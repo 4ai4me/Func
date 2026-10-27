@@ -25,6 +25,8 @@ import {
   Compass,
   Lightbulb,
   BookOpen,
+  LineChart,
+  TrendingUp,
 } from 'lucide-react';
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
@@ -141,6 +143,9 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
   const [showHints, setShowHints] = useState<Record<string, boolean>>({});
   const [domainExplorerX, setDomainExplorerX] = useState<number>(1);
   const [verticalLineA, setVerticalLineA] = useState<number>(0.5);
+  const [selectedRealLifeIdea, setSelectedRealLifeIdea] = useState<(typeof REAL_LIFE_TEMPLATES)[number] | null>(null);
+  const [showProb2Graph1Hint, setShowProb2Graph1Hint] = useState<boolean>(true);
+  const [showProb2Graph2Hint, setShowProb2Graph2Hint] = useState<boolean>(true);
 
   const completion = evaluateLevel1Completion(state);
 
@@ -335,21 +340,560 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
     );
   };
 
-  const applyRealLifeTemplate = (tpl: (typeof REAL_LIFE_TEMPLATES)[number]) => {
-    onUpdate((prev) => ({
-      ...prev,
-      realLifeTopic: tpl.topic,
-      realLifeDomainX: tpl.domainX,
-      realLifeCodomainY: tpl.codomainY,
-      realLifeRule: tpl.rule,
-      realLifeWhyFunc: tpl.whyFunc,
-      realLifeNonFuncExample: tpl.nonFuncExample,
-      bridge: `[실생활 함수] ${tpl.topic}: 정의역(${tpl.domainX}) → 공역(${tpl.codomainY}), 규칙: ${tpl.rule}`,
-    }));
+  const selectRealLifeIdea = (tpl: (typeof REAL_LIFE_TEMPLATES)[number]) => {
+    setSelectedRealLifeIdea(tpl);
     showNotice(
       'realLifeDesign',
-      `‘${tpl.label}’ 예시 틀을 불러왔습니다. 나만의 말이나 주변 사례로 자유롭게 수정해 보세요!`,
+      `‘${tpl.label}’ 아이디어 탐구 가이드를 열었습니다. 아래 가이드를 읽어보고 학습자 본인의 생각과 표현으로 직접 적어보세요!`,
       'good'
+    );
+  };
+
+  // --- Graph Hint Renderers for Problem 2 ---
+  const renderProb2Graph1 = () => {
+    const sizeX = 320;
+    const sizeY = 220;
+    const centerX = 160;
+    const centerY = 110;
+    const xUnit = 28;
+    const yUnit = 16;
+    const toX = (x: number) => centerX + x * xUnit;
+    const toY = (y: number) => centerY - y * yUnit;
+
+    const curX = domainExplorerX;
+    const curY = 2 * curX + 1;
+
+    const xTicks = [-4, -3, -2, -1, 1, 2, 3, 4];
+    const yTicks = [-5, -3, -1, 1, 3, 5];
+
+    return (
+      <div className="flex flex-col items-center">
+        <svg
+          viewBox={`0 0 ${sizeX} ${sizeY}`}
+          className="w-full max-w-[320px] h-auto rounded-xl border border-blue-200 bg-white shadow-xs select-none"
+          role="img"
+          aria-label="일차함수 y = 2x + 1 그래프 힌트"
+        >
+          {/* Grid lines */}
+          {xTicks.map((xt) => (
+            <line
+              key={`grid-x-${xt}`}
+              x1={toX(xt)}
+              y1={toY(6)}
+              x2={toX(xt)}
+              y2={toY(-6)}
+              stroke="#f1f5f9"
+              strokeWidth={1}
+            />
+          ))}
+          {yTicks.map((yt) => (
+            <line
+              key={`grid-y-${yt}`}
+              x1={toX(-4.5)}
+              y1={toY(yt)}
+              x2={toX(4.5)}
+              y2={toY(yt)}
+              stroke="#f1f5f9"
+              strokeWidth={1}
+            />
+          ))}
+
+          {/* Domain highlight on X axis */}
+          <line
+            x1={toX(-4.2)}
+            y1={centerY}
+            x2={toX(4.2)}
+            y2={centerY}
+            stroke="#93c5fd"
+            strokeWidth={6}
+            strokeOpacity={0.6}
+          />
+          {/* Range highlight on Y axis */}
+          <line
+            x1={centerX}
+            y1={toY(-5.8)}
+            x2={centerX}
+            y2={toY(5.8)}
+            stroke="#86efac"
+            strokeWidth={6}
+            strokeOpacity={0.6}
+          />
+
+          {/* Coordinate axes */}
+          <line x1={toX(-4.5)} y1={centerY} x2={toX(4.5)} y2={centerY} stroke="#334155" strokeWidth={1.5} />
+          <line x1={centerX} y1={toY(-6)} x2={centerX} y2={toY(6)} stroke="#334155" strokeWidth={1.5} />
+
+          {/* Arrowheads */}
+          <polygon points={`${toX(4.5)},${centerY} ${toX(4.5)-6},${centerY-3} ${toX(4.5)-6},${centerY+3}`} fill="#334155" />
+          <polygon points={`${centerX},${toY(6)} ${centerX-3},${toY(6)+6} ${centerX+3},${toY(6)+6}`} fill="#334155" />
+
+          {/* Axis labels */}
+          <text x={toX(4.5) - 4} y={centerY + 14} className="fill-slate-800 text-[10px] font-bold italic">x</text>
+          <text x={centerX + 6} y={toY(6) + 10} className="fill-slate-800 text-[10px] font-bold italic">y</text>
+          <text x={centerX - 8} y={centerY + 12} className="fill-slate-600 text-[9px] font-semibold">O</text>
+
+          {/* Ticks */}
+          {xTicks.map((xt) => (
+            <text key={`tx-${xt}`} x={toX(xt)} y={centerY + 12} textAnchor="middle" className="fill-slate-400 text-[9px] mono">
+              {xt}
+            </text>
+          ))}
+          {yTicks.map((yt) => (
+            <text key={`ty-${yt}`} x={centerX - 6} y={toY(yt) + 3} textAnchor="end" className="fill-slate-400 text-[9px] mono">
+              {yt}
+            </text>
+          ))}
+
+          {/* Line y = 2x + 1 */}
+          <line
+            x1={toX(-3.5)}
+            y1={toY(2 * -3.5 + 1)}
+            x2={toX(2.5)}
+            y2={toY(2 * 2.5 + 1)}
+            stroke="#2563eb"
+            strokeWidth={2.5}
+          />
+
+          {/* Lattice points */}
+          {[
+            { x: -1, y: -1 },
+            { x: 0, y: 1 },
+            { x: 1, y: 3 },
+            { x: 2, y: 5 },
+          ].map((pt) => (
+            <g key={`pt-${pt.x}-${pt.y}`}>
+              <circle cx={toX(pt.x)} cy={toY(pt.y)} r={3} fill="#1d4ed8" />
+              <text x={toX(pt.x) + 4} y={toY(pt.y) - 4} className="fill-blue-900 text-[9px] font-bold mono">
+                ({pt.x},{pt.y})
+              </text>
+            </g>
+          ))}
+
+          {/* Dynamic point from domain slider */}
+          {curX >= -3.5 && curX <= 2.5 && (
+            <g>
+              <line x1={toX(curX)} y1={centerY} x2={toX(curX)} y2={toY(curY)} stroke="#64748b" strokeDasharray="2 2" strokeWidth={1} />
+              <line x1={centerX} y1={toY(curY)} x2={toX(curX)} y2={toY(curY)} stroke="#64748b" strokeDasharray="2 2" strokeWidth={1} />
+              <circle cx={toX(curX)} cy={toY(curY)} r={5} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+              <rect x={toX(curX) + 6} y={toY(curY) - 16} width={58} height={16} rx={4} fill="#1e293b" fillOpacity={0.85} />
+              <text x={toX(curX) + 35} y={toY(curY) - 5} textAnchor="middle" className="fill-white text-[9px] font-bold mono">
+                ({curX}, {curY})
+              </text>
+            </g>
+          )}
+        </svg>
+        <div className="mt-1.5 flex items-center justify-between w-full max-w-[320px] text-[11px] text-slate-600 px-1">
+          <span className="flex items-center gap-1 font-semibold text-blue-700">
+            <span className="inline-block w-2.5 h-1.5 bg-blue-300 rounded-sm"></span> 정의역: 실수 전체
+          </span>
+          <span className="flex items-center gap-1 font-semibold text-emerald-700">
+            <span className="inline-block w-2.5 h-1.5 bg-emerald-300 rounded-sm"></span> 치역: 실수 전체
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProb2Graph2 = () => {
+    const sizeX = 320;
+    const sizeY = 220;
+    const centerX = 160;
+    const centerY = 80;
+    const xUnit = 28;
+    const yUnit = 20;
+    const toX = (x: number) => centerX + x * xUnit;
+    const toY = (y: number) => centerY - y * yUnit;
+
+    const curX = domainExplorerX;
+    const curY = -(curX * curX) + 3;
+
+    const xTicks = [-4, -3, -2, -1, 1, 2, 3, 4];
+    const yTicks = [-5, -3, -1, 1, 3];
+
+    // Parabola points from -3.0 to 3.0
+    const pathD = Array.from({ length: 61 }, (_, i) => {
+      const x = -3.0 + i * 0.1;
+      const y = -(x * x) + 3;
+      return `${i === 0 ? 'M' : 'L'} ${toX(x)} ${toY(y)}`;
+    }).join(' ');
+
+    return (
+      <div className="flex flex-col items-center">
+        <svg
+          viewBox={`0 0 ${sizeX} ${sizeY}`}
+          className="w-full max-w-[320px] h-auto rounded-xl border border-indigo-200 bg-white shadow-xs select-none"
+          role="img"
+          aria-label="이차함수 y = -x² + 3 그래프 힌트"
+        >
+          {/* Grid lines */}
+          {xTicks.map((xt) => (
+            <line
+              key={`grid-x-${xt}`}
+              x1={toX(xt)}
+              y1={toY(4)}
+              x2={toX(xt)}
+              y2={toY(-6)}
+              stroke="#f1f5f9"
+              strokeWidth={1}
+            />
+          ))}
+          {yTicks.map((yt) => (
+            <line
+              key={`grid-y-${yt}`}
+              x1={toX(-4.5)}
+              y1={toY(yt)}
+              x2={toX(4.5)}
+              y2={toY(yt)}
+              stroke="#f1f5f9"
+              strokeWidth={1}
+            />
+          ))}
+
+          {/* Range highlight on Y axis: y <= 3 */}
+          <line
+            x1={centerX}
+            y1={toY(3)}
+            x2={centerX}
+            y2={toY(-6)}
+            stroke="#86efac"
+            strokeWidth={6}
+            strokeOpacity={0.7}
+          />
+          {/* Maximum horizontal dashed line at y = 3 */}
+          <line
+            x1={toX(-4.2)}
+            y1={toY(3)}
+            x2={toX(4.2)}
+            y2={toY(3)}
+            stroke="#f59e0b"
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+          />
+          <text x={toX(3.5)} y={toY(3) - 4} textAnchor="end" className="fill-amber-700 text-[9px] font-extrabold mono">
+            최댓값 y = 3
+          </text>
+
+          {/* Coordinate axes */}
+          <line x1={toX(-4.5)} y1={centerY} x2={toX(4.5)} y2={centerY} stroke="#334155" strokeWidth={1.5} />
+          <line x1={centerX} y1={toY(-6)} x2={centerX} y2={toY(4)} stroke="#334155" strokeWidth={1.5} />
+
+          {/* Arrowheads */}
+          <polygon points={`${toX(4.5)},${centerY} ${toX(4.5)-6},${centerY-3} ${toX(4.5)-6},${centerY+3}`} fill="#334155" />
+          <polygon points={`${centerX},${toY(4)} ${centerX-3},${toY(4)+6} ${centerX+3},${toY(4)+6}`} fill="#334155" />
+
+          {/* Axis labels */}
+          <text x={toX(4.5) - 4} y={centerY + 14} className="fill-slate-800 text-[10px] font-bold italic">x</text>
+          <text x={centerX + 6} y={toY(4) + 10} className="fill-slate-800 text-[10px] font-bold italic">y</text>
+          <text x={centerX - 8} y={centerY + 12} className="fill-slate-600 text-[9px] font-semibold">O</text>
+
+          {/* Ticks */}
+          {xTicks.map((xt) => (
+            <text key={`tx-${xt}`} x={toX(xt)} y={centerY + 12} textAnchor="middle" className="fill-slate-400 text-[9px] mono">
+              {xt}
+            </text>
+          ))}
+          {yTicks.map((yt) => (
+            <text key={`ty-${yt}`} x={centerX - 6} y={toY(yt) + 3} textAnchor="end" className="fill-slate-400 text-[9px] mono">
+              {yt}
+            </text>
+          ))}
+
+          {/* Parabola curve */}
+          <path d={pathD} fill="none" stroke="#6366f1" strokeWidth={2.5} />
+
+          {/* Vertex point (0, 3) */}
+          <circle cx={toX(0)} cy={toY(3)} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={2} />
+          <text x={toX(0) + 7} y={toY(3) - 2} className="fill-amber-900 text-[10px] font-extrabold mono">
+            꼭짓점 (0, 3)
+          </text>
+
+          {/* Dynamic point from domain slider */}
+          {curX >= -2.8 && curX <= 2.8 && (
+            <g>
+              <line x1={toX(curX)} y1={centerY} x2={toX(curX)} y2={toY(curY)} stroke="#64748b" strokeDasharray="2 2" strokeWidth={1} />
+              <line x1={centerX} y1={toY(curY)} x2={toX(curX)} y2={toY(curY)} stroke="#64748b" strokeDasharray="2 2" strokeWidth={1} />
+              <circle cx={toX(curX)} cy={toY(curY)} r={5} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+              <rect x={toX(curX) + 6} y={toY(curY) - 16} width={58} height={16} rx={4} fill="#1e293b" fillOpacity={0.85} />
+              <text x={toX(curX) + 35} y={toY(curY) - 5} textAnchor="middle" className="fill-white text-[9px] font-bold mono">
+                ({curX}, {curY})
+              </text>
+            </g>
+          )}
+        </svg>
+        <div className="mt-1.5 flex items-center justify-between w-full max-w-[320px] text-[11px] text-slate-600 px-1">
+          <span className="flex items-center gap-1 font-semibold text-blue-700">
+            정의역: 실수 전체
+          </span>
+          <span className="flex items-center gap-1 font-bold text-emerald-700">
+            <span className="inline-block w-2.5 h-1.5 bg-emerald-400 rounded-sm"></span> 치역: {'{y | y ≤ 3인 실수}'}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Graph Simulation Renderers for Problem 5 (수직선 판정법) ---
+  const renderProb5Sim1 = (a: number) => {
+    const size = 220;
+    const center = 110;
+    const unit = 26;
+    const toX = (x: number) => center + x * unit;
+    const toY = (y: number) => center - y * unit;
+
+    const yInt = -a + 1;
+    const inView = yInt >= -3.5 && yInt <= 3.5 && a >= -3.5 && a <= 3.5;
+
+    return (
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full max-w-[240px] h-auto rounded-xl border border-slate-200 bg-white shadow-xs select-none cursor-crosshair"
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const mathX = Number(((clickX - center * (rect.width / size)) / (unit * (rect.width / size))).toFixed(1));
+          setVerticalLineA(Math.max(-1.5, Math.min(4, mathX)));
+        }}
+        role="img"
+        aria-label="문제 5-(1) 직선 그래프 시뮬레이션"
+      >
+        {[-3, -2, -1, 1, 2, 3].map((t) => (
+          <React.Fragment key={t}>
+            <line x1={toX(t)} y1={10} x2={toX(t)} y2={size - 10} stroke="#f1f5f9" strokeWidth={1} />
+            <line x1={10} y1={toY(t)} x2={size - 10} y2={toY(t)} stroke="#f1f5f9" strokeWidth={1} />
+          </React.Fragment>
+        ))}
+        <line x1={10} y1={center} x2={size - 10} y2={center} stroke="#475569" strokeWidth={1.5} />
+        <line x1={center} y1={size - 10} x2={center} y2={10} stroke="#475569" strokeWidth={1.5} />
+        <text x={size - 16} y={center + 12} className="fill-slate-700 text-[10px] font-bold italic">x</text>
+        <text x={center + 6} y={16} className="fill-slate-700 text-[10px] font-bold italic">y</text>
+        <text x={center - 8} y={center + 12} className="fill-slate-500 text-[9px] font-semibold">O</text>
+
+        {/* Line y = -x + 1 */}
+        <line
+          x1={toX(-3.2)}
+          y1={toY(4.2)}
+          x2={toX(4.2)}
+          y2={toY(-3.2)}
+          stroke="#2563eb"
+          strokeWidth={2.5}
+        />
+        <circle cx={toX(0)} cy={toY(1)} r={3} fill="#1d4ed8" />
+        <text x={toX(0) + 4} y={toY(1) - 4} className="fill-slate-800 text-[9px] font-bold mono">(0,1)</text>
+        <circle cx={toX(1)} cy={toY(0)} r={3} fill="#1d4ed8" />
+        <text x={toX(1) + 4} y={toY(0) + 12} className="fill-slate-800 text-[9px] font-bold mono">(1,0)</text>
+
+        {/* Vertical line x = a */}
+        <line
+          x1={toX(a)}
+          y1={10}
+          x2={toX(a)}
+          y2={size - 10}
+          stroke="#ef4444"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+        />
+        <text x={toX(a) + 3} y={22} className="fill-rose-700 text-[9px] font-extrabold mono">
+          x = {a}
+        </text>
+
+        {/* Intersection */}
+        {inView && (
+          <g>
+            <circle cx={toX(a)} cy={toY(yInt)} r={6} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+            <circle cx={toX(a)} cy={toY(yInt)} r={10} fill="none" stroke="#ef4444" strokeWidth={1} strokeOpacity={0.6} />
+            <text x={toX(a) + 8} y={toY(yInt) - 6} className="fill-rose-900 text-[9px] font-bold mono">
+              교점 ({a.toFixed(1)}, {yInt.toFixed(1)})
+            </text>
+          </g>
+        )}
+      </svg>
+    );
+  };
+
+  const renderProb5Sim2 = (a: number) => {
+    const size = 220;
+    const center = 30;
+    const bottomY = 190;
+    const unit = 32;
+    const toX = (x: number) => center + x * unit;
+    const toY = (y: number) => bottomY - y * unit;
+
+    const points = [
+      { x: 0, y: 2 },
+      { x: 1, y: 3 },
+      { x: 2, y: 4 },
+      { x: 3, y: 3 },
+      { x: 3, y: 1 },
+      { x: 4, y: 2 },
+    ];
+
+    const hitPoints = points.filter((p) => Math.abs(p.x - a) < 0.25);
+
+    return (
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full max-w-[240px] h-auto rounded-xl border border-slate-200 bg-white shadow-xs select-none cursor-crosshair"
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const mathX = Number(((clickX - center * (rect.width / size)) / (unit * (rect.width / size))).toFixed(1));
+          setVerticalLineA(Math.max(-0.5, Math.min(4.5, mathX)));
+        }}
+        role="img"
+        aria-label="문제 5-(2) 점 그래프 시뮬레이션"
+      >
+        {[0, 1, 2, 3, 4].map((t) => (
+          <React.Fragment key={t}>
+            <line x1={toX(t)} y1={10} x2={toX(t)} y2={bottomY + 10} stroke="#f1f5f9" strokeWidth={1} />
+            <line x1={center - 10} y1={toY(t)} x2={size - 10} y2={toY(t)} stroke="#f1f5f9" strokeWidth={1} />
+            {t > 0 && (
+              <>
+                <text x={toX(t)} y={bottomY + 14} textAnchor="middle" className="fill-slate-400 text-[9px] mono">{t}</text>
+                <text x={center - 6} y={toY(t) + 3} textAnchor="end" className="fill-slate-400 text-[9px] mono">{t}</text>
+              </>
+            )}
+          </React.Fragment>
+        ))}
+        <line x1={center - 10} y1={bottomY} x2={size - 10} y2={bottomY} stroke="#475569" strokeWidth={1.5} />
+        <line x1={center} y1={bottomY + 10} x2={center} y2={10} stroke="#475569" strokeWidth={1.5} />
+        <text x={size - 14} y={bottomY + 14} className="fill-slate-700 text-[10px] font-bold italic">x</text>
+        <text x={center + 6} y={16} className="fill-slate-700 text-[10px] font-bold italic">y</text>
+        <text x={center - 8} y={bottomY + 12} className="fill-slate-500 text-[9px] font-semibold">O</text>
+
+        {points.map((p, idx) => {
+          const isHit = hitPoints.some((hp) => hp.x === p.x && hp.y === p.y);
+          return (
+            <g key={`prob5-pt-${idx}`}>
+              <circle
+                cx={toX(p.x)}
+                cy={toY(p.y)}
+                r={isHit ? 6 : 4}
+                fill={isHit ? (hitPoints.length > 1 ? '#ef4444' : '#10b981') : '#0f172a'}
+                stroke="#ffffff"
+                strokeWidth={isHit ? 2 : 1}
+              />
+              <text
+                x={toX(p.x) + 5}
+                y={toY(p.y) - 5}
+                className={`text-[9px] font-bold mono ${
+                  isHit
+                    ? hitPoints.length > 1
+                      ? 'fill-rose-700'
+                      : 'fill-emerald-700'
+                    : 'fill-slate-600'
+                }`}
+              >
+                ({p.x},{p.y})
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Vertical line x = a */}
+        <line
+          x1={toX(a)}
+          y1={10}
+          x2={toX(a)}
+          y2={bottomY + 10}
+          stroke="#ef4444"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+        />
+        <text x={toX(a) + 3} y={22} className="fill-rose-700 text-[9px] font-extrabold mono">
+          x = {a}
+        </text>
+
+        {/* If hit count > 1, draw bracket */}
+        {hitPoints.length > 1 && (
+          <line
+            x1={toX(3)}
+            y1={toY(3)}
+            x2={toX(3)}
+            y2={toY(1)}
+            stroke="#ef4444"
+            strokeWidth={3}
+            strokeDasharray="2 2"
+          />
+        )}
+      </svg>
+    );
+  };
+
+  const renderProb5Sim3 = (a: number) => {
+    const size = 220;
+    const center = 110;
+    const unit = 50;
+    const toX = (x: number) => center + x * unit;
+    const toY = (y: number) => center - y * unit;
+
+    const hasHits = a > -1 && a < 1;
+    const isTangent = Math.abs(a - 1) < 0.05 || Math.abs(a - (-1)) < 0.05;
+    const y1 = hasHits ? Math.sqrt(Math.max(0, 1 - a * a)) : 0;
+    const y2 = -y1;
+
+    return (
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="w-full max-w-[240px] h-auto rounded-xl border border-slate-200 bg-white shadow-xs select-none cursor-crosshair"
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const mathX = Number(((clickX - center * (rect.width / size)) / (unit * (rect.width / size))).toFixed(1));
+          setVerticalLineA(Math.max(-1.5, Math.min(1.8, mathX)));
+        }}
+        role="img"
+        aria-label="문제 5-(3) 원 그래프 시뮬레이션"
+      >
+        {[-1, 1].map((t) => (
+          <React.Fragment key={t}>
+            <line x1={toX(t)} y1={10} x2={toX(t)} y2={size - 10} stroke="#f1f5f9" strokeWidth={1} />
+            <line x1={10} y1={toY(t)} x2={size - 10} y2={toY(t)} stroke="#f1f5f9" strokeWidth={1} />
+            <text x={toX(t)} y={center + 14} textAnchor="middle" className="fill-slate-400 text-[9px] mono">{t}</text>
+            <text x={center - 6} y={toY(t) + 3} textAnchor="end" className="fill-slate-400 text-[9px] mono">{t}</text>
+          </React.Fragment>
+        ))}
+        <line x1={10} y1={center} x2={size - 10} y2={center} stroke="#475569" strokeWidth={1.5} />
+        <line x1={center} y1={size - 10} x2={center} y2={10} stroke="#475569" strokeWidth={1.5} />
+        <text x={size - 14} y={center + 12} className="fill-slate-700 text-[10px] font-bold italic">x</text>
+        <text x={center + 6} y={16} className="fill-slate-700 text-[10px] font-bold italic">y</text>
+        <text x={center - 8} y={center + 12} className="fill-slate-500 text-[9px] font-semibold">O</text>
+
+        {/* Circle */}
+        <circle cx={center} cy={center} r={unit} fill="none" stroke="#6366f1" strokeWidth={2.5} />
+
+        {/* Vertical line x = a */}
+        <line
+          x1={toX(a)}
+          y1={10}
+          x2={toX(a)}
+          y2={size - 10}
+          stroke="#ef4444"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+        />
+        <text x={toX(a) + 3} y={22} className="fill-rose-700 text-[9px] font-extrabold mono">
+          x = {a}
+        </text>
+
+        {/* Intersection points */}
+        {hasHits && (
+          <g>
+            <line x1={toX(a)} y1={toY(y1)} x2={toX(a)} y2={toY(y2)} stroke="#ef4444" strokeWidth={2.5} strokeDasharray="2 2" />
+            <circle cx={toX(a)} cy={toY(y1)} r={5} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+            <circle cx={toX(a)} cy={toY(y2)} r={5} fill="#ef4444" stroke="#ffffff" strokeWidth={2} />
+            <text x={toX(a) + 6} y={toY(y1) - 4} className="fill-rose-800 text-[8px] font-bold mono">
+              y={y1.toFixed(2)}
+            </text>
+            <text x={toX(a) + 6} y={toY(y2) + 10} className="fill-rose-800 text-[8px] font-bold mono">
+              y={y2.toFixed(2)}
+            </text>
+          </g>
+        )}
+
+        {isTangent && (
+          <circle cx={toX(a > 0 ? 1 : -1)} cy={toY(0)} r={5} fill="#f59e0b" stroke="#ffffff" strokeWidth={2} />
+        )}
+      </svg>
     );
   };
 
@@ -924,30 +1468,31 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   <label htmlFor="prob1_1Reason" className="block text-xs font-bold text-slate-700 mb-1">
                     함수가 아닌 이유 (원소 번호 포함)
                   </label>
-                  <input
+                  <textarea
                     id="prob1_1Reason"
-                    type="text"
+                    rows={3}
                     value={state.prob1_1Reason || ''}
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob1_1Reason: e.target.value, prob1Verified: false }))
                     }
-                    placeholder="예: X의 원소 3에 대응하는 Y의 원소가 없다."
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm text-slate-900"
+                    placeholder="예: 집합 X의 원소 3에 대응하는 집합 Y의 원소가 없기 때문이다."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdate((prev) => ({
-                        ...prev,
-                        prob1_1IsFunc: 'no',
-                        prob1_1Reason: 'X의 원소 3에 대응하는 Y의 원소가 없기 때문이다.',
-                        prob1Verified: false,
-                      }))
-                    }
-                    className="mt-1.5 text-[11px] font-bold text-blue-600 hover:underline"
-                  >
-                    + 예시 문장 넣기 (원소 3 미대응)
-                  </button>
+                  <div className="mt-1.5 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob1_1')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob1_1 ? '이유 서술 힌트 접기' : '💡 (1)번 이유 서술 힌트 보기'}
+                    </button>
+                    {showHints.prob1_1 && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                        <strong>서술 힌트:</strong> 집합 X의 원소 1, 2, 3, 4 중에서 화살표가 출발하지 않은 원소가 있는지 살펴보고, &ldquo;X의 원소 3에 대응하는 Y의 원소가 없다&rdquo;는 사실을 문장으로 서술해 보세요.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1027,22 +1572,14 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       className="mt-0.5 w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-2.5 py-1.5 text-xs sm:text-sm mono text-slate-900"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdate((prev) => ({
-                        ...prev,
-                        prob1_2IsFunc: 'yes',
-                        prob1_2Domain: '{1, 2, 3, 4}',
-                        prob1_2Codomain: '{a, b, c, d}',
-                        prob1_2Range: '{a, c, d}',
-                        prob1Verified: false,
-                      }))
-                    }
-                    className="text-[11px] font-bold text-blue-600 hover:underline"
-                  >
-                    + 집합 기호 빠른 입력 ({'{1,2,3,4}'}, {'{a,b,c,d}'}, {'{a,c,d}'})
-                  </button>
+                  <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
+                    <span className="font-semibold text-slate-700">💡 집합 기호 입력 도움:</span>
+                    {['{', '}', ',', '1', '2', '3', '4', 'a', 'b', 'c', 'd'].map((sym) => (
+                      <span key={sym} className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 mono font-bold text-slate-800">
+                        {sym}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -1080,30 +1617,31 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   <label htmlFor="prob1_3Reason" className="block text-xs font-bold text-slate-700 mb-1">
                     함수가 아닌 이유 (원소 번호 포함)
                   </label>
-                  <input
+                  <textarea
                     id="prob1_3Reason"
-                    type="text"
+                    rows={3}
                     value={state.prob1_3Reason || ''}
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob1_3Reason: e.target.value, prob1Verified: false }))
                     }
-                    placeholder="예: X의 원소 4에 대응하는 Y의 원소가 b, d로 2개이다."
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm text-slate-900"
+                    placeholder="예: 집합 X의 원소 4에 대응하는 집합 Y의 원소가 b와 d로 2개이기 때문이다."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onUpdate((prev) => ({
-                        ...prev,
-                        prob1_3IsFunc: 'no',
-                        prob1_3Reason: 'X의 원소 4에 대응하는 Y의 원소가 b와 d로 2개이기 때문이다.',
-                        prob1Verified: false,
-                      }))
-                    }
-                    className="mt-1.5 text-[11px] font-bold text-blue-600 hover:underline"
-                  >
-                    + 예시 문장 넣기 (원소 4에 2개 대응)
-                  </button>
+                  <div className="mt-1.5 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob1_3')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob1_3 ? '이유 서술 힌트 접기' : '💡 (3)번 이유 서술 힌트 보기'}
+                    </button>
+                    {showHints.prob1_3 && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                        <strong>서술 힌트:</strong> 집합 X의 원소 4에서 화살표가 몇 개 나가는지 살펴보고, &ldquo;원소 4에 대응하는 Y의 원소가 b와 d로 2개이다&rdquo;는 사실을 적어보세요. (함수는 오직 하나씩만 대응해야 합니다!)
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1259,107 +1797,159 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               )}
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
               {/* 문제 2-(1) */}
-              <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                <div className="text-sm font-extrabold text-slate-900">
-                  (1) 함수 <span className="mono text-blue-700">y = 2x + 1</span>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-sm sm:text-base font-extrabold text-slate-900">
+                    (1) 함수 <span className="mono text-blue-700">y = 2x + 1</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowProb2Graph1Hint((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                  >
+                    <LineChart className="h-3.5 w-3.5" />
+                    {showProb2Graph1Hint ? '그래프 힌트 접기' : '📊 그래프 힌트 보기'}
+                  </button>
                 </div>
-                <div>
-                  <label htmlFor="prob2_1Domain" className="block text-xs font-bold text-slate-700 mb-1">
-                    정의역
-                  </label>
-                  <input
-                    id="prob2_1Domain"
-                    type="text"
-                    value={state.prob2_1Domain || ''}
-                    onChange={(e) =>
-                      onUpdate((prev) => ({ ...prev, prob2_1Domain: e.target.value, prob2Verified: false }))
-                    }
-                    placeholder="예: {x | x는 실수}"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
-                  />
+
+                {/* Graph Hint Widget for (1) */}
+                {showProb2Graph1Hint && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3 space-y-2">
+                    <div className="text-xs font-bold text-blue-900 flex items-center gap-1">
+                      <TrendingUp className="h-3.5 w-3.5 text-blue-600" />
+                      <span>좌표평면 그래프 분석 힌트 (직선)</span>
+                    </div>
+                    {renderProb2Graph1()}
+                    <div className="text-[11px] text-slate-600 space-y-1 bg-white p-2.5 rounded-lg border border-blue-100 leading-relaxed">
+                      <div>
+                        • <strong>정의역:</strong> 분모가 0이 되거나 근호 안이 음수가 되는 제한이 없으므로 모든 실수 <MathText text="x" />에서 정의됩니다.
+                      </div>
+                      <div>
+                        • <strong>치역:</strong> 기울기가 2인 직선은 위아래로 끝없이 뻗어나가므로 <MathText text="y" /> 역시 모든 실수 값을 가집니다.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="prob2_1Domain" className="block text-xs font-bold text-slate-700 mb-1">
+                      정의역 (집합 조건제시법 형식)
+                    </label>
+                    <input
+                      id="prob2_1Domain"
+                      type="text"
+                      value={state.prob2_1Domain || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({ ...prev, prob2_1Domain: e.target.value, prob2Verified: false }))
+                      }
+                      placeholder="예: {x | x는 실수}"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="prob2_1Range" className="block text-xs font-bold text-slate-700 mb-1">
+                      치역 (집합 조건제시법 형식)
+                    </label>
+                    <input
+                      id="prob2_1Range"
+                      type="text"
+                      value={state.prob2_1Range || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({ ...prev, prob2_1Range: e.target.value, prob2Verified: false }))
+                      }
+                      placeholder="예: {y | y는 실수}"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
+                    <span className="font-semibold text-slate-700">기호 도움:</span>
+                    {['{', '}', '|', 'x', 'y', '실수', '는'].map((sym) => (
+                      <span key={sym} className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 mono font-bold text-slate-800">
+                        {sym}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="prob2_1Range" className="block text-xs font-bold text-slate-700 mb-1">
-                    치역
-                  </label>
-                  <input
-                    id="prob2_1Range"
-                    type="text"
-                    value={state.prob2_1Range || ''}
-                    onChange={(e) =>
-                      onUpdate((prev) => ({ ...prev, prob2_1Range: e.target.value, prob2Verified: false }))
-                    }
-                    placeholder="예: {y | y는 실수}"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onUpdate((prev) => ({
-                      ...prev,
-                      prob2_1Domain: '{x | x는 실수}',
-                      prob2_1Range: '{y | y는 실수}',
-                      prob2Verified: false,
-                    }))
-                  }
-                  className="text-xs font-bold text-blue-600 hover:underline"
-                >
-                  + 조건제시법 빠른 입력 ({'{x | x는 실수}'}, {'{y | y는 실수}'})
-                </button>
               </div>
 
               {/* 문제 2-(2) */}
-              <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                <div className="text-sm font-extrabold text-slate-900">
-                  (2) 함수 <span className="mono text-blue-700">y = -x² + 3</span>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-sm sm:text-base font-extrabold text-slate-900">
+                    (2) 함수 <span className="mono text-blue-700">y = -x² + 3</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowProb2Graph2Hint((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                  >
+                    <LineChart className="h-3.5 w-3.5" />
+                    {showProb2Graph2Hint ? '그래프 힌트 접기' : '📊 그래프 힌트 보기'}
+                  </button>
                 </div>
-                <div>
-                  <label htmlFor="prob2_2Domain" className="block text-xs font-bold text-slate-700 mb-1">
-                    정의역
-                  </label>
-                  <input
-                    id="prob2_2Domain"
-                    type="text"
-                    value={state.prob2_2Domain || ''}
-                    onChange={(e) =>
-                      onUpdate((prev) => ({ ...prev, prob2_2Domain: e.target.value, prob2Verified: false }))
-                    }
-                    placeholder="예: {x | x는 실수}"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
-                  />
+
+                {/* Graph Hint Widget for (2) */}
+                {showProb2Graph2Hint && (
+                  <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 space-y-2">
+                    <div className="text-xs font-bold text-indigo-900 flex items-center gap-1">
+                      <TrendingUp className="h-3.5 w-3.5 text-indigo-600" />
+                      <span>좌표평면 그래프 분석 힌트 (포물선)</span>
+                    </div>
+                    {renderProb2Graph2()}
+                    <div className="text-[11px] text-slate-600 space-y-1 bg-white p-2.5 rounded-lg border border-indigo-100 leading-relaxed">
+                      <div>
+                        • <strong>정의역:</strong> 모든 실수 <MathText text="x" />에 대해 <MathText text="-x^2 + 3" />을 계산할 수 있으므로 정의역은 실수 전체입니다.
+                      </div>
+                      <div>
+                        • <strong>치역:</strong> 포물선 꼭짓점이 <MathText text="(0, 3)" />이고 위로 볼록하므로 <MathText text="y \le 3" />인 범위만 가집니다.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="prob2_2Domain" className="block text-xs font-bold text-slate-700 mb-1">
+                      정의역 (집합 조건제시법 형식)
+                    </label>
+                    <input
+                      id="prob2_2Domain"
+                      type="text"
+                      value={state.prob2_2Domain || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({ ...prev, prob2_2Domain: e.target.value, prob2Verified: false }))
+                      }
+                      placeholder="예: {x | x는 실수}"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="prob2_2Range" className="block text-xs font-bold text-slate-700 mb-1">
+                      치역 (집합 조건제시법 형식)
+                    </label>
+                    <input
+                      id="prob2_2Range"
+                      type="text"
+                      value={state.prob2_2Range || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({ ...prev, prob2_2Range: e.target.value, prob2Verified: false }))
+                      }
+                      placeholder="예: {y | y ≤ 3인 실수}"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
+                    <span className="font-semibold text-slate-700">기호 도움:</span>
+                    {['{', '}', '|', 'x', 'y', '≤', '3', '인', '실수'].map((sym) => (
+                      <span key={sym} className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 mono font-bold text-slate-800">
+                        {sym}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="prob2_2Range" className="block text-xs font-bold text-slate-700 mb-1">
-                    치역
-                  </label>
-                  <input
-                    id="prob2_2Range"
-                    type="text"
-                    value={state.prob2_2Range || ''}
-                    onChange={(e) =>
-                      onUpdate((prev) => ({ ...prev, prob2_2Range: e.target.value, prob2Verified: false }))
-                    }
-                    placeholder="예: {y | y ≤ 3인 실수}"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onUpdate((prev) => ({
-                      ...prev,
-                      prob2_2Domain: '{x | x는 실수}',
-                      prob2_2Range: '{y | y ≤ 3인 실수}',
-                      prob2Verified: false,
-                    }))
-                  }
-                  className="text-xs font-bold text-blue-600 hover:underline"
-                >
-                  + 조건제시법 빠른 입력 ({'{x | x는 실수}'}, {'{y | y ≤ 3인 실수}'})
-                </button>
               </div>
             </div>
 
@@ -1557,33 +2147,37 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                 </div>
                 <textarea
                   id="prob3Reason"
-                  rows={2}
+                  rows={4}
                   value={state.prob3Reason || ''}
                   onChange={(e) =>
                     onUpdate((prev) => ({ ...prev, prob3Reason: e.target.value, prob3Verified: false }))
                   }
-                  placeholder="정의역 {-1, 0, 1}의 모든 원소에 대하여 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2이므로 f = g이다."
-                  className={`w-full rounded-xl border bg-white p-3 text-sm text-slate-900 ${getCharCountBorderClass(
+                  placeholder="정의역 {-1, 0, 1}의 모든 원소에 대하여 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2이므로 두 함수의 대응이 완전히 같아서 f = g이다."
+                  className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                     (state.prob3Reason || '').trim().length,
                     10
                   )}`}
                 />
-                <button
-                  type="button"
-                  onClick={() =>
-                    onUpdate((prev) => ({
-                      ...prev,
-                      prob3Table: { f0: '0', f1: '2', gm1: '2', g1: '2' },
-                      prob3IsEqual: 'yes',
-                      prob3Reason:
-                        '정의역 {-1, 0, 1}의 모든 원소 x에 대하여 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2로 함숫값이 모두 같으므로 두 함수 f와 g는 서로 같다 (f = g).',
-                      prob3Verified: false,
-                    }))
-                  }
-                  className="mt-1.5 text-xs font-bold text-blue-600 hover:underline"
-                >
-                  + 표와 서술 예시 채우기
-                </button>
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('prob3_hint')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <Lightbulb className="h-4 w-4 text-amber-500" />
+                    {showHints.prob3_hint ? '문제 3 탐구 힌트 접기' : '💡 문제 3 풀이 힌트 보기'}
+                  </button>
+                  {showHints.prob3_hint && (
+                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs sm:text-sm text-amber-900 space-y-1.5 leading-relaxed">
+                      <div>
+                        • <strong>표 채우기 힌트:</strong> <MathText text="x = 0" />일 때 <MathText text="f(0) = |2 \times 0| = 0" />, <MathText text="x = 1" />일 때 <MathText text="f(1) = |2 \times 1| = 2" />입니다. 마찬가지로 <MathText text="g(x) = 2x^2" />에도 대입해 보세요.
+                      </div>
+                      <div>
+                        • <strong>서술 힌트:</strong> 두 함수가 서로 같으려면( <MathText text="f = g" />) 정의역의 모든 원소 <MathText text="x" />에 대해 함숫값이 일치해야 합니다. <MathText text="f(-1)=g(-1)=2" />, <MathText text="f(0)=g(0)=0" />, <MathText text="f(1)=g(1)=2" />임을 언급하여 서술해 보세요.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1866,71 +2460,138 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               )}
             </div>
 
-            {/* 수직선 x = a 슬라이더 실험 */}
-            <div className="rounded-xl border border-blue-200 bg-white p-4 space-y-3">
+            {/* 수직선 x = a 3개 그래프 시뮬레이터 */}
+            <div className="rounded-2xl border-2 border-blue-200 bg-white p-4 sm:p-5 space-y-4 shadow-xs">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label htmlFor="verticalLineSlider" className="text-xs sm:text-sm font-bold text-slate-800">
-                  수직선 <span className="mono text-blue-600">x = a</span> 위치 조절 (현재{' '}
-                  <span className="mono font-extrabold text-blue-700">a = {verticalLineA}</span>)
-                </label>
-                <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setVerticalLineA(0.5)}
-                    className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100 mono"
-                  >
-                    a = 0.5 (원 내부)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVerticalLineA(3)}
-                    className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100 mono"
-                  >
-                    a = 3 (점 그래프 중복)
-                  </button>
+                <div className="flex items-center gap-2">
+                  <Compass className="h-5 w-5 text-blue-600" />
+                  <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                    수직선 판정법 실시간 시뮬레이터 (x = a를 움직여 세 그래프의 교점을 비교하세요)
+                  </h4>
+                </div>
+                <span className="mono text-xs font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                  현재 수직선 a = {verticalLineA.toFixed(1)}
+                </span>
+              </div>
+
+              {/* 3 Coordinated Simulation Graphs */}
+              <div className="grid gap-4 md:grid-cols-3">
+                {/* Simulation 1: 직선 */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex flex-col items-center space-y-2">
+                  <div className="text-xs font-extrabold text-slate-900">
+                    (1) 일차함수 <span className="mono text-blue-700">y = -x + 1</span>
+                  </div>
+                  {renderProb5Sim1(verticalLineA)}
+                  <div className="w-full text-center py-1.5 px-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
+                    ✓ 교점 1개 (어떤 a에서도 항상 1개 $\rightarrow$ 함수 O)
+                  </div>
+                </div>
+
+                {/* Simulation 2: 점 그래프 */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex flex-col items-center space-y-2">
+                  <div className="text-xs font-extrabold text-slate-900">
+                    (2) 이산 점 그래프
+                  </div>
+                  {renderProb5Sim2(verticalLineA)}
+                  <div className="w-full text-center py-1.5 px-2 rounded-lg text-[11px] font-bold transition-colors">
+                    {Math.abs(verticalLineA - 3) < 0.25 ? (
+                      <span className="text-rose-700 bg-rose-50 border border-rose-200 block py-0.5 rounded">
+                        ⚠️ 교점 2개! (x=3에 1과 3 동시 대응 $\rightarrow$ 함수 X)
+                      </span>
+                    ) : [0, 1, 2, 4].some((n) => Math.abs(verticalLineA - n) < 0.25) ? (
+                      <span className="text-blue-700 bg-blue-50 border border-blue-200 block py-0.5 rounded">
+                        교점 1개 (x = {Math.round(verticalLineA)})
+                      </span>
+                    ) : (
+                      <span className="text-slate-600 bg-slate-100 border border-slate-200 block py-0.5 rounded">
+                        교점 0개 (a = 3으로 이동해 보세요)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Simulation 3: 원 그래프 */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex flex-col items-center space-y-2">
+                  <div className="text-xs font-extrabold text-slate-900">
+                    (3) 원 <span className="mono text-indigo-700">x² + y² = 1</span>
+                  </div>
+                  {renderProb5Sim3(verticalLineA)}
+                  <div className="w-full text-center py-1.5 px-2 rounded-lg text-[11px] font-bold transition-colors">
+                    {verticalLineA > -1 && verticalLineA < 1 ? (
+                      <span className="text-rose-700 bg-rose-50 border border-rose-200 block py-0.5 rounded">
+                        ⚠️ 교점 2개! (위·아래 2개 y값 대응 $\rightarrow$ 함수 X)
+                      </span>
+                    ) : Math.abs(verticalLineA - 1) < 0.05 || Math.abs(verticalLineA - (-1)) < 0.05 ? (
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 block py-0.5 rounded">
+                        접점 1개 (x = {verticalLineA > 0 ? '1' : '-1'})
+                      </span>
+                    ) : (
+                      <span className="text-slate-600 bg-slate-100 border border-slate-200 block py-0.5 rounded">
+                        교점 0개 (-1 &lt; a &lt; 1 구간으로 이동해 보세요)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <input
-                id="verticalLineSlider"
-                type="range"
-                min={-1}
-                max={4}
-                step={0.5}
-                value={verticalLineA}
-                onChange={(e) => setVerticalLineA(Number(e.target.value))}
-                className="w-full accent-blue-600 cursor-pointer"
-              />
-              <div className="grid gap-2 sm:grid-cols-3 text-xs">
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2.5">
-                  <strong className="text-emerald-900">(1) 직선 그래프:</strong>{' '}
-                  <span className="text-emerald-800">
-                    x = {verticalLineA}에서 교점 <strong>1개</strong> (함수 O)
-                  </span>
+
+              {/* Slider & Quick Buttons */}
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label htmlFor="verticalLineSlider" className="text-xs font-bold text-slate-700">
+                    수직선 <span className="mono text-blue-600">x = a</span> 위치 조절 (-1.5 ~ 4.5)
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setVerticalLineA(0.5)}
+                      className={`rounded-md border px-2 py-1 text-xs font-bold mono transition-colors ${
+                        verticalLineA === 0.5 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      a = 0.5 (원 내부 2점)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerticalLineA(1)}
+                      className={`rounded-md border px-2 py-1 text-xs font-bold mono transition-colors ${
+                        verticalLineA === 1 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      a = 1.0 (원 접점)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerticalLineA(2)}
+                      className={`rounded-md border px-2 py-1 text-xs font-bold mono transition-colors ${
+                        verticalLineA === 2 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      a = 2.0 (점 그래프 1점)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerticalLineA(3)}
+                      className={`rounded-md border px-2 py-1 text-xs font-bold mono transition-colors ${
+                        verticalLineA === 3 ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      a = 3.0 (점 그래프 2점 중복)
+                    </button>
+                  </div>
                 </div>
-                <div
-                  className={`rounded-lg border p-2.5 ${
-                    verticalLineA === 3
-                      ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  <strong>(2) 점 그래프:</strong>{' '}
-                  {verticalLineA === 3
-                    ? 'x = 3에서 (3, 1), (3, 3) 교점 2개! (함수 X)'
-                    : 'a = 3으로 이동해 교점 개수를 확인해 보세요.'}
-                </div>
-                <div
-                  className={`rounded-lg border p-2.5 ${
-                    verticalLineA > -1 && verticalLineA < 1
-                      ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
-                      : 'bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  <strong>(3) 원 그래프:</strong>{' '}
-                  {verticalLineA > -1 && verticalLineA < 1
-                    ? `x = ${verticalLineA}에서 위·아래 교점 2개! (함수 X)`
-                    : '-1 < a < 1 구간으로 이동해 보세요.'}
-                </div>
+                <input
+                  id="verticalLineSlider"
+                  type="range"
+                  min={-1.5}
+                  max={4.5}
+                  step={0.1}
+                  value={verticalLineA}
+                  onChange={(e) => setVerticalLineA(Number(e.target.value))}
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+                <p className="text-[11px] text-slate-500">
+                  💡 각 그래프 영역을 직접 클릭해도 수직선 x = a가 해당 좌표로 이동합니다.
+                </p>
               </div>
             </div>
 
@@ -1960,32 +2621,32 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label htmlFor="prob5_2Reason" className="block text-xs font-bold text-slate-700 mb-1">
-                    ② (2)번이 함수의 그래프가 아닌 이유
+                    ② (2)번이 함수의 그래프가 아닌 이유 (문장으로 서술)
                   </label>
-                  <input
+                  <textarea
                     id="prob5_2Reason"
-                    type="text"
+                    rows={3}
                     value={state.prob5_2Reason || ''}
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob5_2Reason: e.target.value, prob5Verified: false }))
                     }
-                    placeholder="예: x = 3일 때 대응하는 y의 값이 1, 3으로 2개이기 때문이다."
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-900"
+                    placeholder="예: x = 3일 때 대응하는 y의 값이 1과 3으로 2개이기 때문에 오직 하나씩 대응해야 한다는 함수의 정의를 만족하지 않는다."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
                 <div>
                   <label htmlFor="prob5_3Reason" className="block text-xs font-bold text-slate-700 mb-1">
-                    ③ (3)번이 함수의 그래프가 아닌 이유
+                    ③ (3)번이 함수의 그래프가 아닌 이유 (문장으로 서술)
                   </label>
-                  <input
+                  <textarea
                     id="prob5_3Reason"
-                    type="text"
+                    rows={3}
                     value={state.prob5_3Reason || ''}
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob5_3Reason: e.target.value, prob5Verified: false }))
                     }
-                    placeholder="예: -1 < a < 1인 직선 x = a와 두 점에서 만나기 때문이다."
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-900"
+                    placeholder="예: -1 < a < 1인 수직선 x = a를 그었을 때 원과 두 점에서 만나므로 하나의 x값에 서로 다른 2개의 y값이 대응하여 함수가 아니다."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -2000,20 +2661,27 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    onUpdate((prev) => ({
-                      ...prev,
-                      prob5Choice: '1',
-                      prob5_2Reason: 'x = 3에서 직선 x = 3과 두 점 (3, 1), (3, 3)에서 만나므로(y값이 2개 대응) 함수의 그래프가 아니다.',
-                      prob5_3Reason: '-1 < a < 1인 실수 a에 대하여 직선 x = a와 두 점에서 만나므로 함수의 그래프가 아니다.',
-                      prob5Verified: false,
-                    }))
-                  }
-                  className="text-xs font-bold text-blue-600 hover:underline px-2 py-1"
+                  onClick={() => toggleHint('prob5_hint')}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs sm:text-sm font-bold text-amber-800 hover:bg-amber-100"
                 >
-                  + 예시 답안 채우기
+                  <HelpCircle className="h-4 w-4" />
+                  {showHints.prob5_hint ? '문제 5 힌트 접기' : '💡 문제 5 풀이 힌트 보기'}
                 </button>
               </div>
+
+              {showHints.prob5_hint && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-xs sm:text-sm text-amber-900 space-y-1.5 leading-relaxed">
+                  <div>
+                    • <strong>(1)번 직선:</strong> 모든 실수 a에 대하여 수직선 x = a와 오직 한 점에서 만나므로 함수의 그래프입니다.
+                  </div>
+                  <div>
+                    • <strong>(2)번 점 그래프:</strong> x = 3에서 직선 x = 3과 점 (3, 1), (3, 3)의 두 점에서 만나므로(y값이 2개 대응) 함수의 그래프가 아닙니다.
+                  </div>
+                  <div>
+                    • <strong>(3)번 원:</strong> -1 &lt; a &lt; 1인 실수 a에 대하여 수직선 x = a와 위아래 두 점에서 만나므로 함수의 그래프가 아닙니다.
+                  </div>
+                </div>
+              )}
 
               {feedback.prob5 && (
                 <div
@@ -2159,23 +2827,62 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               </div>
             </div>
 
-            {/* 추천 실생활 소재 버튼 */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
-              <div className="text-xs font-bold text-slate-700">
-                💡 실생활 함수 아이디어 뱅크 (클릭하면 예시 양식을 불러와 자유롭게 수정할 수 있습니다):
+            {/* 추천 실생활 소재 아이디어 뱅크 버튼 */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+              <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>💡 실생활 함수 아이디어 뱅크 (클릭하면 주제별 탐구 힌트를 확인하여 스스로 작성할 수 있습니다):</span>
+                {selectedRealLifeIdea && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRealLifeIdea(null)}
+                    className="text-[11px] font-bold text-slate-500 hover:text-slate-800 underline"
+                  >
+                    힌트 닫기
+                  </button>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 {REAL_LIFE_TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.label}
                     type="button"
-                    onClick={() => applyRealLifeTemplate(tpl)}
-                    className="rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors"
+                    onClick={() => selectRealLifeIdea(tpl)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                      selectedRealLifeIdea?.label === tpl.label
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-900 ring-1 ring-indigo-600'
+                        : 'border-blue-200 bg-white text-blue-700 hover:bg-blue-50'
+                    }`}
                   >
-                    + {tpl.label}
+                    💡 {tpl.label} 힌트 보기
                   </button>
                 ))}
               </div>
+
+              {/* Selected Idea Exploration Guide Card */}
+              {selectedRealLifeIdea && (
+                <div className="mt-3 rounded-xl border border-indigo-200 bg-white p-4 space-y-2.5 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-extrabold text-indigo-950 flex items-center gap-1.5">
+                      <Lightbulb className="h-4 w-4 text-amber-500" />
+                      ‘{selectedRealLifeIdea.label}’ 탐구 가이드
+                    </span>
+                    <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      스스로 작성 안내
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                    <p>
+                      • <strong>주제 상황:</strong> {selectedRealLifeIdea.topic}
+                    </p>
+                    <p>
+                      • <strong>정의역 X &amp; 공역 Y 생각하기:</strong> 어떤 대상을 입력 집합(X)으로 두고, 결과값은 어떤 수나 대상들의 집합(Y)으로 설정할지 아래 1, 2번에 적어보세요.
+                    </p>
+                    <p>
+                      • <strong>대응 규칙 &amp; 함수 이유:</strong> 입력의 각 원소마다 빠짐없이 결과가 존재하는지, 한 원소에 두 개 이상의 가격이나 결과가 나오지 않고 ‘오직 하나씩’ 대응하는지를 3, 4번에 자신의 문장으로 서술해 보세요.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {feedback.realLifeDesign && (
@@ -2204,7 +2911,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     }))
                   }
                   placeholder="예: 편의점의 모든 상품 집합 X"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white px-3.5 py-2.5 text-sm text-slate-900"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -2224,18 +2931,21 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     }))
                   }
                   placeholder="예: 자연수 전체의 집합 Y (가격 원)"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white px-3.5 py-2.5 text-sm text-slate-900"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="realLifeRule" className="block text-xs sm:text-sm font-bold text-slate-800 mb-1">
-                3. 대응 규칙 <span className="mono text-blue-600">x → f(x)</span> (5자 이상)
-              </label>
-              <input
+              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                <label htmlFor="realLifeRule" className="block text-xs sm:text-sm font-bold text-slate-800">
+                  3. 대응 규칙 <span className="mono text-blue-600">x → f(x)</span> (문장 서술 · 5자 이상)
+                </label>
+                <CharCountBadge current={(state.realLifeRule || '').trim().length} min={5} />
+              </div>
+              <textarea
                 id="realLifeRule"
-                type="text"
+                rows={2}
                 value={state.realLifeRule || ''}
                 onChange={(e) =>
                   onUpdate((prev) => ({
@@ -2244,8 +2954,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     bridge: `[실생활 함수] 정의역(${prev.realLifeDomainX || ''}) → 공역(${prev.realLifeCodomainY || ''}): ${e.target.value}`,
                   }))
                 }
-                placeholder="예: 각 상품 x에 대하여 그 상품의 판매 가격 f(x)원을 대응시킨다."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white px-3.5 py-2.5 text-sm text-slate-900"
+                placeholder="예: 각 상품 x에 대하여 포스기(바코드)에 등록된 해당 상품 1개의 판매 가격 f(x)원을 대응시킨다."
+                className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
@@ -2258,7 +2968,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               </div>
               <textarea
                 id="realLifeWhyFunc"
-                rows={3}
+                rows={4}
                 value={state.realLifeWhyFunc || ''}
                 onChange={(e) =>
                   onUpdate((prev) => ({
@@ -2266,8 +2976,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     realLifeWhyFunc: e.target.value,
                   }))
                 }
-                placeholder="정의역 X의 모든 원소에 대하여 빠짐없이 대응하는 Y의 원소가 오직 하나씩만 결정되기 때문이다."
-                className={`w-full rounded-xl border bg-slate-50/60 focus:bg-white p-3.5 text-sm text-slate-900 ${getCharCountBorderClass(
+                placeholder="정의역 X의 모든 원소(각 상품)에 대하여 가격이 빠짐없이 존재하고, 하나의 상품에 두 개의 가격이 동시에 찍히지 않고 오직 하나씩만 대응하기 때문이다."
+                className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                   (state.realLifeWhyFunc || '').trim().length,
                   12
                 )}`}
@@ -2283,11 +2993,11 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               </div>
               <textarea
                 id="l1reflection"
-                rows={3}
+                rows={4}
                 value={state.reflection}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection: e.target.value }))}
-                placeholder="함수는 수식뿐만 아니라 두 집합 X, Y 사이의 대응으로 정의되며, 좌표평면에서 직선 x=a와 오직 한 점에서 만난다는 성질을 알게 되었다."
-                className={`w-full rounded-xl border bg-slate-50/60 focus:bg-white p-3.5 text-sm text-slate-900 ${getCharCountBorderClass(
+                placeholder="함수는 수식뿐만 아니라 두 집합 X, Y 사이의 대응으로 정의되며, 좌표평면에서 직선 x=a와 오직 한 점에서 만난다는 수직선 판정법의 원리를 알게 되었다."
+                className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                   state.reflection.trim().length,
                   15
                 )}`}
