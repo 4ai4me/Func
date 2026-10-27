@@ -296,8 +296,8 @@ export interface TopicDefinition {
   hints: string[];
 }
 
-export const STORAGE_KEY_STUDENT = 'proof_discovery_two_lessons_student_v1';
-export const STORAGE_KEY_TEACHER = 'proof_discovery_two_lessons_teacher_v1';
+export const STORAGE_KEY_STUDENT = 'func_discovery_lessons_student_v1';
+export const STORAGE_KEY_TEACHER = 'func_discovery_lessons_teacher_v1';
 
 export const TOPICS: Record<TopicId, TopicDefinition> = {
   a: {
@@ -2246,6 +2246,117 @@ export function cleanStudentState(raw: unknown): StudentRecord {
     ensureTeacherEval(cleanedResult);
   }
   return cleanedResult;
+}
+
+function hasFuncLesson1Data(l1: unknown): boolean {
+  if (!l1 || typeof l1 !== 'object') return false;
+  const x = l1 as Record<string, unknown>;
+  return Boolean(
+    x.countryMapVerified ||
+      x.prob1Verified ||
+      x.prob2Verified ||
+      x.prob3Verified ||
+      x.prob4_1Verified ||
+      x.prob4_2Verified ||
+      x.prob5Verified ||
+      x.realLifeQuizVerified ||
+      (typeof x.realLifeWhyFunc === 'string' && x.realLifeWhyFunc.trim().length > 0) ||
+      (Array.isArray(x.prob4_1Points) && x.prob4_1Points.length > 0)
+  );
+}
+
+/**
+ * Extracts the Func (함수와 그래프) worksheet from a shared Firestore `worksheetJson` string.
+ * If the student registered in Props (`https://4ai4me.github.io/Props/`), their top-level
+ * `worksheetJson` contains Props (명제) data while `funcWorksheet` holds their Func (함수) data.
+ * This ensures students never have to re-register and neither app overwrites the other's answers.
+ */
+export function extractFuncWorksheetFromJson(
+  worksheetJson: string | undefined | null,
+  fallbackGroup = '',
+  fallbackCode = ''
+): StudentRecord {
+  const createFreshForStudent = (grp: string, cd: string): StudentRecord => {
+    const fresh = createInitialStudentState();
+    fresh.group = grp.slice(0, 25);
+    fresh.code = cd.slice(0, 25);
+    return fresh;
+  };
+
+  if (!worksheetJson || typeof worksheetJson !== 'string') {
+    return createFreshForStudent(fallbackGroup, fallbackCode);
+  }
+
+  try {
+    const raw = JSON.parse(worksheetJson);
+    if (!raw || typeof raw !== 'object') {
+      return createFreshForStudent(fallbackGroup, fallbackCode);
+    }
+    const obj = raw as Record<string, unknown>;
+    const resolvedGroup =
+      fallbackGroup || (typeof obj.group === 'string' ? obj.group : '');
+    const resolvedCode =
+      fallbackCode || (typeof obj.code === 'string' ? obj.code : '');
+
+    // 1. Dedicated nested `funcWorksheet` field (shared Props + Func document)
+    if (obj.funcWorksheet && typeof obj.funcWorksheet === 'object') {
+      const cleaned = cleanStudentState(obj.funcWorksheet);
+      if (resolvedGroup) cleaned.group = resolvedGroup.slice(0, 25);
+      if (resolvedCode) cleaned.code = resolvedCode.slice(0, 25);
+      return cleaned;
+    }
+
+    // 2. Top-level record that was explicitly authored in Func
+    if (obj.courseId === 'func-v1' || hasFuncLesson1Data(obj.l1)) {
+      const cleaned = cleanStudentState(obj);
+      if (resolvedGroup) cleaned.group = resolvedGroup.slice(0, 25);
+      if (resolvedCode) cleaned.code = resolvedCode.slice(0, 25);
+      return cleaned;
+    }
+
+    // 3. Student registered in Props (명제) and is opening Func (함수) for the first time:
+    // Return a clean Func worksheet while preserving their group & student code.
+    return createFreshForStudent(resolvedGroup, resolvedCode);
+  } catch {
+    return createFreshForStudent(fallbackGroup, fallbackCode);
+  }
+}
+
+/**
+ * Embeds the Func (함수와 그래프) worksheet into the shared Firestore `worksheetJson` string
+ * without overwriting or losing any existing Props (명제) worksheet fields (`l1..l7`, `evaluation`, `teacherMemo`).
+ */
+export function embedFuncWorksheetIntoJson(
+  existingWorksheetJson: string | undefined | null,
+  funcState: StudentRecord
+): string {
+  const stampedFunc: StudentRecord & { courseId: 'func-v1' } = {
+    ...funcState,
+    courseId: 'func-v1',
+  };
+
+  if (existingWorksheetJson && typeof existingWorksheetJson === 'string') {
+    try {
+      const parsed = JSON.parse(existingWorksheetJson);
+      if (parsed && typeof parsed === 'object' && (parsed as Record<string, unknown>).kind === 'proof2lesson-v1') {
+        const baseObj = parsed as Record<string, unknown>;
+        return JSON.stringify({
+          ...baseObj,
+          funcWorksheet: stampedFunc,
+        });
+      }
+    } catch {
+      // Fall through to creating a valid proof2lesson-v1 wrapper
+    }
+  }
+
+  const wrapper = createInitialStudentState();
+  wrapper.group = (funcState.group || '').slice(0, 25);
+  wrapper.code = (funcState.code || '').slice(0, 25);
+  return JSON.stringify({
+    ...wrapper,
+    funcWorksheet: stampedFunc,
+  });
 }
 
 /**

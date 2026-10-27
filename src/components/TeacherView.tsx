@@ -20,6 +20,7 @@ import {
   cleanStudentState,
   createSampleTeacherDataset,
   csvSafe,
+  embedFuncWorksheetIntoJson,
   ensureTeacherEval,
   evaluateRubricL1,
   evaluateRubricL2,
@@ -28,6 +29,7 @@ import {
   evaluateRubricL5,
   evaluateRubricL6,
   evaluateRubricL7,
+  extractFuncWorksheetFromJson,
   getTeacherEvalAverage,
   getTeacherEvaluationProgress,
   getClassEvaluationSummary,
@@ -137,11 +139,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       for (const data of docs) {
         if (data.status === 'approved' && data.worksheetJson) {
           try {
-            const parsed = cleanStudentState(JSON.parse(data.worksheetJson));
-            parsed.group = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
-            parsed.code = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
+            const groupLabel = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
+            const codeLabel = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
               data.studentNum
             ).padStart(2, '0')}_${data.name}`.slice(0, 25);
+            const parsed = extractFuncWorksheetFromJson(data.worksheetJson, groupLabel, codeLabel);
             approvedWorksheets.push(parsed);
           } catch {
             // ignore malformed worksheet
@@ -685,8 +687,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     });
     if (matchCloud) {
       try {
+        const nextWorksheetJson = embedFuncWorksheetIntoJson(
+          matchCloud.worksheetJson,
+          updatedItem
+        );
         await updateDoc(doc(db, 'student_registrations', matchCloud.studentKey), {
-          worksheetJson: JSON.stringify(updatedItem),
+          worksheetJson: nextWorksheetJson,
           updatedAt: serverTimestamp(),
         });
       } catch {

@@ -50,6 +50,8 @@ import {
   EVAL_CRITERIA,
   EVAL_SCORE_LABELS,
   CLASSROOM_BRAND_NAME,
+  extractFuncWorksheetFromJson,
+  embedFuncWorksheetIntoJson,
 } from './mathLogic.ts';
 
 test('mod handles positive and negative integers properly', () => {
@@ -743,6 +745,47 @@ test('Lesson 1 (함수의 뜻과 그래프) validation and completion helpers wo
   s.l1.realLifeWhyFunc = '모든 상품에는 정해진 판매 가격이 반드시 하나씩만 존재하므로 함수이다.';
   s.l1.reflection = '함수는 수식뿐만 아니라 두 집합 사이의 대응 관계로 정의되며 그래프와 실생활에서도 다양하게 나타난다.';
   assert.equal(evaluateLevel1Completion(s.l1)[4], true);
+});
+
+test('extractFuncWorksheetFromJson & embedFuncWorksheetIntoJson preserve Props data while isolating Func worksheet', () => {
+  // 1. Simulate a student who already registered and completed work in Props (명제 수업)
+  const propsSample = createSampleTeacherDataset()[0];
+  propsSample.group = '수일고등학교 1학년 9반';
+  propsSample.code = '10915_홍길동';
+  propsSample.l1.reflection = 'Props 명제 1차시 성찰 기록입니다.';
+  propsSample.teacherMemo = 'Props 명제 교사 메모입니다.';
+  const propsWorksheetJson = JSON.stringify(propsSample);
+
+  // 2. When that student opens Func for the first time, extractFuncWorksheetFromJson returns a clean Func worksheet
+  const funcInitial = extractFuncWorksheetFromJson(
+    propsWorksheetJson,
+    '수일고등학교 1학년 9반',
+    '10915_홍길동'
+  );
+  assert.equal(funcInitial.group, '수일고등학교 1학년 9반');
+  assert.equal(funcInitial.code, '10915_홍길동');
+  assert.equal(funcInitial.l1.reflection, '');
+  assert.equal(funcInitial.teacherMemo, undefined);
+
+  // 3. When the student saves in Func, embedFuncWorksheetIntoJson preserves 100% of Props fields at the root
+  funcInitial.l1.countryMapVerified = true;
+  funcInitial.l1.reflection = 'Func 함수 1차시 성찰 기록입니다.';
+  funcInitial.teacherMemo = 'Func 함수 교사 메모입니다.';
+  const combinedJson = embedFuncWorksheetIntoJson(propsWorksheetJson, funcInitial);
+
+  const parsedRoot = JSON.parse(combinedJson);
+  assert.equal(parsedRoot.l1.reflection, 'Props 명제 1차시 성찰 기록입니다.');
+  assert.equal(parsedRoot.teacherMemo, 'Props 명제 교사 메모입니다.');
+
+  // 4. Subsequent extraction in Func reads the saved Func state
+  const funcReloaded = extractFuncWorksheetFromJson(
+    combinedJson,
+    '수일고등학교 1학년 9반',
+    '10915_홍길동'
+  );
+  assert.equal(funcReloaded.l1.countryMapVerified, true);
+  assert.equal(funcReloaded.l1.reflection, 'Func 함수 1차시 성찰 기록입니다.');
+  assert.equal(funcReloaded.teacherMemo, 'Func 함수 교사 메모입니다.');
 });
 
 

@@ -13,6 +13,7 @@ import {
   EVAL_CRITERIA,
   cleanStudentState,
   createInitialStudentState,
+  embedFuncWorksheetIntoJson,
   ensureTeacherEval,
   evaluateLevel1Completion,
   evaluateLevel2Completion,
@@ -21,6 +22,7 @@ import {
   evaluateLevel5Completion,
   evaluateLevel6Completion,
   evaluateLevel7Completion,
+  extractFuncWorksheetFromJson,
   getTeacherEvaluationProgress,
   hasTeacherEvaluation,
   mergeStudentStates,
@@ -164,6 +166,7 @@ export default function App() {
   } | null>(null);
 
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRawWorksheetJsonRef = useRef<string>(approvedProfile?.worksheetJson || '');
 
   // Track Firebase Auth state
   useEffect(() => {
@@ -189,8 +192,13 @@ export default function App() {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       syncTimerRef.current = setTimeout(async () => {
         try {
+          const nextWorksheetJson = embedFuncWorksheetIntoJson(
+            latestRawWorksheetJsonRef.current || approvedProfile.worksheetJson,
+            student
+          );
+          latestRawWorksheetJsonRef.current = nextWorksheetJson;
           await updateDoc(doc(db, 'student_registrations', approvedProfile.studentKey), {
-            worksheetJson: JSON.stringify(student),
+            worksheetJson: nextWorksheetJson,
             updatedAt: serverTimestamp(),
           });
           setCloudSyncStatus('saved');
@@ -210,8 +218,13 @@ export default function App() {
       if (!docSnap.exists()) return;
       const data = docSnap.data() as FirestoreStudentRegistrationDoc;
       if (data.worksheetJson) {
+        latestRawWorksheetJsonRef.current = data.worksheetJson;
         try {
-          const remote = cleanStudentState(JSON.parse(data.worksheetJson));
+          const groupLabel = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
+          const codeLabel = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
+            data.studentNum
+          ).padStart(2, '0')}_${data.name}`.slice(0, 25);
+          const remote = extractFuncWorksheetFromJson(data.worksheetJson, groupLabel, codeLabel);
           setStudent((prev) => {
             const hasEvalChanged =
               JSON.stringify(remote.evaluation) !== JSON.stringify(prev.evaluation) ||
@@ -269,8 +282,13 @@ export default function App() {
     }
     setCloudSyncStatus('saving');
     try {
+      const nextWorksheetJson = embedFuncWorksheetIntoJson(
+        latestRawWorksheetJsonRef.current || approvedProfile.worksheetJson,
+        student
+      );
+      latestRawWorksheetJsonRef.current = nextWorksheetJson;
       await updateDoc(doc(db, 'student_registrations', approvedProfile.studentKey), {
-        worksheetJson: JSON.stringify(student),
+        worksheetJson: nextWorksheetJson,
         updatedAt: serverTimestamp(),
       });
       setCloudSyncStatus('saved');
@@ -305,6 +323,7 @@ export default function App() {
         regDoc.studentNum
       ).padStart(2, '0')}_${regDoc.name}`.slice(0, 25);
 
+      latestRawWorksheetJsonRef.current = regDoc.worksheetJson || '';
       setApprovedProfile(regDoc);
       try {
         localStorage.setItem('math_detective_approved_profile_v1', JSON.stringify(regDoc));

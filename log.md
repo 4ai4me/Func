@@ -51,3 +51,16 @@
 ### 2. 조치 및 검증
 - [x] `write_to_file` 도구를 통해 `/ghpages-app.css` (77KB) 및 `/ghpages-app.js` (1.4MB)를 AI Studio 워크스페이스 파일 트리에 직접 등록하여 GitHub 커밋/동기화 대상에 포함시킴
 - [x] 브라우저 및 CDN의 404 캐시를 우회하도록 `index.html`의 정적 번들 쿼리 파라미터를 `?v=20261026-func-v2`로 갱신
+
+## [2026-10-27] 기존 `Props` (`https://4ai4me.github.io/Props/`) Firebase DB 통합 연동 및 학생 재가입 불필요 처리 (Tier 3)
+
+### 1. 작업 시작 전 검토 (변경 전 공통 질문)
+- **무엇을 바꾸는가?**: `https://4ai4me.github.io/Props/`에서 사용 중인 Firebase Firestore 데이터베이스(`ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd`)를 `Func`에서도 동일하게 바라보도록 `firebase-applet-config.json` 및 `src/firebase.ts`를 연동하고, `worksheetJson` 내에서 기존 `Props`(명제) 데이터를 보존하면서 `Func`(함수) 데이터를 `funcWorksheet` 필드에 분리 저장·추출하는 `extractFuncWorksheetFromJson` / `embedFuncWorksheetIntoJson` 로직을 적용한다.
+- **왜 바꾸는가?**: 기존 `Props` 수업에서 이미 가입 및 교사 승인을 완료한 학습자가 `Func` 사이트에서 다시 가입 신청하거나 재승인을 기다릴 필요 없이 즉시 입장할 수 있도록 하기 위함이다.
+- **사용자 데이터 보호 (Priority #1)**: 두 사이트가 동일한 `student_registrations/{studentKey}` 문서를 공유할 때 `Func` 저장 작업이 기존 `Props`(명제) 답안이나 교사 평가를 덮어쓰지 않도록 `embedFuncWorksheetIntoJson`이 기존 `Props` 루트 필드를 100% 보존하고 `funcWorksheet` 하위 객체에만 `Func` 상태를 기록한다. 또한 동일 도메인(`4ai4me.github.io`) 내 `localStorage` 키 충돌을 막기 위해 `STORAGE_KEY_STUDENT`를 `func_discovery_lessons_student_v1`으로 분리하되, 로그인 세션 키(`math_detective_active_student_key_v1`)는 공유하여 자동 입장을 지원한다.
+
+### 2. 구현 및 검증 내역 (Definition of Done)
+- [x] `firebase-applet-config.json` 및 `src/firebase.ts`의 `firestoreDatabaseId`를 `Props`와 동일한 `ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd`로 설정
+- [x] `extractFuncWorksheetFromJson` 및 `embedFuncWorksheetIntoJson` 구현 및 단위 테스트(`mathLogic.test.ts` 22개 테스트 통과) 검증 완료
+- [x] `AuthGateView.tsx`, `App.tsx`, `TeacherView.tsx`에 무손실 연동 적용 완료
+- [x] 프로덕션 빌드 및 `ghpages-app.js` / `ghpages-app.css` 최신 번들 갱신 완료

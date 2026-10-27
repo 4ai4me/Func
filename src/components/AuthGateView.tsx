@@ -25,7 +25,12 @@ import {
   validateStudentRegistrationInput,
 } from '../utils/authLogic';
 import { ClientNetworkIdentity, getClientNetworkIdentity } from '../utils/deviceFingerprint';
-import { StudentRecord, cleanStudentState, createInitialStudentState } from '../utils/mathLogic';
+import {
+  StudentRecord,
+  createInitialStudentState,
+  embedFuncWorksheetIntoJson,
+  extractFuncWorksheetFromJson,
+} from '../utils/mathLogic';
 import {
   ShieldCheck,
   UserCheck,
@@ -126,15 +131,12 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({
         const data = snap.data() as FirestoreStudentRegistrationDoc;
         setPendingDoc(data);
         if (data.status === 'approved') {
-          try {
-            const parsed = cleanStudentState(JSON.parse(data.worksheetJson));
-            onStudentApprovedLogin(data, parsed);
-          } catch {
-            const fresh = createInitialStudentState();
-            fresh.group = `${data.school} ${data.grade}학년 ${data.classNum}반`;
-            fresh.code = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(data.studentNum).padStart(2, '0')} ${data.name}`;
-            onStudentApprovedLogin(data, fresh);
-          }
+          const groupLabel = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
+          const codeLabel = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
+            data.studentNum
+          ).padStart(2, '0')}_${data.name}`.slice(0, 25);
+          const parsed = extractFuncWorksheetFromJson(data.worksheetJson, groupLabel, codeLabel);
+          onStudentApprovedLogin(data, parsed);
         }
       },
       (error) => {
@@ -247,7 +249,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({
         ipAddress: latestNet.ipAddress,
         userAgent: latestNet.userAgent,
         status: 'pending',
-        worksheetJson: JSON.stringify(initialWorksheet),
+        worksheetJson: embedFuncWorksheetIntoJson(null, initialWorksheet),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -602,7 +604,7 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({
           </div>
 
           <div className="mb-6">
-            <div className="text-xs font-extrabold text-blue-600 mb-1">이하연 수학 교실 · 수학 탐정단</div>
+            <div className="text-xs font-extrabold text-blue-600 mb-1">이하연 수학 교실 · 수학 탐정단 (통합 계정 연동)</div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {studentSubTab === 'login'
                 ? '학생 탐정단 입장하기'
@@ -610,8 +612,8 @@ export const AuthGateView: React.FC<AuthGateViewProps> = ({
             </h2>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500 leading-relaxed">
               {studentSubTab === 'login'
-                ? '가입 신청 후 교사(관리자)의 승인이 완료된 학생은 아래 정보를 입력하여 활동지를 시작하세요.'
-                : '학교, 학년, 반, 번호, 생년월일, 이름을 입력해 가입을 신청하세요. 기기 고유 MAC 주소 식별자가 함께 기록되어 중복 가입이 방지되며, 관리자 승인 후 가입 처리됩니다.'}
+                ? '이전 명제 수업(Props)에서 이미 가입·승인된 학생은 다시 가입할 필요 없이 기존 학적 정보로 바로 입장할 수 있습니다.'
+                : '이전 명제 수업(Props)에서 승인된 학생은 [승인된 학생 입장] 탭을 이용해 주세요. 처음 이용하는 학생만 가입을 신청하세요.'}
             </p>
           </div>
 
