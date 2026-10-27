@@ -327,12 +327,13 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                   <div className="mt-4 pt-4 border-t border-slate-100 space-y-4 text-xs sm:text-sm">
                     {/* 1차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-blue-700">1차시 · 직접 증명</div>
+                      <div className="font-bold text-blue-700">1차시 · 함수의 뜻과 그래프</div>
                       <div className="text-slate-600">
-                        <strong>발견한 명제:</strong> {student.l1.claim || '(미작성)'}
+                        <strong>대응·정의역·치역 (문제 1·2):</strong> {student.l1.claim || '(미작성)'}
                       </div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>일반적 증명:</strong> {student.l1.proofText || '(미작성)'}
+                        <strong>그래프·실생활 함수 (문제 4·5·도전):</strong>{' '}
+                        {student.l1.proofText || student.l1.bridge || '(미작성)'}
                       </div>
                     </div>
 

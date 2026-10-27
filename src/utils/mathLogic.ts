@@ -23,6 +23,18 @@ export interface L2Check {
   memo?: string;
 }
 
+export interface L1CoordPoint {
+  x: number;
+  y: number;
+}
+
+export interface L1Prob3Table {
+  f0: string;
+  f1: string;
+  gm1: string;
+  g1: string;
+}
+
 export interface Lesson1State {
   examples: L1Example[];
   claim: string;
@@ -36,6 +48,43 @@ export interface Lesson1State {
   proofText: string;
   reflection: string;
   bridge: string;
+  // 1차시 (함수의 뜻과 그래프) 인터랙티브 활동지 필드
+  countryMap?: Record<string, string>;
+  countryMapVerified?: boolean;
+  prob1_1IsFunc?: '' | 'yes' | 'no';
+  prob1_1Reason?: string;
+  prob1_2IsFunc?: '' | 'yes' | 'no';
+  prob1_2Domain?: string;
+  prob1_2Codomain?: string;
+  prob1_2Range?: string;
+  prob1_3IsFunc?: '' | 'yes' | 'no';
+  prob1_3Reason?: string;
+  prob1Verified?: boolean;
+  prob2_1Domain?: string;
+  prob2_1Range?: string;
+  prob2_2Domain?: string;
+  prob2_2Range?: string;
+  prob2Verified?: boolean;
+  prob3Table?: L1Prob3Table;
+  prob3IsEqual?: '' | 'yes' | 'no';
+  prob3Reason?: string;
+  prob3Verified?: boolean;
+  prob4_1Points?: L1CoordPoint[];
+  prob4_1Verified?: boolean;
+  prob4_2LinePoints?: L1CoordPoint[];
+  prob4_2Verified?: boolean;
+  prob5Choice?: '' | '1' | '2' | '3';
+  prob5_2Reason?: string;
+  prob5_3Reason?: string;
+  prob5Verified?: boolean;
+  realLifeQuiz?: Record<string, 'yes' | 'no'>;
+  realLifeQuizVerified?: boolean;
+  realLifeTopic?: string;
+  realLifeDomainX?: string;
+  realLifeCodomainY?: string;
+  realLifeRule?: string;
+  realLifeWhyFunc?: string;
+  realLifeNonFuncExample?: string;
 }
 
 export interface Lesson2State {
@@ -974,7 +1023,7 @@ export const PROOF7_PROB2_STEPS: ProofStepQuestion[] = [
 ];
 
 export const STAGE_TITLES = {
-  1: ['단서 수집', '가설 수립', '반례 수색', '증명 보고서', '다음 사건 예고'],
+  1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '도전! 실생활 함수'],
   2: ['새 사건 선택', '현장 조사', '반례 수색', '판정서 작성', '수사 결과 공유'],
   3: ['대우 단서 탐색', '문제 1 증명', '3의 배수 탐색', '문제 2 증명', '사건 종결·성찰'],
   4: ['귀류법 단서 탐색', '문제 1 증명 (√2)', '무리수 성질 탐색', '문제 2 증명 (1+√2)', '사건 종결·성찰'],
@@ -987,23 +1036,23 @@ export const TOTAL_LESSONS = 7;
 export const LEGACY_EVAL_CRITERIA_COUNT = 4;
 
 export const EVAL_CRITERIA = [
-  '규칙 발견·추측 (1차시)',
-  '반례 탐색·검증 (2차시)',
-  '논리적 정당화 (3차시 대우법)',
-  '성찰·탐구 확장 (4차시 귀류법)',
-  '절대부등식1 증명 (5차시)',
-  '절대부등식2 증명 (6차시)',
-  '절대부등식3 증명 (7차시)',
+  '함수의 뜻과 그래프 (1차시)',
+  '여러 가지 함수 (2차시)',
+  '합성함수 탐구 (3차시)',
+  '역함수 탐구 (4차시)',
+  '유리함수1 탐구 (5차시)',
+  '유리함수2 탐구 (6차시)',
+  '무리함수 탐구 (7차시)',
 ] as const;
 
 export const EVAL_DESCRIPTIONS = [
-  '사례의 규칙을 보편 명제로 표현하고 직접 증명하는 능력',
-  '조건에 맞는 반례를 탐색하고 명제의 참·거짓을 판단하는 능력',
-  '명제의 대우(~q → ~p)와 경우 나누기로 일반성을 설명하는 능력',
-  '결론 부정을 통한 모순 추론(귀류법) 및 탐구 확장 능력',
-  '완전제곱식의 합(A²+B² ≥ 0)으로 부등식과 등호 조건을 증명하는 능력',
-  '양수 조건에서 산술·기하·조화평균 관계를 유도하고 증명하는 능력',
-  '절댓값 제곱 성질(|A|² = A²)과 제곱의 차로 절댓값 부등식을 증명하는 능력',
+  '대응 관계에서 함수를 판별하고 정의역·공역·치역, 서로 같은 함수, 함수의 그래프 및 실생활 함수를 탐구하는 능력',
+  '일대일함수·일대일대응·항등함수·상수함수의 조건을 구분하고 정당화하는 능력',
+  '합성함수의 정의 조건과 성질(교환·결합법칙)을 추론하고 설명하는 능력',
+  '역함수의 존재 조건(일대일대응)과 그래프의 대칭성을 탐구하는 능력',
+  '유리식과 유리함수 y=k/x의 정의역·치역 및 그래프 개형을 분석하는 능력',
+  '유리함수 y=k/(x-p)+q의 점근선과 대칭성을 유도하고 정당화하는 능력',
+  '무리함수 y=√(a(x-p))+q의 정의역·치역과 그래프를 탐구하는 능력',
 ] as const;
 
 export const CLASSROOM_BRAND_NAME = '이하연 수학 교실';
@@ -1218,6 +1267,42 @@ export function createInitialStudentState(): StudentRecord {
       proofText: '',
       reflection: '',
       bridge: '',
+      countryMap: {},
+      countryMapVerified: false,
+      prob1_1IsFunc: '',
+      prob1_1Reason: '',
+      prob1_2IsFunc: '',
+      prob1_2Domain: '',
+      prob1_2Codomain: '',
+      prob1_2Range: '',
+      prob1_3IsFunc: '',
+      prob1_3Reason: '',
+      prob1Verified: false,
+      prob2_1Domain: '',
+      prob2_1Range: '',
+      prob2_2Domain: '',
+      prob2_2Range: '',
+      prob2Verified: false,
+      prob3Table: { f0: '', f1: '', gm1: '', g1: '' },
+      prob3IsEqual: '',
+      prob3Reason: '',
+      prob3Verified: false,
+      prob4_1Points: [],
+      prob4_1Verified: false,
+      prob4_2LinePoints: [],
+      prob4_2Verified: false,
+      prob5Choice: '',
+      prob5_2Reason: '',
+      prob5_3Reason: '',
+      prob5Verified: false,
+      realLifeQuiz: {},
+      realLifeQuizVerified: false,
+      realLifeTopic: '',
+      realLifeDomainX: '',
+      realLifeCodomainY: '',
+      realLifeRule: '',
+      realLifeWhyFunc: '',
+      realLifeNonFuncExample: '',
     },
     l2: {
       topic: '',
@@ -1514,13 +1599,26 @@ export function calc7Abs(a: number, b: number): L7AbsExample {
 }
 
 export function evaluateLevel1Completion(p: Lesson1State): boolean[] {
-  return [
-    p.examples.length >= 4 && p.examples.some((v) => v.n < 0),
-    p.claimChecked,
-    p.checks.filter((v) => v.valid).length >= 3 && p.limits.trim().length >= 12,
-    p.proofVerified.every(Boolean) && p.proofText.trim().length >= 35,
-    p.reflection.trim().length >= 20 && p.bridge.trim().length >= 10,
-  ];
+  const step0Done =
+    (Boolean(p.countryMapVerified) && Boolean(p.prob1Verified)) ||
+    (p.examples.length >= 4 && p.examples.some((v) => v.n < 0));
+  const step1Done = Boolean(p.prob2Verified) || p.claimChecked;
+  const step2Done =
+    (Boolean(p.prob3Verified) && (p.prob3Reason || '').trim().length >= 10) ||
+    (p.checks.filter((v) => v.valid).length >= 3 && p.limits.trim().length >= 12);
+  const step3Done =
+    (Boolean(p.prob4_1Verified) && Boolean(p.prob4_2Verified) && Boolean(p.prob5Verified)) ||
+    (p.proofVerified.every(Boolean) && p.proofText.trim().length >= 35);
+  const step4Done =
+    (Boolean(p.realLifeQuizVerified) &&
+      (p.realLifeDomainX || '').trim().length >= 2 &&
+      (p.realLifeCodomainY || '').trim().length >= 2 &&
+      (p.realLifeRule || '').trim().length >= 5 &&
+      (p.realLifeWhyFunc || '').trim().length >= 12 &&
+      p.reflection.trim().length >= 15) ||
+    (p.reflection.trim().length >= 20 && p.bridge.trim().length >= 10);
+
+  return [step0Done, step1Done, step2Done, step3Done, step4Done];
 }
 
 export function evaluateLevel2Completion(p: Lesson2State): boolean[] {
@@ -1587,12 +1685,324 @@ export function evaluateLevel7Completion(p: Lesson7State): boolean[] {
 
 export function evaluateRubricL1(p: Lesson1State): boolean[] {
   return [
-    p.examples.length >= 4,
-    p.claimChecked,
-    p.checks.length >= 3,
-    p.proofVerified.every(Boolean),
-    p.reflection.trim().length >= 20,
+    (Boolean(p.countryMapVerified) && Boolean(p.prob1Verified)) || p.examples.length >= 4,
+    Boolean(p.prob2Verified) || p.claimChecked,
+    Boolean(p.prob3Verified) || p.checks.length >= 3,
+    (Boolean(p.prob4_1Verified) && Boolean(p.prob4_2Verified) && Boolean(p.prob5Verified)) ||
+      p.proofVerified.every(Boolean),
+    ((p.realLifeWhyFunc || '').trim().length >= 12 && p.reflection.trim().length >= 15) ||
+      p.reflection.trim().length >= 20,
   ];
+}
+
+export const L1_COUNTRIES = ['대한민국', '독일', '프랑스', '미국'] as const;
+export const L1_CURRENCIES = ['원(₩)', '유로(€)', '달러($)', '파운드(£)'] as const;
+export const L1_CORRECT_COUNTRY_MAP: Record<string, string> = {
+  대한민국: '원(₩)',
+  독일: '유로(€)',
+  프랑스: '유로(€)',
+  미국: '달러($)',
+};
+
+export function validateL1CountryMap(
+  countryMap?: Record<string, string>
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const m = countryMap || {};
+  const missing = L1_COUNTRIES.filter((c) => !m[c]);
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      message: `아직 연결하지 않은 나라가 있습니다: ${missing.join(', ')}. 네 나라를 모두 화살표로 연결해 보세요.`,
+      type: 'warn',
+    };
+  }
+  const wrong = L1_COUNTRIES.filter((c) => m[c] !== L1_CORRECT_COUNTRY_MAP[c]);
+  if (wrong.length > 0) {
+    return {
+      ok: false,
+      message: `${wrong.join(', ')}의 화폐 단위 연결을 다시 확인해 보세요. (독일과 프랑스는 유럽연합 화폐인 유로(€)를 사용합니다)`,
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '정확합니다! 대한민국→원(₩), 독일→유로(€), 프랑스→유로(€), 미국→달러($)로 X의 각 원소에 Y의 원소가 오직 하나씩 대응하므로 이 대응은 함수입니다.',
+    type: 'good',
+  };
+}
+
+function normalizeSetTokens(raw: string): string[] {
+  return raw
+    .replace(/[{}\[\]()\s]/g, '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .sort();
+}
+
+export function validateL1Prob1(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (p.prob1_1IsFunc !== 'no') {
+    return {
+      ok: false,
+      message: '(1)번 대응에서 집합 X의 원소 3에 대응하는 Y의 원소가 있는지 확인해 보세요.',
+      type: 'warn',
+    };
+  }
+  const r1 = (p.prob1_1Reason || '').trim();
+  if (r1.length < 5 || !r1.includes('3')) {
+    return {
+      ok: false,
+      message: '(1)번이 함수가 아닌 이유에 집합 X의 원소 ‘3’에 대응하는 Y의 원소가 없다는 점을 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  if (p.prob1_2IsFunc !== 'yes') {
+    return {
+      ok: false,
+      message: '(2)번 대응은 X의 각 원소 1, 2, 3, 4에 Y의 원소가 오직 하나씩 대응하므로 함수입니다.',
+      type: 'warn',
+    };
+  }
+  const dom2 = normalizeSetTokens(p.prob1_2Domain || '');
+  const cod2 = normalizeSetTokens(p.prob1_2Codomain || '');
+  const ran2 = normalizeSetTokens(p.prob1_2Range || '');
+  if (dom2.join(',') !== '1,2,3,4') {
+    return {
+      ok: false,
+      message: '(2)번 함수의 정의역 X의 원소를 모두 적어 주세요. 예: {1, 2, 3, 4}',
+      type: 'warn',
+    };
+  }
+  if (cod2.join(',') !== 'a,b,c,d') {
+    return {
+      ok: false,
+      message: '(2)번 함수의 공역 Y의 원소를 모두 적어 주세요. 예: {a, b, c, d}',
+      type: 'warn',
+    };
+  }
+  if (ran2.join(',') !== 'a,c,d') {
+    return {
+      ok: false,
+      message: '(2)번 함수에서 화살표를 받은 함숫값 전체의 집합(치역)을 확인해 보세요. f(1)=c, f(2)=d, f(3)=a, f(4)=c이므로 {a, c, d}입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob1_3IsFunc !== 'no') {
+    return {
+      ok: false,
+      message: '(3)번 대응에서 집합 X의 원소 4에서 나가는 화살표가 몇 개인지 확인해 보세요.',
+      type: 'warn',
+    };
+  }
+  const r3 = (p.prob1_3Reason || '').trim();
+  if (r3.length < 5 || !r3.includes('4')) {
+    return {
+      ok: false,
+      message: '(3)번이 함수가 아닌 이유에 집합 X의 원소 ‘4’에 대응하는 Y의 원소가 b, d 두 개라는 점을 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 1] 완벽합니다! 함수는 (2)번이며 정의역은 {1, 2, 3, 4}, 공역은 {a, b, c, d}, 치역은 {a, c, d}입니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1Prob2(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const d1 = (p.prob2_1Domain || '').trim();
+  const r1 = (p.prob2_1Range || '').trim();
+  const d2 = (p.prob2_2Domain || '').trim();
+  const r2 = (p.prob2_2Range || '').trim();
+
+  if (!d1.includes('실수') || d1.includes('≠') || d1.includes('!=')) {
+    return {
+      ok: false,
+      message: '[문제 2-(1)] 일차함수 y = 2x + 1에서 정의역이 명시되지 않았을 때 정의역은 실수 전체의 집합 {x | x는 실수}입니다.',
+      type: 'warn',
+    };
+  }
+  if (!r1.includes('실수') || r1.includes('≤') || r1.includes('≥')) {
+    return {
+      ok: false,
+      message: '[문제 2-(1)] 일차함수 y = 2x + 1의 치역은 실수 전체의 집합 {y | y는 실수}입니다.',
+      type: 'warn',
+    };
+  }
+  if (!d2.includes('실수')) {
+    return {
+      ok: false,
+      message: '[문제 2-(2)] 이차함수 y = -x² + 3의 정의역은 실수 전체의 집합 {x | x는 실수}입니다.',
+      type: 'warn',
+    };
+  }
+  const r2Normalized = r2.replace(/\s+/g, '');
+  const hasLe3 =
+    r2Normalized.includes('y≤3') ||
+    r2Normalized.includes('y<=3') ||
+    r2Normalized.includes('3이하');
+  if (!hasLe3) {
+    return {
+      ok: false,
+      message: '[문제 2-(2)] 모든 실수 x에 대하여 x² ≥ 0이므로 -x² + 3 ≤ 3입니다. 치역에 ‘y ≤ 3인 실수’ 조건이 들어가야 합니다.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 2] 정답입니다! (1) 정의역·치역은 모두 실수 전체의 집합이고, (2) y = -x² + 3의 치역은 {y | y ≤ 3인 실수}입니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1Prob3(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const t = p.prob3Table || { f0: '', f1: '', gm1: '', g1: '' };
+  if (
+    t.f0.trim() !== '0' ||
+    t.f1.trim() !== '2' ||
+    t.gm1.trim() !== '2' ||
+    t.g1.trim() !== '2'
+  ) {
+    return {
+      ok: false,
+      message:
+        '표의 빈칸을 다시 계산해 보세요: f(0)=|0|=0, f(1)=|2|=2, g(-1)=2×(-1)²=2, g(1)=2×1²=2입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob3IsEqual !== 'yes') {
+    return {
+      ok: false,
+      message: '정의역 {-1, 0, 1}의 모든 원소에서 f(x)와 g(x)의 함숫값이 서로 같은지 비교해 보세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.prob3Reason || '').trim().length < 10) {
+    return {
+      ok: false,
+      message: '두 함수가 서로 같은 이유(정의역의 모든 원소 -1, 0, 1에서 함숫값이 각각 같음)를 10자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[탐구+ 문제 3] 정확합니다! 두 함수의 식(|2x|와 2x²)이 달라도 정의역 {-1, 0, 1}의 모든 원소에서 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2이므로 f = g입니다.',
+    type: 'good',
+  };
+}
+
+export const L1_PROB4_TARGET_POINTS: L1CoordPoint[] = [
+  { x: 0, y: 3 },
+  { x: 1, y: 1 },
+  { x: 2, y: -1 },
+  { x: 3, y: -3 },
+];
+
+export function validateL1Prob4_1Points(
+  points?: L1CoordPoint[]
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const pts = points || [];
+  if (pts.length !== 4) {
+    return {
+      ok: false,
+      message: `정의역 {0, 1, 2, 3}의 원소는 4개이므로 좌표평면 위에 점 4개를 찍어야 합니다. (현재 ${pts.length}개 찍힘)`,
+      type: 'warn',
+    };
+  }
+  const missing = L1_PROB4_TARGET_POINTS.filter(
+    (target) => !pts.some((p) => p.x === target.x && p.y === target.y)
+  );
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      message: `y = -2x + 3에 x = 0, 1, 2, 3을 대입한 순서쌍 (0, 3), (1, 1), (2, -1), (3, -3)의 위치를 다시 확인해 보세요.`,
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 4-(1)] 정확합니다! 정의역이 {0, 1, 2, 3}일 때 함수 y = -2x + 3의 그래프는 네 점 (0, 3), (1, 1), (2, -1), (3, -3)으로 나타납니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1Prob4_2Line(
+  linePoints?: L1CoordPoint[]
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const pts = linePoints || [];
+  if (pts.length < 2) {
+    return {
+      ok: false,
+      message: '정의역이 실수 전체의 집합일 때 직선을 그리기 위해 좌표평면에서 직선 y = -2x + 3 위의 서로 다른 두 점을 클릭해 주세요.',
+      type: 'warn',
+    };
+  }
+  const [p1, p2] = pts;
+  if (p1.x === p2.x && p1.y === p2.y) {
+    return {
+      ok: false,
+      message: '서로 다른 두 점을 선택해야 직선을 그을 수 있습니다.',
+      type: 'warn',
+    };
+  }
+  const onLine1 = p1.y === -2 * p1.x + 3;
+  const onLine2 = p2.y === -2 * p2.x + 3;
+  if (!onLine1 || !onLine2) {
+    return {
+      ok: false,
+      message: `선택한 두 점 (${p1.x}, ${p1.y}), (${p2.x}, ${p2.y}) 중 y = -2x + 3 위에 있지 않은 점이 있습니다. 예: (0, 3)과 (1, 1) 또는 (2, -1)을 연결해 보세요.`,
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 4-(2)] 완벽합니다! 정의역이 실수 전체의 집합일 때 함수 y = -2x + 3의 그래프는 좌표평면 위의 직선으로 나타납니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1Prob5(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (p.prob5Choice !== '1') {
+    return {
+      ok: false,
+      message: '정의역의 각 원소 a에 대하여 y축에 평행한 직선(x축에 수직인 직선) x = a와 오직 한 점에서 만나는 그래프를 찾아보세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.prob5_2Reason || '').trim().length < 6) {
+    return {
+      ok: false,
+      message: '(2)번이 함수의 그래프가 아닌 이유(예: x = 3에서 대응하는 점이 2개임)를 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.prob5_3Reason || '').trim().length < 6) {
+    return {
+      ok: false,
+      message: '(3)번 원이 함수의 그래프가 아닌 이유(예: -1 < a < 1인 직선 x = a와 두 점에서 만남)를 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 5] 정확합니다! 함수의 그래프는 (1)번뿐이며, (2)번은 x = 3에서 두 점과 만나고, (3)번은 직선 x = a (-1 < a < 1)와 두 점에서 만나므로 함수의 그래프가 아닙니다.',
+    type: 'good',
+  };
 }
 
 export function evaluateRubricL2(p: Lesson2State): boolean[] {
@@ -1876,7 +2286,17 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
   result.l1 = pickNewerOrFilled(
     remote.l1,
     local.l1,
-    (l) => Boolean(l.claim || l.proofText || l.examples?.length || l.reflection)
+    (l) =>
+      Boolean(
+        l.claim ||
+          l.proofText ||
+          l.examples?.length ||
+          l.reflection ||
+          l.countryMapVerified ||
+          l.prob1Verified ||
+          l.prob4_1Points?.length ||
+          l.realLifeWhyFunc
+      )
   );
   result.l2 = pickNewerOrFilled(
     remote.l2,

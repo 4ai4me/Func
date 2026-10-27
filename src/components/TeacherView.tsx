@@ -2140,13 +2140,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
-                    <div className="text-xs font-bold text-blue-600">1차시 · 교사 안내형 수사 (직접 증명)</div>
+                    <div className="text-xs font-bold text-blue-600">1차시 · 함수의 뜻과 그래프 (대응·정의역·그래프·실생활)</div>
                     {[
-                      ['추측한 명제', selectedStudent.l1.claim],
-                      ['사례 확인의 한계', selectedStudent.l1.limits],
-                      ['일반적인 증명 서술', selectedStudent.l1.proofText],
-                      ['탐구 성찰', selectedStudent.l1.reflection],
-                      ['다음 질문: 16으로 바꾸면?', selectedStudent.l1.bridge],
+                      ['대응·정의역·치역 (문제 1·2)', selectedStudent.l1.claim],
+                      ['서로 같은 함수 판별 (문제 3)', selectedStudent.l1.limits || selectedStudent.l1.prob3Reason],
+                      ['함수의 그래프 (문제 4·5)', selectedStudent.l1.proofText],
+                      ['실생활 함수 설계 (도전 활동)', selectedStudent.l1.bridge || selectedStudent.l1.realLifeWhyFunc],
+                      ['1차시 성찰', selectedStudent.l1.reflection],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
@@ -2634,14 +2634,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-blue-600" />
-                      1차시 · 교사 안내형 수사 (규칙 발견 및 일반적 증명)
+                      1차시 · 함수의 뜻과 그래프 (대응·정의역·그래프·실생활)
                     </div>
                     {[
-                      ['추측한 명제', selectedStudent.l1.claim],
-                      ['사례 확인의 한계', selectedStudent.l1.limits],
-                      ['일반적인 증명 서술', selectedStudent.l1.proofText],
-                      ['탐구 성찰', selectedStudent.l1.reflection],
-                      ['다음 질문: 16으로 바꾸면?', selectedStudent.l1.bridge],
+                      ['대응·정의역·치역 (문제 1·2)', selectedStudent.l1.claim],
+                      ['서로 같은 함수 판별 (문제 3)', selectedStudent.l1.limits || selectedStudent.l1.prob3Reason],
+                      ['함수의 그래프 (문제 4·5)', selectedStudent.l1.proofText],
+                      ['실생활 함수 설계 (도전 활동)', selectedStudent.l1.bridge || selectedStudent.l1.realLifeWhyFunc],
+                      ['1차시 성찰', selectedStudent.l1.reflection],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>

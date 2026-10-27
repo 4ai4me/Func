@@ -1197,10 +1197,11 @@ export default function App() {
 
             <h3 className="text-lg font-bold pt-2">1. 탐구 활동 요약 (1 ~ 7차시)</h3>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>1차시 발견한 명제:</strong> {printingStudent.l1.claim || '미작성'}
+              <strong>1차시 대응·정의역·치역 [문제 1·2]:</strong> {printingStudent.l1.claim || '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>1차시 증명 서술:</strong> {printingStudent.l1.proofText || '미작성'}
+              <strong>1차시 함수의 그래프·실생활 함수 [문제 4·5·도전]:</strong>{' '}
+              {printingStudent.l1.proofText || printingStudent.l1.bridge || '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
               <strong>2차시 선택 명제:</strong>{' '}

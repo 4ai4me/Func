@@ -627,3 +627,122 @@ test('mergeStudentStates preserves student work in lessons 5~7 while merging tea
   assert.equal(merged.teacherMemo, '교사 추가 메모');
 });
 
+import {
+  validateL1CountryMap,
+  validateL1Prob1,
+  validateL1Prob2,
+  validateL1Prob3,
+  validateL1Prob4_1Points,
+  validateL1Prob4_2Line,
+  validateL1Prob5,
+} from './mathLogic.ts';
+
+test('Lesson 1 (함수의 뜻과 그래프) validation and completion helpers work accurately', () => {
+  const s = createInitialStudentState();
+
+  // Step 0: [생각 열기] Country -> Currency map & [문제 1]
+  assert.equal(validateL1CountryMap({}).ok, false);
+  assert.equal(
+    validateL1CountryMap({
+      대한민국: '원(₩)',
+      독일: '달러($)',
+      프랑스: '유로(€)',
+      미국: '달러($)',
+    }).ok,
+    false
+  );
+  assert.equal(
+    validateL1CountryMap({
+      대한민국: '원(₩)',
+      독일: '유로(€)',
+      프랑스: '유로(€)',
+      미국: '달러($)',
+    }).ok,
+    true
+  );
+
+  s.l1.prob1_1IsFunc = 'no';
+  s.l1.prob1_1Reason = 'X의 원소 3에 대응하는 Y의 원소가 없다.';
+  s.l1.prob1_2IsFunc = 'yes';
+  s.l1.prob1_2Domain = '{1, 2, 3, 4}';
+  s.l1.prob1_2Codomain = '{a, b, c, d}';
+  s.l1.prob1_2Range = '{a, c, d}';
+  s.l1.prob1_3IsFunc = 'no';
+  s.l1.prob1_3Reason = 'X의 원소 4에 대응하는 Y의 원소가 b, d 두 개이다.';
+  assert.equal(validateL1Prob1(s.l1).ok, true);
+
+  s.l1.countryMapVerified = true;
+  s.l1.prob1Verified = true;
+  assert.equal(evaluateLevel1Completion(s.l1)[0], true);
+
+  // Step 1: [문제 2] Domain and Range
+  s.l1.prob2_1Domain = '{x | x는 실수}';
+  s.l1.prob2_1Range = '{y | y는 실수}';
+  s.l1.prob2_2Domain = '{x | x는 실수}';
+  s.l1.prob2_2Range = '{y | y ≤ 3인 실수}';
+  assert.equal(validateL1Prob2(s.l1).ok, true);
+  s.l1.prob2Verified = true;
+  assert.equal(evaluateLevel1Completion(s.l1)[1], true);
+
+  // Step 2: [탐구+ 문제 3] Equal Functions
+  s.l1.prob3Table = { f0: '0', f1: '2', gm1: '2', g1: '2' };
+  s.l1.prob3IsEqual = 'yes';
+  s.l1.prob3Reason = '정의역 {-1, 0, 1}의 모든 원소에서 함숫값이 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2로 같으므로 두 함수는 서로 같다.';
+  assert.equal(validateL1Prob3(s.l1).ok, true);
+  s.l1.prob3Verified = true;
+  assert.equal(evaluateLevel1Completion(s.l1)[2], true);
+
+  // Step 3: [문제 4] Coordinate Plane Points & Line + [문제 5]
+  assert.equal(
+    validateL1Prob4_1Points([
+      { x: 0, y: 3 },
+      { x: 1, y: 1 },
+      { x: 2, y: -1 },
+    ]).ok,
+    false
+  );
+  assert.equal(
+    validateL1Prob4_1Points([
+      { x: 0, y: 3 },
+      { x: 1, y: 1 },
+      { x: 2, y: -1 },
+      { x: 3, y: -3 },
+    ]).ok,
+    true
+  );
+  assert.equal(
+    validateL1Prob4_2Line([
+      { x: 0, y: 3 },
+      { x: 2, y: -1 },
+    ]).ok,
+    true
+  );
+  assert.equal(
+    validateL1Prob4_2Line([
+      { x: 0, y: 3 },
+      { x: 1, y: 2 },
+    ]).ok,
+    false
+  );
+
+  s.l1.prob5Choice = '1';
+  s.l1.prob5_2Reason = 'x=3일 때 대응하는 y값이 1과 3으로 두 개이다.';
+  s.l1.prob5_3Reason = '-1<a<1인 직선 x=a와 두 점에서 만나므로 함수의 그래프가 아니다.';
+  assert.equal(validateL1Prob5(s.l1).ok, true);
+
+  s.l1.prob4_1Verified = true;
+  s.l1.prob4_2Verified = true;
+  s.l1.prob5Verified = true;
+  assert.equal(evaluateLevel1Completion(s.l1)[3], true);
+
+  // Step 4: Real-life function challenge
+  s.l1.realLifeQuizVerified = true;
+  s.l1.realLifeDomainX = '편의점의 모든 상품 집합';
+  s.l1.realLifeCodomainY = '자연수 전체의 집합 (가격)';
+  s.l1.realLifeRule = '각 상품 x에 그 상품의 판매 가격 y원을 대응시킨다.';
+  s.l1.realLifeWhyFunc = '모든 상품에는 정해진 판매 가격이 반드시 하나씩만 존재하므로 함수이다.';
+  s.l1.reflection = '함수는 수식뿐만 아니라 두 집합 사이의 대응 관계로 정의되며 그래프와 실생활에서도 다양하게 나타난다.';
+  assert.equal(evaluateLevel1Completion(s.l1)[4], true);
+});
+
+
