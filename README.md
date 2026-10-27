@@ -80,6 +80,10 @@
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 
-# 타입 체크 및 프로덕션 빌드
+# 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build
 ```
+
+- **GitHub Pages (`https://4ai4me.github.io/Func`) 호환성**:
+  - 루트 디렉터리의 `index.html`을 기본 진입점으로 사용하며, `github.io` 정적 호스팅 환경 접속 시 자동으로 `./ghpages-app.css`와 `./ghpages-app.js` 번들을 로드하여 별도의 빌드 서버 없이 즉시 화면이 렌더링됩니다.
+  - `npm run build` 실행 시 `dist/assets/`의 최신 빌드 결과물이 루트의 `ghpages-app.js`, `ghpages-app.css`로 자동 복사됩니다.

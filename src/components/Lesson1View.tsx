@@ -38,6 +38,27 @@ interface Lesson1ViewProps {
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
 }
 
+const getTextbookImageSrc = (fileName: string): string => {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+    return `./public/assets/aistudio/${fileName}`;
+  }
+  return `/assets/aistudio/${fileName}`;
+};
+
+const handleTextbookImageError = (
+  e: React.SyntheticEvent<HTMLImageElement, Event>,
+  fileName: string
+) => {
+  const img = e.currentTarget;
+  if (!img.dataset.fallbackStep) {
+    img.dataset.fallbackStep = '1';
+    img.src = `./public/assets/aistudio/${fileName}`;
+  } else if (img.dataset.fallbackStep === '1') {
+    img.dataset.fallbackStep = '2';
+    img.src = `./assets/aistudio/${fileName}`;
+  }
+};
+
 const REAL_LIFE_QUIZ_ITEMS = [
   {
     id: 'q1',
@@ -574,7 +595,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
 
             <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
               <img
-                src="/assets/aistudio/image_0c986aed.png"
+                src={getTextbookImageSrc('image_0c986aed.png')}
+                onError={(e) => handleTextbookImageError(e, 'image_0c986aed.png')}
                 alt="생각 열기: 세계 여러 나라 X와 화폐 단위 Y"
                 className="w-full max-w-2xl mx-auto h-auto rounded-lg"
               />
@@ -831,7 +853,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
             </p>
             <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 sm:p-4">
               <img
-                src="/assets/aistudio/image_27581b60.png"
+                src={getTextbookImageSrc('image_27581b60.png')}
+                onError={(e) => handleTextbookImageError(e, 'image_27581b60.png')}
                 alt="보기: 함수 f: X -> Y의 정의역, 공역, 치역"
                 className="w-full max-w-2xl mx-auto h-auto rounded-lg"
               />
@@ -859,7 +882,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
 
             <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
               <img
-                src="/assets/aistudio/image_e014c6f3.png"
+                src={getTextbookImageSrc('image_e014c6f3.png')}
+                onError={(e) => handleTextbookImageError(e, 'image_e014c6f3.png')}
                 alt="문제 1: 세 가지 대응 (1), (2), (3)"
                 className="w-full max-w-2xl mx-auto h-auto rounded-lg"
               />
@@ -1154,7 +1178,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
           {/* 교과서 [보기] & [문제 2] 이미지 */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 space-y-4">
             <img
-              src="/assets/aistudio/image_d9cfc624.png"
+              src={getTextbookImageSrc('image_d9cfc624.png')}
+              onError={(e) => handleTextbookImageError(e, 'image_d9cfc624.png')}
               alt="보기 및 문제 2: 함수의 정의역과 치역"
               className="w-full max-w-2xl mx-auto h-auto rounded-lg"
             />
@@ -1390,7 +1415,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
 
           <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6">
             <img
-              src="/assets/aistudio/image_b125265d.png"
+              src={getTextbookImageSrc('image_b125265d.png')}
+              onError={(e) => handleTextbookImageError(e, 'image_b125265d.png')}
               alt="탐구+ 문제 3: 정의역이 {-1, 0, 1}인 두 함수 f(x)=|2x|와 g(x)=2x² 비교"
               className="w-full max-w-2xl mx-auto h-auto rounded-lg"
             />
@@ -1614,7 +1640,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
           {/* 교과서 함수의 그래프 & 문제 4, 5 이미지 */}
           <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6">
             <img
-              src="/assets/aistudio/image_4e12a268.png"
+              src={getTextbookImageSrc('image_4e12a268.png')}
+              onError={(e) => handleTextbookImageError(e, 'image_4e12a268.png')}
               alt="함수의 그래프 개념 및 문제 4, 문제 5"
               className="w-full max-w-2xl mx-auto h-auto rounded-lg"
             />

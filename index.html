@@ -18,15 +18,46 @@
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=Noto+Sans+Math&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      window.__loadStaticBundle = function () {
+        if (window.__staticBundleLoaded) return;
+        window.__staticBundleLoaded = true;
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = './ghpages-app.css?v=20261026-func-l1';
+        document.head.appendChild(l);
+        var s = document.createElement('script');
+        s.type = 'module';
+        s.src = './ghpages-app.js?v=20261026-func-l1';
+        document.head.appendChild(s);
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" onerror="window.__loadStaticBundle()"></script>
+    <script>
+      if (location.hostname.endsWith('github.io') || location.protocol === 'file:') {
+        window.__loadStaticBundle();
+      } else {
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (root && !root.hasChildNodes()) {
+            window.__loadStaticBundle();
+          }
+        }, 1800);
+      }
+    </script>
   </body>
 </html>

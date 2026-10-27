@@ -29,3 +29,16 @@
 - [x] 4단계: `[문제 4]` 인터랙티브 좌표평면 직접 점 찍기(유한 정의역 $\{0,1,2,3\}$) 및 직선 긋기(실수 전체 정의역) 캔버스, `[문제 5]` 수직선 $x=a$ 슬라이더 판별 탐색기 구현
 - [x] 5단계: 실생활 대응 사례 함수 판별 퀴즈 및 나만의 실생활 함수 $f: X \to Y$ 설계 활동지 구현
 - [x] 순수 함수 단위 테스트(`src/utils/mathLogic.test.ts` 21개, `src/utils/authLogic.test.ts` 6개 — 총 27개 통과), 프로덕션 빌드(`compile_applet`) 및 Chromium 브라우저 전 단계(1~5단계) E2E 검증 완료
+
+## [2026-10-26] GitHub Pages (`https://4ai4me.github.io/Func`) 빈 화면 해결 및 `index.html` 정적 번들 로더 적용 (Tier 2)
+
+### 1. 작업 시작 전 검토 (변경 전 공통 질문)
+- **무엇을 바꾸는가?**: `https://4ai4me.github.io/Func` 접속 시 빈 화면이 나오는 문제를 해결하기 위해 `4ai4me/Props`와 동일하게 `vite.config.ts`에 `base: './'`를 설정하고, `package.json`의 `build` 스크립트가 루트 경로에 `ghpages-app.js`와 `ghpages-app.css`를 생성하도록 구성하며, `index.html`에서 `window.__loadStaticBundle()`을 통해 정적 번들을 기본 로드하도록 수정한다. 또한 1차시 교과서 이미지 6종이 `github.io` 서브패스(`/Func/public/assets/aistudio/...`)에서도 깨지지 않도록 경로 해석 및 `onError` 폴백을 적용한다.
+- **왜 바꾸는가?**: GitHub Pages가 저장소 루트(`/index.html`)를 직접 서빙할 때 브라우저는 `/src/main.tsx`를 직접 실행할 수 없으므로, 빌드된 `ghpages-app.js` 및 `ghpages-app.css`를 `index.html`에서 즉시 로드해야 정상 화면이 표시된다.
+
+### 2. 구현 및 검증 내역 (Definition of Done)
+- [x] `vite.config.ts`에 `base: './'` 추가
+- [x] `package.json`의 `"build"` 스크립트에 `cp dist/assets/index-*.js ghpages-app.js && cp dist/assets/index-*.css ghpages-app.css` 적용 및 `compile_applet` 실행으로 루트에 `ghpages-app.js`, `ghpages-app.css` 생성 완료
+- [x] `index.html`에 `window.__loadStaticBundle()` 스크립트 탑재 (`github.io` 도메인 또는 정적 환경에서 즉시 `./ghpages-app.css`, `./ghpages-app.js` 로드)
+- [x] `Lesson1View.tsx`의 교과서 이미지 6종 경로에 `github.io` 호환 경로(`./public/assets/aistudio/...`) 및 `onError` 폴백 적용
+- [x] 로컬 정적 서버(`/Func/` 경로 마운트) 및 `playwright-cli` 스크린샷(`ghpages-func-verify.png`)으로 정상 렌더링 확인 완료
