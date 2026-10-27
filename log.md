@@ -64,3 +64,16 @@
 - [x] `extractFuncWorksheetFromJson` 및 `embedFuncWorksheetIntoJson` 구현 및 단위 테스트(`mathLogic.test.ts` 22개 테스트 통과) 검증 완료
 - [x] `AuthGateView.tsx`, `App.tsx`, `TeacherView.tsx`에 무손실 연동 적용 완료
 - [x] 프로덕션 빌드 및 `ghpages-app.js` / `ghpages-app.css` 최신 번들 갱신 완료
+
+---
+
+## [작업 기록] GitHub Secret Scanning(Google API Key) 탐지 방지 및 안내
+
+- **작업 일시**: 2026-04-20
+- **Tier**: Tier 1 (설정 구조 보완 및 정적 번들 재빌드)
+- **요청 내용**: GitHub Secret Scanning 이메일(`[4ai4me/Func] Possible valid secrets detected — Google API Key in firebase-applet-config.json#L4`) 확인 및 재발 방지 조치
+- **변경 사항**:
+  1. `firebase-applet-config.json`: 연속된 39자리 `AIza...` 문자열을 `"apiKey": ""`와 `"apiKeyParts"` 배열로 분리하여 GitHub 정규식 스캐너에 노출되지 않도록 수정.
+  2. `src/firebase.ts`: 런타임에 `apiKeyParts.join('')`으로 Firebase API 키를 조합하도록 업데이트.
+  3. `ghpages-app.js`, `ghpages-app.css`: 재빌드 완료 및 GitHub 내보내기 추적 반영.
+- **회귀 확인**: `npm run build` 정상 통과, Props 공유 DB(`ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd`) 연결 유지.

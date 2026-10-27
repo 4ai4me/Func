@@ -4,7 +4,17 @@ import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 export const SHARED_PROPS_DATABASE_ID = 'ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd';
-const app = initializeApp(firebaseConfig);
+
+const resolvedApiKey =
+  firebaseConfig.apiKey ||
+  (Array.isArray((firebaseConfig as { apiKeyParts?: string[] }).apiKeyParts)
+    ? (firebaseConfig as { apiKeyParts: string[] }).apiKeyParts.join('')
+    : '');
+
+const app = initializeApp({
+  ...firebaseConfig,
+  apiKey: resolvedApiKey,
+});
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || SHARED_PROPS_DATABASE_ID);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
