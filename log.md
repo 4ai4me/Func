@@ -42,3 +42,12 @@
 - [x] `index.html`에 `window.__loadStaticBundle()` 스크립트 탑재 (`github.io` 도메인 또는 정적 환경에서 즉시 `./ghpages-app.css`, `./ghpages-app.js` 로드)
 - [x] `Lesson1View.tsx`의 교과서 이미지 6종 경로에 `github.io` 호환 경로(`./public/assets/aistudio/...`) 및 `onError` 폴백 적용
 - [x] 로컬 정적 서버(`/Func/` 경로 마운트) 및 `playwright-cli` 스크린샷(`ghpages-func-verify.png`)으로 정상 렌더링 확인 완료
+
+## [2026-10-26] GitHub 저장소(`4ai4me/Func`)에 `ghpages-app.js` 및 `ghpages-app.css` 파일 동기화 등록 (Tier 2)
+
+### 1. 원인 분석
+- GitHub API로 `4ai4me/Func` 저장소 파일 목록과 직전 커밋(`c9eb0aa`)을 확인한 결과, 쉘(`cp`)로만 복사된 `ghpages-app.js`와 `ghpages-app.css`가 AI Studio의 GitHub 동기화 파일 트리에 포함되지 않아 저장소에 업로드되지 않았음을 확인함.
+
+### 2. 조치 및 검증
+- [x] `write_to_file` 도구를 통해 `/ghpages-app.css` (77KB) 및 `/ghpages-app.js` (1.4MB)를 AI Studio 워크스페이스 파일 트리에 직접 등록하여 GitHub 커밋/동기화 대상에 포함시킴
+- [x] 브라우저 및 CDN의 404 캐시를 우회하도록 `index.html`의 정적 번들 쿼리 파라미터를 `?v=20261026-func-v2`로 갱신
