@@ -1,0 +1,6 @@
+{
+  "name": "이하연 수학 교실 — 함수 탐구 프로젝트",
+  "description": "고등학교 공통수학2 함수 단원(함수의 뜻과 그래프, 여러 가지 함수, 합성함수, 역함수, 유리함수, 무리함수) 단계별 탐구 및 학생·교사 승인제 통합 플랫폼",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
