@@ -758,6 +758,15 @@ test('Lesson 1 (함수의 뜻과 그래프) validation and completion helpers wo
   s.l1.aiFixCVerified = true;
   s.l1.aiReflection = '서로 다른 사진이 같은 사람에 대응해도 각 사진마다 출력이 하나이므로 함수이다.';
   assert.equal(evaluateLevel1Completion(s.l1)[5], true);
+
+  // Vending machine challenge verification
+  const sVend = createInitialStudentState();
+  sVend.l1.vendAnswer = 'no';
+  sVend.l1.vendExplain = '2번은 2개, 3번은 출력이 없음';
+  sVend.l1.vendCheck1 = true;
+  sVend.l1.vFix = ['물', '주스', '우유', '차'];
+  sVend.l1.vendCheck2 = true;
+  assert.equal(evaluateLevel1Completion(sVend.l1)[5], true);
 });
 
 test('extractFuncWorksheetFromJson & embedFuncWorksheetIntoJson preserve Props data while isolating Func worksheet', () => {

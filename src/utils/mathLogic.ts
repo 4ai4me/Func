@@ -97,6 +97,15 @@ export interface Lesson1State {
   aiFixCVerified?: boolean;
   aiReflection?: string;
   aiReflectionChecked?: boolean;
+  // 1차시 06도전!! 실생활 함수 (도전 2 · 자판기 수리)
+  vendAnswer?: '' | 'yes' | 'no';
+  vendExplain?: string;
+  vendCheck1?: boolean;
+  vFix?: string[];
+  vendCheck2?: boolean;
+  setAns?: '' | 'yes' | 'no';
+  setExplain?: string;
+  vendCheck3?: boolean;
 }
 
 export interface Lesson2State {
@@ -1326,6 +1335,14 @@ export function createInitialStudentState(): StudentRecord {
       aiFixCVerified: false,
       aiReflection: '',
       aiReflectionChecked: false,
+      vendAnswer: '',
+      vendExplain: '',
+      vendCheck1: false,
+      vFix: ['', '', '', ''],
+      vendCheck2: false,
+      setAns: '',
+      setExplain: '',
+      vendCheck3: false,
     },
     l2: {
       topic: '',
@@ -1646,7 +1663,12 @@ export function evaluateLevel1Completion(p: Lesson1State): boolean[] {
       Boolean(p.aiFixCVerified) &&
       (p.aiExplain || '').trim().length >= 8 &&
       (p.aiReflection || '').trim().length >= 8) ||
-    Boolean(p.aiCheck1 && p.aiFixBVerified && p.aiFixCVerified);
+    Boolean(p.aiCheck1 && p.aiFixBVerified && p.aiFixCVerified) ||
+    (Boolean(p.vendCheck1) &&
+      Boolean(p.vendCheck2) &&
+      (p.vFix && p.vFix.length === 4 && p.vFix.every(Boolean)) &&
+      (p.vendExplain || '').trim().length >= 6) ||
+    Boolean(p.vendCheck1 && p.vendCheck2);
 
   return [step0Done, step1Done, step2Done, step3Done, step4Done, step5Done];
 }
@@ -2065,6 +2087,72 @@ export function validateL1AiMission(
     ok: true,
     message:
       '정답입니다! 기계 A는 함수입니다(다른 사진이 같은 이름으로 출력되는 다대일 대응도 함수). 기계 B는 사진 ②에 두 이름이 대응하여 함수가 아니며, 기계 C는 사진 ③에 출력이 없어 함수가 아닙니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1VendMission1(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (!p.vendAnswer) {
+    return {
+      ok: false,
+      message: '현재 자판기의 대응이 함수인지 여부를 먼저 선택해 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.vendExplain || '').trim().length < 6) {
+    return {
+      ok: false,
+      message: '어떤 버튼이 함수의 조건을 위반했는지 이유를 작성해 주세요.',
+      type: 'warn',
+    };
+  }
+  if (p.vendAnswer !== 'no') {
+    return {
+      ok: false,
+      message:
+        '다시 생각해 보세요. 현재 자판기는 함수가 아닙니다. 2번 버튼은 서로 다른 음료 2개(출력 중복), 3번 버튼은 대응하는 음료가 없기(출력 누락) 때문입니다.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '정답입니다! 현재 자판기는 함수가 아닙니다. 2번 버튼은 서로 다른 음료 2개(출력 중복 오류), 3번 버튼은 대응하는 음료가 없기(출력 누락 오류) 때문입니다. 1번과 4번이 모두 물에 대응하는 것은 함수의 정의(각 입력마다 오직 하나 대응)에 아무 문제가 없습니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1VendMission3(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (!p.setAns) {
+    return {
+      ok: false,
+      message: '음료 세트 출력 상황이 함수가 될 수 있는지 판단을 선택해 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.setExplain || '').trim().length < 6) {
+    return {
+      ok: false,
+      message: '출력의 원소를 어떻게 정의했는지 근거를 작성해 주세요.',
+      type: 'warn',
+    };
+  }
+  if (p.setAns !== 'yes') {
+    return {
+      ok: false,
+      message:
+        '다시 생각해 보세요. 출력이 개별 음료가 아니라 {물, 주스}와 같은 하나의 "음료 세트"를 공역의 원소로 정의한다면 어떻게 될까요?',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '좋습니다! 출력이 개별 음료가 아니라 음료 세트라면 {물, 주스}라는 묶음 전체를 하나의 공역 원소로 볼 수 있습니다. 각 버튼마다 출력 세트가 오직 하나씩 결정된다면 함수가 될 수 있습니다.',
     type: 'good',
   };
 }
