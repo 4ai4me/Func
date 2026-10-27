@@ -85,6 +85,18 @@ export interface Lesson1State {
   realLifeRule?: string;
   realLifeWhyFunc?: string;
   realLifeNonFuncExample?: string;
+  // 1차시 06도전!! 실생활 함수 (AI 얼굴 인식)
+  aiA?: '' | 'yes' | 'no';
+  aiB?: '' | 'yes' | 'no';
+  aiC?: '' | 'yes' | 'no';
+  aiExplain?: string;
+  aiCheck1?: boolean;
+  aiFixB?: string;
+  aiFixBVerified?: boolean;
+  aiFixC?: string;
+  aiFixCVerified?: boolean;
+  aiReflection?: string;
+  aiReflectionChecked?: boolean;
 }
 
 export interface Lesson2State {
@@ -1023,7 +1035,7 @@ export const PROOF7_PROB2_STEPS: ProofStepQuestion[] = [
 ];
 
 export const STAGE_TITLES = {
-  1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '도전! 실생활 함수'],
+  1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수'],
   2: ['새 사건 선택', '현장 조사', '반례 수색', '판정서 작성', '수사 결과 공유'],
   3: ['대우 단서 탐색', '문제 1 증명', '3의 배수 탐색', '문제 2 증명', '사건 종결·성찰'],
   4: ['귀류법 단서 탐색', '문제 1 증명 (√2)', '무리수 성질 탐색', '문제 2 증명 (1+√2)', '사건 종결·성찰'],
@@ -1303,6 +1315,17 @@ export function createInitialStudentState(): StudentRecord {
       realLifeRule: '',
       realLifeWhyFunc: '',
       realLifeNonFuncExample: '',
+      aiA: '',
+      aiB: '',
+      aiC: '',
+      aiExplain: '',
+      aiCheck1: false,
+      aiFixB: '',
+      aiFixBVerified: false,
+      aiFixC: '',
+      aiFixCVerified: false,
+      aiReflection: '',
+      aiReflectionChecked: false,
     },
     l2: {
       topic: '',
@@ -1617,8 +1640,15 @@ export function evaluateLevel1Completion(p: Lesson1State): boolean[] {
       (p.realLifeWhyFunc || '').trim().length >= 12 &&
       p.reflection.trim().length >= 15) ||
     (p.reflection.trim().length >= 20 && p.bridge.trim().length >= 10);
+  const step5Done =
+    (Boolean(p.aiCheck1) &&
+      Boolean(p.aiFixBVerified) &&
+      Boolean(p.aiFixCVerified) &&
+      (p.aiExplain || '').trim().length >= 8 &&
+      (p.aiReflection || '').trim().length >= 8) ||
+    Boolean(p.aiCheck1 && p.aiFixBVerified && p.aiFixCVerified);
 
-  return [step0Done, step1Done, step2Done, step3Done, step4Done];
+  return [step0Done, step1Done, step2Done, step3Done, step4Done, step5Done];
 }
 
 export function evaluateLevel2Completion(p: Lesson2State): boolean[] {
@@ -2001,6 +2031,40 @@ export function validateL1Prob5(
     ok: true,
     message:
       '[문제 5] 정확합니다! 함수의 그래프는 (1)번뿐이며, (2)번은 x = 3에서 두 점과 만나고, (3)번은 직선 x = a (-1 < a < 1)와 두 점에서 만나므로 함수의 그래프가 아닙니다.',
+    type: 'good',
+  };
+}
+
+export function validateL1AiMission(
+  p: Lesson1State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (!p.aiA || !p.aiB || !p.aiC) {
+    return {
+      ok: false,
+      message: '기계 A, B, C 세 기계의 함수 여부를 모두 선택해 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.aiExplain || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '세 기계의 차이점(출력 개수, 누락 여부 등)을 자신의 말로 설명해 주세요.',
+      type: 'warn',
+    };
+  }
+  const isCorrect = p.aiA === 'yes' && p.aiB === 'no' && p.aiC === 'no';
+  if (!isCorrect) {
+    return {
+      ok: false,
+      message:
+        '다시 생각해 보세요. 기계 A는 서로 다른 사진이 같은 이름에 대응해도 각 사진마다 출력이 하나이므로 함수입니다. 기계 B는 사진 ②에 출력이 2개(중복), 기계 C는 사진 ③에 출력이 없음(누락)이 발생했습니다.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '정답입니다! 기계 A는 함수입니다(다른 사진이 같은 이름으로 출력되는 다대일 대응도 함수). 기계 B는 사진 ②에 두 이름이 대응하여 함수가 아니며, 기계 C는 사진 ③에 출력이 없어 함수가 아닙니다.',
     type: 'good',
   };
 }

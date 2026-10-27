@@ -261,7 +261,7 @@ test('csvSafe prevents formula injection and escapes quotes', () => {
 
 test('evaluateLevel1..7Completion track progress accurately', () => {
   const s = createInitialStudentState();
-  assert.deepEqual(evaluateLevel1Completion(s.l1), [false, false, false, false, false]);
+  assert.deepEqual(evaluateLevel1Completion(s.l1), [false, false, false, false, false, false]);
   s.l1.examples = [calc1(-3), calc1(1), calc1(3), calc1(5)];
   assert.equal(evaluateLevel1Completion(s.l1)[0], true);
 
@@ -745,6 +745,19 @@ test('Lesson 1 (함수의 뜻과 그래프) validation and completion helpers wo
   s.l1.realLifeWhyFunc = '모든 상품에는 정해진 판매 가격이 반드시 하나씩만 존재하므로 함수이다.';
   s.l1.reflection = '함수는 수식뿐만 아니라 두 집합 사이의 대응 관계로 정의되며 그래프와 실생활에서도 다양하게 나타난다.';
   assert.equal(evaluateLevel1Completion(s.l1)[4], true);
+
+  // Step 5: AI Face Recognition challenge (도전!! 실생활 함수)
+  s.l1.aiA = 'yes';
+  s.l1.aiB = 'no';
+  s.l1.aiC = 'no';
+  s.l1.aiExplain = '기계 B는 한 사진에 두 사람 대응, 기계 C는 출력이 없음';
+  s.l1.aiCheck1 = true;
+  s.l1.aiFixB = '유나';
+  s.l1.aiFixBVerified = true;
+  s.l1.aiFixC = '지민';
+  s.l1.aiFixCVerified = true;
+  s.l1.aiReflection = '서로 다른 사진이 같은 사람에 대응해도 각 사진마다 출력이 하나이므로 함수이다.';
+  assert.equal(evaluateLevel1Completion(s.l1)[5], true);
 });
 
 test('extractFuncWorksheetFromJson & embedFuncWorksheetIntoJson preserve Props data while isolating Func worksheet', () => {

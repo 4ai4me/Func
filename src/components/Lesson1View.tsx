@@ -12,6 +12,7 @@ import {
   validateL1Prob4_1Points,
   validateL1Prob4_2Line,
   validateL1Prob5,
+  validateL1AiMission,
   evaluateLevel1Completion,
 } from '../utils/mathLogic';
 import {
@@ -27,6 +28,10 @@ import {
   BookOpen,
   LineChart,
   TrendingUp,
+  Bot,
+  Cpu,
+  Wrench,
+  Download,
 } from 'lucide-react';
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
@@ -137,6 +142,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
   step,
   onStepChange,
   onUpdate,
+  onGoToLesson2,
+  onRequestConfirm,
 }) => {
   const [selectedCountry, setSelectedCountry] = useState<string>('대한민국');
   const [feedback, setFeedback] = useState<Record<string, { text: string; type: 'good' | 'warn' }>>({});
@@ -347,6 +354,97 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
       `‘${tpl.label}’ 아이디어 탐구 가이드를 열었습니다. 아래 가이드를 읽어보고 학습자 본인의 생각과 표현으로 직접 적어보세요!`,
       'good'
     );
+  };
+
+  // --- Step 5 Handlers (도전!! 실생활 함수 - AI 얼굴 인식) ---
+  const handleVerifyAiMission1 = () => {
+    const res = validateL1AiMission(state);
+    if (!res.ok) {
+      showNotice('aiMission1', res.message, res.type);
+      return;
+    }
+    onUpdate((prev) => ({ ...prev, aiCheck1: true }));
+    showNotice('aiMission1', res.message, 'good');
+  };
+
+  const handleRepairMachineB = () => {
+    if (!state.aiFixB) {
+      showNotice(
+        'aiRepairB',
+        '기계 B의 사진 ②에 대응시킬 이름 하나(지민, 유나, 민수 중 택 1)를 선택해 주세요.',
+        'warn'
+      );
+      return;
+    }
+    onUpdate((prev) => ({ ...prev, aiFixBVerified: true }));
+    showNotice(
+      'aiRepairB',
+      `기계 B 수리 성공! 사진 ②의 출력이 [${state.aiFixB}] 1개로 결정되었습니다. 이제 기계 B는 함수의 정의를 완벽하게 만족합니다. 🔧✨`,
+      'good'
+    );
+  };
+
+  const handleRepairMachineC = () => {
+    if (!state.aiFixC) {
+      showNotice(
+        'aiRepairC',
+        '기계 C의 사진 ③에 대응시킬 이름 하나(지민, 유나, 민수 중 택 1)를 선택해 주세요.',
+        'warn'
+      );
+      return;
+    }
+    onUpdate((prev) => ({ ...prev, aiFixCVerified: true }));
+    showNotice(
+      'aiRepairC',
+      `기계 C 수리 성공! 사진 ③에 [${state.aiFixC}]라는 출력이 연결되었습니다. 이제 정의역의 모든 사진에 빠짐없이 출력이 하나씩 존재하므로 기계 C도 함수가 되었습니다. 🔧✨`,
+      'good'
+    );
+  };
+
+  const handleVerifyAiReflection = () => {
+    const refText = (state.aiReflection || '').trim();
+    if (refText.length < 5) {
+      showNotice(
+        'aiReflection',
+        '두 장의 사진이 같은 사람의 이름으로 출력되어도 함수가 될 수 있는지 자신의 생각을 적어 주세요.',
+        'warn'
+      );
+      return;
+    }
+    onUpdate((prev) => ({ ...prev, aiReflectionChecked: true }));
+    showNotice(
+      'aiReflection',
+      '문항 3 개념 확인 완료! 서로 다른 두 사진에 같은 이름이 대응하는 다대일 대응도 함수입니다. 중요한 것은 각각의 입력에 출력이 오직 하나씩 정해지는 것입니다.',
+      'good'
+    );
+  };
+
+  const handleDownloadAiRecord = () => {
+    const payload = {
+      activity: 'AI 얼굴 인식은 함수일까? (창의 탐구 ①)',
+      studentState: {
+        aiA: state.aiA,
+        aiB: state.aiB,
+        aiC: state.aiC,
+        aiExplain: state.aiExplain,
+        check1: state.aiCheck1,
+        fixB: state.aiFixB,
+        fixBVerified: state.aiFixBVerified,
+        fixC: state.aiFixC,
+        fixCVerified: state.aiFixCVerified,
+        aiReflection: state.aiReflection,
+      },
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AI_얼굴인식_학습기록.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   // --- Graph Hint Renderers for Problem 2 ---
@@ -1108,7 +1206,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
         <div className="space-y-6">
           <div>
             <div className="text-xs font-bold text-blue-600">
-              01차시 · 함수의 뜻과 그래프 · 1 / 5단계
+              01차시 · 함수의 뜻과 그래프 · 1 / 6단계
             </div>
             <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               탐구 01 · 대응으로서의 함수 도입
@@ -1703,7 +1801,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
         <div className="space-y-6">
           <div>
             <div className="text-xs font-bold text-blue-600">
-              01차시 · 함수의 뜻과 그래프 · 2 / 5단계
+              01차시 · 함수의 뜻과 그래프 · 2 / 6단계
             </div>
             <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               탐구 02 · 함수의 정의역과 치역 구하기
@@ -1991,7 +2089,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
         <div className="space-y-6">
           <div>
             <div className="text-xs font-bold text-blue-600">
-              01차시 · 함수의 뜻과 그래프 · 3 / 5단계
+              01차시 · 함수의 뜻과 그래프 · 3 / 6단계
             </div>
             <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               탐구 03 · 두 함수의 식이 달라도 서로 같은 함수가 될 수 있을까?
@@ -2219,7 +2317,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
         <div className="space-y-6">
           <div>
             <div className="text-xs font-bold text-blue-600">
-              01차시 · 함수의 뜻과 그래프 · 4 / 5단계
+              01차시 · 함수의 뜻과 그래프 · 4 / 6단계
             </div>
             <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               탐구 04 · 좌표평면 위에 직접 점 찍기와 직선 긋기
@@ -2712,10 +2810,10 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
         <div className="space-y-6">
           <div>
             <div className="text-xs font-bold text-blue-600">
-              01차시 · 함수의 뜻과 그래프 · 5 / 5단계 (도전 활동)
+              01차시 · 함수의 뜻과 그래프 · 5 / 6단계 (실생활 함수 모델링)
             </div>
             <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              도전! 실생활에서 함수인 예 찾아보기 활동지
+              탐구 05 · 실생활에서 함수인 예 찾아보기 활동지
             </h2>
             <p className="mt-1 text-sm sm:text-base text-slate-600">
               우리 주변의 현상이나 규칙 중에서 <strong>집합 X의 각 원소에 집합 Y의 원소가 오직 하나씩 대응하는 실생활 함수</strong>를 찾아 정의역, 공역, 대응 규칙으로 설계해 봅시다.
@@ -3005,13 +3103,614 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
-            <h3 className="text-lg font-extrabold text-slate-900">
-              01차시 (함수의 뜻과 그래프) 탐구 기록 완료 안내
-            </h3>
-            <p className="mt-1 text-sm text-slate-600">
-              대응으로서의 함수 도입, 정의역·공역·치역, 서로 같은 함수, 좌표평면 그래프 그리기, 그리고 실생활 함수 찾기 도전 활동까지 모두 안전하게 저장됩니다.
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                05단계 실생활 함수 모델링 작성 완료!
+              </h3>
+              <p className="mt-1 text-xs sm:text-sm text-slate-600">
+                작성을 마치셨다면 다음 '06 도전!! 실생활 함수 (AI 얼굴 인식은 함수일까?)' 단계로 이동하여 AI 얼굴 인식 시스템을 함수 관점에서 수사해 보세요.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onStepChange(5)}
+              className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-blue-700 shadow-xs flex items-center gap-2 whitespace-nowrap"
+            >
+              <span>06단계 도전 탐구로 이동</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          STEP 5: 도전!! 실생활 함수 — AI 얼굴 인식은 함수일까? (창의 탐구 ①)
+         ===================================================================== */}
+      {step === 5 && (
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-extrabold text-blue-800">
+                <Cpu className="h-3.5 w-3.5 text-blue-600" />
+                창의 융합 탐구 ① · AI 얼굴 인식
+              </span>
+              <span className="text-xs font-bold text-slate-500">
+                01차시 · 함수의 뜻과 그래프 · 6 / 6단계 (최종 도전)
+              </span>
+            </div>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2 flex-wrap">
+              <span>탐구 06 · 도전!! 실생활 함수 — AI 얼굴 인식은 함수일까?</span>
+            </h2>
+            <p className="mt-1 text-sm sm:text-base text-slate-600">
+              인공지능(AI) 카메라에 얼굴 사진을 입력하면 인식된 <strong>이름 1개</strong>를 출력하도록 설계했습니다.
+              사진의 집합을 <strong>정의역 X</strong>, 사람 이름의 집합을 <strong>공역 Y</strong>로 생각하고, 세 기계의 작동 결과를 수학적으로 판별해 봅시다.
             </p>
+          </div>
+
+          {/* 미션 1: AI가 얼굴을 알아본다면? (기계 A, B, C 비교) */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  미션 1 · AI 기계 A, B, C의 출력 판별하기
+                </h3>
+              </div>
+              {state.aiCheck1 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-extrabold text-emerald-800">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  문항 1 판별 완료
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600">
+              세 대의 AI 기계에 각각 세 장의 사진(사진 ①, ②, ③)을 입력했을 때의 결과입니다.
+              사진은 정의역의 원소, 사람 이름은 공역의 원소입니다.
+            </p>
+
+            {/* 3 Machines Visual Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 기계 A */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-blue-200/80 mb-3">
+                    <span className="font-extrabold text-blue-900 text-sm sm:text-base">
+                      기계 A · 한 번에 한 이름
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200/70 text-blue-800 mono">
+                      정상 출력
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-blue-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ① 🙎‍♂️</span>
+                      <span className="text-blue-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-blue-900 bg-blue-100 px-2.5 py-0.5 rounded">지민</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-blue-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ② 👩</span>
+                      <span className="text-blue-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-blue-900 bg-blue-100 px-2.5 py-0.5 rounded">유나</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-blue-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ③ 🙎‍♂️</span>
+                      <span className="text-blue-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-blue-900 bg-blue-100 px-2.5 py-0.5 rounded">지민</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-blue-200/70">
+                  <label htmlFor="aiA" className="block text-xs font-bold text-slate-800 mb-1">
+                    기계 A는 함수일까요?
+                  </label>
+                  <select
+                    id="aiA"
+                    value={state.aiA || ''}
+                    onChange={(e) =>
+                      onUpdate((prev) => ({
+                        ...prev,
+                        aiA: e.target.value as any,
+                        aiCheck1: false,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="">선택하세요</option>
+                    <option value="yes">함수이다 (O)</option>
+                    <option value="no">함수가 아니다 (X)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 기계 B */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-200/80 mb-3">
+                    <span className="font-extrabold text-amber-950 text-sm sm:text-base">
+                      기계 B · 이상한 출력
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200/80 text-amber-900 mono">
+                      출력 중복 의심
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-amber-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ① 🙎‍♂️</span>
+                      <span className="text-amber-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded">지민</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-amber-100/70 p-2 rounded-lg border border-amber-300 shadow-2xs">
+                      <span className="font-semibold text-slate-900">사진 ② 👩</span>
+                      <span className="text-red-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-red-700 bg-red-100 px-2 py-0.5 rounded text-xs">
+                        유나, 민수 (각각!)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-amber-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ③ 🙎‍♂️</span>
+                      <span className="text-amber-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded">지민</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-amber-200/70">
+                  <label htmlFor="aiB" className="block text-xs font-bold text-slate-800 mb-1">
+                    기계 B는 함수일까요?
+                  </label>
+                  <select
+                    id="aiB"
+                    value={state.aiB || ''}
+                    onChange={(e) =>
+                      onUpdate((prev) => ({
+                        ...prev,
+                        aiB: e.target.value as any,
+                        aiCheck1: false,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  >
+                    <option value="">선택하세요</option>
+                    <option value="yes">함수이다 (O)</option>
+                    <option value="no">함수가 아니다 (X)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 기계 C */}
+              <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-rose-200/80 mb-3">
+                    <span className="font-extrabold text-rose-950 text-sm sm:text-base">
+                      기계 C · 사라진 출력
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-200/80 text-rose-900 mono">
+                      출력 누락 의심
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-rose-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ① 🙎‍♂️</span>
+                      <span className="text-rose-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-rose-950 bg-rose-100 px-2.5 py-0.5 rounded">지민</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/90 p-2 rounded-lg border border-rose-100 shadow-2xs">
+                      <span className="font-semibold text-slate-700">사진 ② 👩</span>
+                      <span className="text-rose-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-rose-950 bg-rose-100 px-2.5 py-0.5 rounded">유나</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-rose-100/70 p-2 rounded-lg border border-rose-300 shadow-2xs">
+                      <span className="font-semibold text-slate-900">사진 ③ 🙎‍♂️</span>
+                      <span className="text-rose-600 font-extrabold text-base">➜</span>
+                      <span className="font-extrabold text-slate-500 italic bg-white/80 px-2.5 py-0.5 rounded border border-rose-200">
+                        결과 없음 (미출력)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-rose-200/70">
+                  <label htmlFor="aiC" className="block text-xs font-bold text-slate-800 mb-1">
+                    기계 C는 함수일까요?
+                  </label>
+                  <select
+                    id="aiC"
+                    value={state.aiC || ''}
+                    onChange={(e) =>
+                      onUpdate((prev) => ({
+                        ...prev,
+                        aiC: e.target.value as any,
+                        aiCheck1: false,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs sm:text-sm font-bold text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                  >
+                    <option value="">선택하세요</option>
+                    <option value="yes">함수이다 (O)</option>
+                    <option value="no">함수가 아니다 (X)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              💡 <strong>참고:</strong> 이 실험에서는 이름을 각각 별도의 공역 원소로 다룹니다. (이름 목록 전체를 한 개의 묶음 원소로 정의하는 특수 경우가 아닙니다.)
+            </p>
+
+            {/* 설명 서술형 입력창 (넓은 textarea) */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label htmlFor="aiExplain" className="block text-xs sm:text-sm font-bold text-slate-900">
+                  세 기계(A, B, C)의 차이를 함수의 정의(입력과 출력 조건)를 사용하여 자신의 말로 설명하기
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('aiExplainHint')}
+                    className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                    <span>💡 힌트 보기</span>
+                  </button>
+                  <CharCountBadge current={(state.aiExplain || '').trim().length} min={8} />
+                </div>
+              </div>
+
+              {showHints.aiExplainHint && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs sm:text-sm text-amber-900 space-y-1 animate-fadeIn">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                    함수의 핵심 판별 조건 힌트
+                  </p>
+                  <ul className="list-disc list-inside space-y-0.5 text-amber-900">
+                    <li><strong>조건 1:</strong> 정의역의 모든 원소(사진 ①, ②, ③)에 출력이 빠짐없이 존재하는가? (기계 C 검토)</li>
+                    <li><strong>조건 2:</strong> 각 사진마다 출력이 '오직 하나씩'만 정해지는가? (기계 B 검토)</li>
+                    <li><strong>조건 3:</strong> 서로 다른 두 사진이 같은 사람의 이름을 가리키는 것(기계 A의 사진 ①과 ③)은 함수 조건에 맞을까요?</li>
+                  </ul>
+                </div>
+              )}
+
+              <textarea
+                id="aiExplain"
+                rows={4}
+                value={state.aiExplain || ''}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    aiExplain: e.target.value,
+                    aiCheck1: false,
+                  }))
+                }
+                placeholder="예: 기계 A는 사진 ①과 ③의 출력이 모두 지민이지만 각 사진마다 출력이 오직 하나씩이므로 함수입니다. 기계 B는 사진 ②에 유나와 민수 두 개가 대응하여 오직 하나 조건에 위배되고, 기계 C는 사진 ③에 대응하는 출력이 누락되어 함수가 아닙니다."
+                className={`w-full rounded-xl border p-3.5 text-sm sm:text-base text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
+                  (state.aiExplain || '').trim().length,
+                  8
+                )}`}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 flex-wrap pt-2">
+              <button
+                type="button"
+                onClick={handleVerifyAiMission1}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-blue-700 shadow-xs flex items-center gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span>문항 1 판별 결과 확인</span>
+              </button>
+            </div>
+
+            {feedback.aiMission1 && (
+              <div
+                className={`rounded-xl border p-4 text-xs sm:text-sm flex items-start gap-3 ${
+                  feedback.aiMission1.type === 'good'
+                    ? 'border-emerald-200 bg-emerald-50/80 text-emerald-900'
+                    : 'border-amber-200 bg-amber-50/80 text-amber-900'
+                }`}
+              >
+                {feedback.aiMission1.type === 'good' ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                )}
+                <div className="space-y-1">
+                  <strong className="block font-bold">
+                    {feedback.aiMission1.type === 'good' ? '판별 결과: 정확합니다! 🎉' : '확인 필요'}
+                  </strong>
+                  <p className="leading-relaxed">{feedback.aiMission1.text}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 미션 2: AI 오류를 직접 수리하기 (인터랙티브 기계 수리 시뮬레이터) */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Wrench className="h-5 w-5 text-indigo-600" />
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  미션 2 · AI 오류를 직접 수리하기 (기계 수리 엔지니어링)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {state.aiFixBVerified && state.aiFixCVerified && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-extrabold text-emerald-800">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    기계 B·C 수리 완료!
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600">
+              기계 B는 사진 ②에 두 이름이 대응하는 <strong>출력 중복 오류</strong>, 기계 C는 사진 ③의 출력이 없는 <strong>출력 누락 오류</strong>입니다.
+              학습자가 AI 소프트웨어 엔지니어가 되어 <strong>각 기계를 정상적인 함수로 직접 수리</strong>해 보세요!
+            </p>
+
+            {/* 수리 인터랙션 카드 2종 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* 기계 B 수리 */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                    <span className="grid h-6 w-6 place-items-center rounded bg-amber-600 text-xs font-bold text-white mono">
+                      B
+                    </span>
+                    기계 B 수리 · 사진 ②의 출력 하나로 변경
+                  </h4>
+                  {state.aiFixBVerified && (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                      수리 완료 ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="rounded-lg bg-white p-3 border border-amber-200 space-y-2 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span>수리 전 상태:</span>
+                    <span className="text-red-600 font-bold">사진 ② ➜ [유나, 민수] (2개 대응 오류)</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <span className="font-extrabold text-slate-900 whitespace-nowrap">사진 ② 👩</span>
+                    <span className="text-indigo-600 font-extrabold text-lg">➜</span>
+                    <select
+                      aria-label="기계 B 사진 2의 출력 선택"
+                      value={state.aiFixB || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({
+                          ...prev,
+                          aiFixB: e.target.value,
+                          aiFixBVerified: false,
+                        }))
+                      }
+                      className="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-bold text-indigo-950 focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="">이름 하나 선택</option>
+                      <option value="지민">지민</option>
+                      <option value="유나">유나</option>
+                      <option value="민수">민수</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRepairMachineB}
+                  className="w-full rounded-xl bg-amber-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-amber-700 shadow-xs flex items-center justify-center gap-2"
+                >
+                  <Wrench className="h-4 w-4" />
+                  <span>기계 B 수리 및 함수 검증</span>
+                </button>
+
+                {feedback.aiRepairB && (
+                  <div
+                    className={`rounded-lg p-3 text-xs flex items-start gap-2 ${
+                      feedback.aiRepairB.type === 'good'
+                        ? 'bg-emerald-100/80 text-emerald-900 border border-emerald-300'
+                        : 'bg-amber-100/80 text-amber-900 border border-amber-300'
+                    }`}
+                  >
+                    {feedback.aiRepairB.type === 'good' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+                    )}
+                    <span>{feedback.aiRepairB.text}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 기계 C 수리 */}
+              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                    <span className="grid h-6 w-6 place-items-center rounded bg-rose-600 text-xs font-bold text-white mono">
+                      C
+                    </span>
+                    기계 C 수리 · 사진 ③의 출력 채우기
+                  </h4>
+                  {state.aiFixCVerified && (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                      수리 완료 ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="rounded-lg bg-white p-3 border border-rose-200 space-y-2 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span>수리 전 상태:</span>
+                    <span className="text-rose-600 font-bold">사진 ③ ➜ 결과 없음 (출력 누락 오류)</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <span className="font-extrabold text-slate-900 whitespace-nowrap">사진 ③ 🙎‍♂️</span>
+                    <span className="text-indigo-600 font-extrabold text-lg">➜</span>
+                    <select
+                      aria-label="기계 C 사진 3의 출력 선택"
+                      value={state.aiFixC || ''}
+                      onChange={(e) =>
+                        onUpdate((prev) => ({
+                          ...prev,
+                          aiFixC: e.target.value,
+                          aiFixCVerified: false,
+                        }))
+                      }
+                      className="rounded-lg border border-indigo-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-bold text-indigo-950 focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="">이름 하나 선택</option>
+                      <option value="지민">지민</option>
+                      <option value="유나">유나</option>
+                      <option value="민수">민수</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRepairMachineC}
+                  className="w-full rounded-xl bg-rose-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-rose-700 shadow-xs flex items-center justify-center gap-2"
+                >
+                  <Wrench className="h-4 w-4" />
+                  <span>기계 C 수리 및 함수 검증</span>
+                </button>
+
+                {feedback.aiRepairC && (
+                  <div
+                    className={`rounded-lg p-3 text-xs flex items-start gap-2 ${
+                      feedback.aiRepairC.type === 'good'
+                        ? 'bg-emerald-100/80 text-emerald-900 border border-emerald-300'
+                        : 'bg-rose-100/80 text-rose-900 border border-rose-300'
+                    }`}
+                  >
+                    {feedback.aiRepairC.type === 'good' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-rose-700 shrink-0 mt-0.5" />
+                    )}
+                    <span>{feedback.aiRepairC.text}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 심화 탐구 질문 (문항 3 · 서술형) */}
+            <div className="space-y-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <label htmlFor="aiReflection" className="block text-xs sm:text-sm font-bold text-slate-900">
+                  탐구 질문: 두 장의 사진이 같은 사람의 이름으로 출력되어도 함수일까요? 이유는?
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('aiReflectionHint')}
+                    className="inline-flex items-center gap-1 rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100"
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                    <span>💡 힌트 보기</span>
+                  </button>
+                  <CharCountBadge current={(state.aiReflection || '').trim().length} min={8} />
+                </div>
+              </div>
+
+              {showHints.aiReflectionHint && (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs sm:text-sm text-indigo-900 space-y-1 animate-fadeIn">
+                  <p className="font-bold flex items-center gap-1.5 text-indigo-950">
+                    <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                    수학적 개념 힌트
+                  </p>
+                  <p>
+                    정의역 <MathText text="X" />의 각 원소에 공역 <MathText text="Y" />의 원소가 <strong>'오직 하나씩'</strong> 대응한다는 것은, 화살표를 쏘는 쪽(정의역)에서 두 발을 쏘지 않는다는 뜻입니다.
+                    공역의 한 원소가 여러 개의 화살표를 받는 다대일(many-to-one) 대응은 함수에 해당할까요?
+                  </p>
+                </div>
+              )}
+
+              <textarea
+                id="aiReflection"
+                rows={4}
+                value={state.aiReflection || ''}
+                onChange={(e) =>
+                  onUpdate((prev) => ({
+                    ...prev,
+                    aiReflection: e.target.value,
+                    aiReflectionChecked: false,
+                  }))
+                }
+                placeholder="정의역의 모든 원소와 공역의 원소 사이의 관계를 이용하여 설명하세요. (예: 서로 다른 사진 ①과 ③이 모두 지민으로 대응되어도, 각 사진마다 출력이 오직 하나씩 정해지므로...)"
+                className={`w-full rounded-xl border p-3.5 text-sm sm:text-base text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
+                  (state.aiReflection || '').trim().length,
+                  8
+                )}`}
+              />
+
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleVerifyAiReflection}
+                  className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-indigo-700 shadow-xs flex items-center gap-2"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span>문항 3 생각 및 개념 확인</span>
+                </button>
+              </div>
+
+              {feedback.aiReflection && (
+                <div
+                  className={`rounded-xl border p-4 text-xs sm:text-sm flex items-start gap-3 ${
+                    feedback.aiReflection.type === 'good'
+                      ? 'border-emerald-200 bg-emerald-50/80 text-emerald-900'
+                      : 'border-amber-200 bg-amber-50/80 text-amber-900'
+                  }`}
+                >
+                  {feedback.aiReflection.type === 'good' ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <strong className="block font-bold">
+                      {feedback.aiReflection.type === 'good' ? '개념 정리 완료!' : '작성 안내'}
+                    </strong>
+                    <p className="mt-0.5">{feedback.aiReflection.text}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 학습 마무리 & 성찰 배너 */}
+          <div className="rounded-2xl border border-blue-200 bg-linear-to-r from-blue-50 to-indigo-50/60 p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  🎉 01차시 (함수의 뜻과 그래프) 전체 탐구 완주!
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-slate-600">
+                  실생활 AI를 수학적으로 모델링하려면 <strong>입력(정의역)과 출력(공역)이 무엇인지</strong> 먼저 명확히 정의해야 합니다.
+                  작성하신 모든 탐구 기록과 AI 수리 데이터는 브라우저와 클라우드에 안전하게 보관됩니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleDownloadAiRecord}
+                  className="rounded-xl border border-blue-300 bg-white px-4 py-2 text-xs sm:text-sm font-bold text-blue-900 hover:bg-blue-50 shadow-2xs flex items-center gap-1.5"
+                >
+                  <Download className="h-4 w-4 text-blue-600" />
+                  <span>AI 미션 기록 JSON 다운로드</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onGoToLesson2}
+                  className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white hover:bg-blue-700 shadow-xs flex items-center gap-2"
+                >
+                  <span>02차시 (여러 가지 함수) 도전하기</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -3035,14 +3734,23 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
           >
             {completion[step] ? '✓ 현재 단계 작성 조건 충족' : '현재 단계 탐구 진행 중'}
           </span>
-          <button
-            type="button"
-            disabled={step === 4}
-            onClick={() => onStepChange(Math.min(4, step + 1))}
-            className="min-h-[44px] rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-40 whitespace-nowrap"
-          >
-            다음 단계 →
-          </button>
+          {step === 5 ? (
+            <button
+              type="button"
+              onClick={onGoToLesson2}
+              className="min-h-[44px] rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 shadow-xs flex items-center gap-2 whitespace-nowrap"
+            >
+              <span>02차시로 이동 →</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onStepChange(Math.min(5, step + 1))}
+              className="min-h-[44px] rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-40 whitespace-nowrap"
+            >
+              다음 단계 →
+            </button>
+          )}
         </div>
       </div>
     </div>

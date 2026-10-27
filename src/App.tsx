@@ -620,7 +620,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/5 · 2차시 {done2.filter(Boolean).length}/5 · 3차시 {done3.filter(Boolean).length}/5 · 4차시 {done4.filter(Boolean).length}/5 · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/5 · 3차시 {done3.filter(Boolean).length}/5 · 4차시 {done4.filter(Boolean).length}/5 · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
                     </span>
                   </div>
 
@@ -875,16 +875,20 @@ export default function App() {
                   <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
                       className="h-full rounded-full bg-blue-600 transition-all duration-200"
-                      style={{ width: `${activeDone.filter(Boolean).length * 20}%` }}
+                      style={{ width: `${(activeDone.filter(Boolean).length / STAGE_TITLES[activeLessonTab].length) * 100}%` }}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* 5-Stage Step Navigation */}
+              {/* Step Navigation */}
               <nav
                 aria-label="수사 단계 이동"
-                className="no-print grid grid-cols-5 gap-2 sm:gap-3"
+                className={`no-print grid ${
+                  STAGE_TITLES[activeLessonTab].length === 6
+                    ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
+                    : 'grid-cols-5'
+                } gap-2 sm:gap-3`}
               >
                 {STAGE_TITLES[activeLessonTab].map((title, idx) => {
                   const isCurrent = activeStep === idx;

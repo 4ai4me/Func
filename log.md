@@ -77,3 +77,38 @@
   2. `src/firebase.ts`: 런타임에 `apiKeyParts.join('')`으로 Firebase API 키를 조합하도록 업데이트.
   3. `ghpages-app.js`, `ghpages-app.css`: 재빌드 완료 및 GitHub 내보내기 추적 반영.
 - **회귀 확인**: `npm run build` 정상 통과, Props 공유 DB(`ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd`) 연결 유지.
+
+---
+
+## [작업 기록] 1차시 06 도전!! 실생활 함수 (AI 얼굴 인식은 함수일까?) 단계 추가 및 적용
+
+- **작업 일시**: 2026-10-27
+- **Tier**: Tier 2 (신규 학습 단계 추가, 인터랙티브 AI 기계 판별·수리 엔지니어링 시뮬레이션, 상태 모델 확장, 단위 테스트)
+- **요청 내용**:
+  1. 1차시에 `06도전!! 실생활 함수` 단계 추가
+  2. 유첨된 `AI 얼굴 인식은 함수일까?` (창의 탐구 ①) 파일 검토 및 적용:
+     - 미션 1: AI 기계 A, B, C의 얼굴 사진(정의역) → 이름(공역) 대응 판별 (드롭다운 + 이유 서술형 textarea + 힌트 아코디언 + 판정 결과 확인)
+     - 미션 2: 기계 오류 직접 수리 (기계 B 출력 중복 수리, 기계 C 출력 누락 채우기, 인터랙티브 검증 및 상태 뱃지)
+     - 탐구 질문: "두 장의 사진이 같은 사람의 이름으로 출력되어도 함수일까? 이유는?" (서술형 + 힌트 토글 + 개념 확인)
+     - 학습 마무리 및 AI 미션 기록 JSON 내보내기 지원
+- **구현 내역 (Definition of Done)**:
+  - [x] `src/utils/mathLogic.ts`:
+    - `Lesson1State`에 `aiA`, `aiB`, `aiC`, `aiExplain`, `aiCheck1`, `aiFixB`, `aiFixBVerified`, `aiFixC`, `aiFixCVerified`, `aiReflection`, `aiReflectionChecked` 필드 추가
+    - `STAGE_TITLES[1]`을 6개 단계(`['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수']`)로 확장
+    - `evaluateLevel1Completion` 6단계 완료 판정 로직 추가
+    - `validateL1AiMission` 검증 헬퍼 함수 추가
+  - [x] `src/utils/mathLogic.test.ts`:
+    - 6단계 완료 판정 및 5단계(Step 5) AI 미션 단위 테스트 추가 (22개 테스트 전원 통과)
+  - [x] `src/App.tsx`:
+    - 1차시 진행도 뱃지 및 프로그레스 바 분모를 `STAGE_TITLES[activeLessonTab].length` 기반으로 동적 갱신
+    - 6개 단계에 맞게 상단 네비게이션 그리드(`grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`) 반응형 조정
+  - [x] `src/components/Lesson1View.tsx`:
+    - 단계별 헤더를 `x / 6단계`로 일관되게 업데이트
+    - Step 5 `탐구 06 · 도전!! 실생활 함수 — AI 얼굴 인식은 함수일까?` 전체 인터랙티브 UI 구현
+    - 넓은 textarea(3~4행), 글자 수 뱃지, `💡 힌트 보기` 토글 아코디언, 인터랙티브 수리 시뮬레이션, JSON 다운로드 완벽 구비
+    - 하단 네비게이션 0~5단계 및 5단계에서 02차시 이동 버튼 연결
+  - [x] `src/components/TeacherView.tsx`:
+    - 교사용 학생 상세 조회 및 인쇄 모달에 `AI 얼굴 인식 도전 (탐구 06)` 답변 필드 표시 연동
+  - [x] `index.html`, `ghpages-app.js`, `ghpages-app.css`:
+    - 캐시 버스터 버전 `?v=20261027-l1-ai-v1`로 갱신 및 프로덕션 번들(1.88MB) 빌드 동기화 완료
+- **회귀 확인**: `lint_applet` 통과 (0 errors), `compile_applet` 통과, 단위 테스트 22/22 통과.

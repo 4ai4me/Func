@@ -2152,6 +2152,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       ['서로 같은 함수 판별 (문제 3)', selectedStudent.l1.limits || selectedStudent.l1.prob3Reason],
                       ['함수의 그래프 (문제 4·5)', selectedStudent.l1.proofText],
                       ['실생활 함수 설계 (도전 활동)', selectedStudent.l1.bridge || selectedStudent.l1.realLifeWhyFunc],
+                      ['AI 얼굴 인식 도전 (탐구 06)', selectedStudent.l1.aiExplain || selectedStudent.l1.aiReflection],
                       ['1차시 성찰', selectedStudent.l1.reflection],
                     ].map(([label, val]) => (
                       <div key={label}>
@@ -2647,6 +2648,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       ['서로 같은 함수 판별 (문제 3)', selectedStudent.l1.limits || selectedStudent.l1.prob3Reason],
                       ['함수의 그래프 (문제 4·5)', selectedStudent.l1.proofText],
                       ['실생활 함수 설계 (도전 활동)', selectedStudent.l1.bridge || selectedStudent.l1.realLifeWhyFunc],
+                      ['AI 얼굴 인식 도전 (탐구 06)', selectedStudent.l1.aiExplain || selectedStudent.l1.aiReflection],
                       ['1차시 성찰', selectedStudent.l1.reflection],
                     ].map(([label, val]) => (
                       <div key={label}>
