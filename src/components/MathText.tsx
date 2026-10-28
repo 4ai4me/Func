@@ -60,17 +60,28 @@ export interface MathTextProps {
   className?: string;
 }
 
+export const normalizeMathSymbols = (str: string): string => {
+  return str
+    .replace(/\\times/g, '×')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\le(q)?\b/g, '≤')
+    .replace(/\\ge(q)?\b/g, '≥')
+    .replace(/\\ne(q)?\b/g, '≠')
+    .replace(/\\pm\b/g, '±');
+};
+
 /**
  * 문자열 내의 모든 루트 수식(√(ab), √a, √b, √2, √(□) 등)을 찾아
  * 윗줄(vinculum)이 연결된 온전한 수학 근호(<MathRadical />)로 변환하여 렌더링한다.
  */
 export const MathText: React.FC<MathTextProps> = ({ text, className }) => {
   if (!text) return null;
-  if (!text.includes('√')) {
-    return className ? <span className={className}>{text}</span> : <>{text}</>;
+  const normalizedText = normalizeMathSymbols(text);
+  if (!normalizedText.includes('√')) {
+    return className ? <span className={className}>{normalizedText}</span> : <>{normalizedText}</>;
   }
 
-  const tokens = tokenizeMathRadicals(text);
+  const tokens = tokenizeMathRadicals(normalizedText);
   const content = tokens.map((tok, idx) => {
     if (tok.type === 'radical') {
       return (

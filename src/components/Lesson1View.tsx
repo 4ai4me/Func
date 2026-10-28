@@ -2108,7 +2108,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                         • <strong>정의역:</strong> 모든 실수 <MathText text="x" />에 대해 <MathText text="-x^2 + 3" />을 계산할 수 있으므로 정의역은 실수 전체입니다.
                       </div>
                       <div>
-                        • <strong>치역:</strong> 포물선 꼭짓점이 <MathText text="(0, 3)" />이고 위로 볼록하므로 <MathText text="y \le 3" />인 범위만 가집니다.
+                        • <strong>치역:</strong> 포물선 꼭짓점이 <MathText text="(0, 3)" />이고 위로 볼록하므로 <MathText text="y ≤ 3" />인 범위만 가집니다.
                       </div>
                     </div>
                   </div>
@@ -2391,7 +2391,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   {showHints.prob3_hint && (
                     <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs sm:text-sm text-amber-900 space-y-1.5 leading-relaxed">
                       <div>
-                        • <strong>표 채우기 힌트:</strong> <MathText text="x = 0" />일 때 <MathText text="f(0) = |2 \times 0| = 0" />, <MathText text="x = 1" />일 때 <MathText text="f(1) = |2 \times 1| = 2" />입니다. 마찬가지로 <MathText text="g(x) = 2x^2" />에도 대입해 보세요.
+                        • <strong>표 채우기 힌트:</strong> <MathText text="x = 0" />일 때 <MathText text="f(0) = |2 × 0| = 0" />, <MathText text="x = 1" />일 때 <MathText text="f(1) = |2 × 1| = 2" />입니다. 마찬가지로 <MathText text="g(x) = 2x²" />(즉, <MathText text="g(0) = 2 × 0² = 0" />, <MathText text="g(1) = 2 × 1² = 2" />)에도 대입해 보세요.
                       </div>
                       <div>
                         • <strong>서술 힌트:</strong> 두 함수가 서로 같으려면( <MathText text="f = g" />) 정의역의 모든 원소 <MathText text="x" />에 대해 함숫값이 일치해야 합니다. <MathText text="f(-1)=g(-1)=2" />, <MathText text="f(0)=g(0)=0" />, <MathText text="f(1)=g(1)=2" />임을 언급하여 서술해 보세요.
@@ -2704,7 +2704,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </div>
                   {renderProb5Sim1(verticalLineA)}
                   <div className="w-full text-center py-1.5 px-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
-                    ✓ 교점 1개 (어떤 a에서도 항상 1개 $\rightarrow$ 함수 O)
+                    ✓ 교점 1개 (어떤 a에서도 항상 1개 → 함수 O)
                   </div>
                 </div>
 
@@ -2717,7 +2717,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   <div className="w-full text-center py-1.5 px-2 rounded-lg text-[11px] font-bold transition-colors">
                     {Math.abs(verticalLineA - 3) < 0.25 ? (
                       <span className="text-rose-700 bg-rose-50 border border-rose-200 block py-0.5 rounded">
-                        ⚠️ 교점 2개! (x=3에 1과 3 동시 대응 $\rightarrow$ 함수 X)
+                        ⚠️ 교점 2개! (x=3에 1과 3 동시 대응 → 함수 X)
                       </span>
                     ) : [0, 1, 2, 4].some((n) => Math.abs(verticalLineA - n) < 0.25) ? (
                       <span className="text-blue-700 bg-blue-50 border border-blue-200 block py-0.5 rounded">
@@ -2740,7 +2740,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   <div className="w-full text-center py-1.5 px-2 rounded-lg text-[11px] font-bold transition-colors">
                     {verticalLineA > -1 && verticalLineA < 1 ? (
                       <span className="text-rose-700 bg-rose-50 border border-rose-200 block py-0.5 rounded">
-                        ⚠️ 교점 2개! (위·아래 2개 y값 대응 $\rightarrow$ 함수 X)
+                        ⚠️ 교점 2개! (위·아래 2개 y값 대응 → 함수 X)
                       </span>
                     ) : Math.abs(verticalLineA - 1) < 0.05 || Math.abs(verticalLineA - (-1)) < 0.05 ? (
                       <span className="text-amber-700 bg-amber-50 border border-amber-200 block py-0.5 rounded">

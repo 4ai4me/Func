@@ -136,3 +136,33 @@
     - 캐시 버스터 버전 `?v=20261027-no-placeholder-hints`로 갱신 및 프로덕션 정적 번들 빌드 완료
 - **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (23/23 통과), `npm run build` 성공, `lint_applet` 및 `compile_applet` 이상 없음.
 
+
+---
+
+## [2026-10-28] 1차시 03 문제 3 힌트 수식 표기(× 기호) 수정 및 GitHub Secret Alert 안내
+
+- **작업 Tier**: Tier 1 (수식 텍스트 표기 수정 및 GitHub 보안 알림 검토)
+- **변경 사항**:
+  1. `src/components/Lesson1View.tsx`:
+     - 1차시 03 [서로 같은 함수] 문제 3 힌트에서 LaTeX 원시 문자열 `\times`로 노출되던 곱셈 표기를 표준 수학 곱셈 기호인 `×`로 교체: `<MathText text="f(0) = |2 × 0| = 0" />`, `<MathText text="f(1) = |2 × 1| = 2" />`, `<MathText text="g(x) = 2x²" />(즉, <MathText text="g(0) = 2 × 0² = 0" />, <MathText text="g(1) = 2 × 1² = 2" />)`
+     - 1차시 02 문제 2 힌트의 치역 표기에서 `y \le 3`을 `y ≤ 3`으로 수정
+  2. `src/components/MathText.tsx`:
+     - `normalizeMathSymbols` 방어 로직 추가: `\times` → `×`, `\cdot` → `·`, `\le` → `≤`, `\ge` → `≥`, `\ne` → `≠`, `\pm` → `±` 자동 치환을 지원하여 추후 LaTeX 형태 수식이 전달되더라도 정상적인 수학 유니코드 기호로 표시되도록 보장
+  3. GitHub Secret Scanning Alert 검토 및 안내:
+     - GitHub가 `firebase-applet-config.json`의 이전 커밋(`3e9c4662`)에서 감지한 Google API Key 알림의 원인 및 해결 방법 정리 (웹 클라이언트 식별용 키이므로 Firestore Rules 및 Google Cloud 콘솔 제한으로 안전함 확인, GitHub UI에서 "Close alert" 처리 방법 안내)
+- **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (23/23 통과), `npm run build` 성공, `compile_applet` 정상 확인.
+
+---
+
+## [2026-10-28] 1차시 04 함수의 그래프 [문제 5] 수직선 판정법 시뮬레이션 설명 내 화살표(→) 오타 수정
+
+- **작업 Tier**: Tier 1 (UI 설명 텍스트 오타 수정)
+- **변경 사항**:
+  1. `src/components/Lesson1View.tsx`:
+     - 1차시 04 [함수의 그래프] [문제 5] 수직선 판정법 실시간 시뮬레이터 아래 설명 문구에서 LaTeX 원시 명령어로 노출되던 `$\rightarrow$`를 직관적이고 깔끔한 유니코드 화살표 기호 `→`로 수정:
+       - (1) 일차함수: `✓ 교점 1개 (어떤 a에서도 항상 1개 $\rightarrow$ 함수 O)` → `✓ 교점 1개 (어떤 a에서도 항상 1개 → 함수 O)`
+       - (2) 이산 점 그래프: `⚠️ 교점 2개! (x=3에 1과 3 동시 대응 $\rightarrow$ 함수 X)` → `⚠️ 교점 2개! (x=3에 1과 3 동시 대응 → 함수 X)`
+       - (3) 원 그래프: `⚠️ 교점 2개! (위·아래 2개 y값 대응 $\rightarrow$ 함수 X)` → `⚠️ 교점 2개! (위·아래 2개 y값 대응 → 함수 X)`
+  2. 빌드 및 배포 번들:
+     - `npm run build`를 통해 `dist/` 및 GitHub Pages용 `ghpages-app.js`, `ghpages-app.css` 최신 상태 동기화
+- **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (23/23 통과), `compile_applet` 정상 통과 확인.
