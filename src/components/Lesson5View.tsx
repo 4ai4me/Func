@@ -580,9 +580,17 @@ export const Lesson5View: React.FC<Lesson5ViewProps> = ({
               rows={4}
               value={state.prob1ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder="좌변에서 우변을 빼면 a² + b² - ab = (a - …)² + … ≥ 0이므로 a² + b² ≥ ab가 성립한다. 여기서 등호는 …일 때 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> 좌변에서 우변을 뺀 식을 완전제곱식의 합으로 변형하여 0 이상임을 보인 뒤, 두 제곱식이 동시에 0이 되는 등호 성립 조건을 적어보세요.
+              </div>
+            </details>
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -747,9 +755,17 @@ export const Lesson5View: React.FC<Lesson5ViewProps> = ({
                   rows={3}
                   value={state.equalityReason}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, equalityReason: e.target.value }))}
-                  placeholder="a² - 4ab와 결합하여 완전제곱식 (a - 2b)²을 만들려면 …이 필요하고, 남는 …도 제곱식이기 때문이다."
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                    💡 서술 힌트 보기
+                  </summary>
+                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>작성 힌트:</strong> <span className="mono font-bold">a² − 4ab</span>를 완전제곱식 <span className="mono font-bold">(a − 2b)²</span>으로 묶기 위해 필요한 항과 남는 제곱항을 생각해 보세요.
+                  </div>
+                </details>
               </div>
             </div>
           </div>
@@ -969,9 +985,17 @@ export const Lesson5View: React.FC<Lesson5ViewProps> = ({
               rows={4}
               value={state.prob2ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder="(1) (a+b)² - 4ab = (a - b)² ≥ 0이므로 성립하며 등호는 …일 때 성립한다. (2) a² - 4ab + 5b² = (a - 2b)² + b² ≥ 0이므로 성립하며 등호는 …일 때 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> (1)번 식을 이항해 정리한 완전제곱식과 등호 조건, (2)번 식을 두 제곱식의 합으로 변형한 식과 등호 조건을 차례대로 적어보세요.
+              </div>
+            </details>
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -1051,9 +1075,17 @@ export const Lesson5View: React.FC<Lesson5ViewProps> = ({
                 rows={3}
                 value={state.reflection1}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder="실수를 제곱하면 항상 … 이상이라는 성질 덕분에, 식을 완전제곱식의 합으로 바꾸면 …임을 한눈에 보일 수 있기 때문이다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 1 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 임의의 실수를 제곱했을 때 부호가 항상 어떻게 되는지(<span className="mono font-bold">A² ≥ 0</span>)와 연결하여 설명해 보세요.
+                </div>
+              </details>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2.5">
@@ -1068,9 +1100,17 @@ export const Lesson5View: React.FC<Lesson5ViewProps> = ({
                 rows={3}
                 value={state.reflection2}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder="(1)은 제곱식이 하나여서 …일 때 등호가 성립하지만, (2)는 두 제곱식의 합이어서 …일 때만 등호가 성립한다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 2 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 제곱식이 1개일 때 0이 되는 조건과, 두 제곱식의 합이 0이 되기 위해 두 항이 모두 0이어야 하는 조건의 차이를 비교해 보세요.
+                </div>
+              </details>
             </div>
           </div>
 

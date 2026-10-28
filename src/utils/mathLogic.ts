@@ -2324,12 +2324,47 @@ export function cleanStudentState(raw: unknown): StudentRecord {
   const rawL6 = (x.l6 && typeof x.l6 === 'object' ? x.l6 : {}) as Partial<Lesson6State>;
   const rawL7 = (x.l7 && typeof x.l7 === 'object' ? x.l7 : {}) as Partial<Lesson7State>;
 
+  const LEGACY_TEMPLATE_STRINGS = new Set([
+    '편의점에 등록된 모든 상품(바코드)의 집합 X',
+    '편의점에 진열된 모든 상품의 집합 X',
+    '자연수(원 단위 금액) 전체의 집합 Y',
+    '자연수 전체의 집합 Y (원 단위 가격)',
+    '각 상품 x에 대하여 그 상품의 판매 가격 f(x)원을 대응시킨다.',
+    '각 상품 x에 대하여 포스기에 등록된 판매 가격 f(x)원을 대응시킨다.',
+    '정의역 X의 모든 상품마다 판매 가격이 빠짐없이 존재하고, 한 상품에 두 개 이상의 가격이 동시에 찍히지 않아 오직 하나씩만 대응하기 때문이다.',
+    '모든 상품마다 가격이 빠짐없이 존재하고, 하나의 상품을 찍었을 때 가격이 두 개로 나오지 않고 오직 하나씩만 결정되기 때문이다.',
+    '반대로 가격(X)에서 상품(Y)으로 대응시키면 1,500원짜리 상품이 여러 개 존재하므로 X의 한 원소에 Y의 원소가 여러 개 대응하여 함수가 아니다.',
+    '{x | 0 < x ≤ 20인 실수} (택배 무게 kg)',
+    '자연수 전체의 집합 Y (배송 요금 원)',
+    '무게 x kg인 택배 상자에 요금표에 정해진 배송비 f(x)원을 대응시킨다.',
+    '허용 범위 안의 어떤 무게 x를 재더라도 요금표에 의해 배송비가 오직 하나로 결정되므로 X의 각 원소에 Y의 원소가 하나씩 대응하는 함수이다.',
+    '만약 같은 무게인데도 측정할 때마다 요금이 3,000원 또는 5,000원으로 동시에 나온다면 하나씩 대응하지 않으므로 함수가 될 수 없다.',
+    '{x | x > 0인 실수} (정사각형 한 변의 길이 cm)',
+    '{y | y > 0인 실수} (넓이 cm²)',
+    '한 변의 길이가 x cm인 정사각형에 넓이 f(x) = x² cm²을 대응시킨다.',
+    '양수인 한 변의 길이 x가 정해지면 제곱한 값 x²은 항상 유일하게 하나로 결정되므로 함수이다.',
+    '실수 전체에서 제곱이 x가 되는 수 y(즉 y² = x)를 대응시키면 x = 4일 때 y = 2와 y = -2 두 개가 대응하므로 함수가 아니다.',
+    '자판기의 버튼 번호 집합 X = {1, 2, 3, 4, 5, 6}',
+    '자판기 안의 음료 종류 집합 Y = {생수, 콜라, 사이다, 이온음료}',
+    '자판기 버튼 번호 x를 누르면 배정된 음료 f(x)가 1개 나온다.',
+    '모든 버튼마다 음료가 배정되어 있고, 버튼 하나를 눌렀을 때 정해진 음료 한 종류만 나오므로 함수이다. (여러 버튼에 같은 음료가 배정되어도 함수가 된다!)',
+    ' 만약 3번 버튼의 음료가 품절되어 눌러도 아무 음료가 나오지 않거나, 고장으로 버튼 하나에 두 종류 음료가 동시에 쏟아지면 함수가 아니다.',
+    '만약 3번 버튼의 음료가 품절되어 눌러도 아무 음료가 나오지 않거나, 고장으로 버튼 하나에 두 종류 음료가 동시에 쏟아지면 함수가 아니다.',
+  ]);
+  const stripLegacyTpl = (val: unknown): string =>
+    typeof val === 'string' && !LEGACY_TEMPLATE_STRINGS.has(val.trim()) ? val : '';
+
   const cleanedResult: StudentRecord = {
     ...base,
     ...(x as Partial<StudentRecord>),
     l1: {
       ...base.l1,
       ...(l1 as Partial<Lesson1State>),
+      realLifeDomainX: stripLegacyTpl(l1.realLifeDomainX),
+      realLifeCodomainY: stripLegacyTpl(l1.realLifeCodomainY),
+      realLifeRule: stripLegacyTpl(l1.realLifeRule),
+      realLifeWhyFunc: stripLegacyTpl(l1.realLifeWhyFunc),
+      realLifeNonFuncExample: stripLegacyTpl(l1.realLifeNonFuncExample),
     },
     l2: {
       ...base.l2,

@@ -1284,13 +1284,18 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({
               rows={4}
               value={state.prob1ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder="a > 0, b > 0일 때 (a+b)/2 - √(ab) = (√a - √b)² / 2 ≥ 0이므로 (a+b)/2 ≥ √(ab)가 성립한다. 여기서 등호는 …일 때 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
-            <MathPreviewBox
-              text={state.prob1ProofText}
-              placeholder="a > 0, b > 0일 때 (a+b)/2 - √(ab) = (√a - √b)² / 2 ≥ 0이므로 (a+b)/2 ≥ √(ab)가 성립한다. 여기서 등호는 …일 때 성립한다."
-            />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> <MathText text="a > 0, b > 0" />일 때 좌변에서 우변을 뺀 식을 <MathText text="(√a − √b)² / 2" />로 변형하여 0 이상임을 보이고, 언제 등호가 성립하는지 적어보세요.
+              </div>
+            </details>
+            <MathPreviewBox text={state.prob1ProofText} />
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -1470,9 +1475,17 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({
                   rows={3}
                   value={state.harmonicReason}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, harmonicReason: e.target.value }))}
-                  placeholder="산술·기하평균에서 등호는 두 양수 a와 1/a가 같을 때 성립하므로, a = 1/a이고 a > 0에서 …이다."
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                    💡 등호 조건 서술 힌트 보기
+                  </summary>
+                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>작성 힌트:</strong> 산술·기하평균에서 등호는 두 양수 항(<span className="mono font-bold">a</span>와 <span className="mono font-bold">1/a</span>)이 서로 같을 때 성립한다는 점을 이용해 <span className="mono font-bold">a &gt; 0</span>인 해를 구해보세요.
+                  </div>
+                </details>
                 <MathPreviewBox text={state.harmonicReason} />
               </div>
             </div>
@@ -1699,13 +1712,18 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({
               rows={4}
               value={state.prob2ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder="(1) a > 0이면 1/a > 0이므로 산술·기하평균에 의해 a + 1/a ≥ 2√(a · 1/a) = 2이고 등호는 a=1일 때 성립한다. (2) √(ab) - 2ab/(a+b) = … ≥ 0이므로 성립하며 등호는 a=b일 때 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
-            <MathPreviewBox
-              text={state.prob2ProofText}
-              placeholder="(1) a > 0이면 1/a > 0이므로 산술·기하평균에 의해 a + 1/a ≥ 2√(a · 1/a) = 2이고 등호는 a=1일 때 성립한다. (2) √(ab) - 2ab/(a+b) = … ≥ 0이므로 성립하며 등호는 a=b일 때 성립한다."
-            />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> (1)번은 <span className="mono font-bold">a</span>와 <span className="mono font-bold">1/a</span>에 산술·기하평균을 적용한 과정과 등호 조건을, (2)번은 기하평균과 조화평균의 차(또는 산술·기하평균 변형)를 이용한 증명과 등호 조건을 서술해 보세요.
+              </div>
+            </details>
+            <MathPreviewBox text={state.prob2ProofText} />
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -1789,13 +1807,18 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({
                 rows={3}
                 value={state.reflection1}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder="양수 조건이 있어야 √a와 √b가 실수로 존재하고, a = (√a)², b = (√b)²으로 바꾸어 완전제곱식 …을 만들 수 있기 때문이다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
-              <MathPreviewBox
-                text={state.reflection1}
-                placeholder="양수 조건이 있어야 √a와 √b가 실수로 존재하고, a = (√a)², b = (√b)²으로 바꾸어 완전제곱식 …을 만들 수 있기 때문이다."
-              />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 1 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> <MathText text="√a, √b" />가 실수로 정의되기 위한 조건과 완전제곱식 변형 과정을 떠올려 보세요.
+                </div>
+              </details>
+              <MathPreviewBox text={state.reflection1} />
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2.5">
@@ -1810,9 +1833,17 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({
                 rows={3}
                 value={state.reflection2}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder="두 양수 a, b에 대하여 항상 산술평균 ≥ 기하평균 ≥ 조화평균이 성립하며, 등호는 모두 …일 때 성립한다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 2 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 반원 도형 시뮬레이션에서 확인한 반지름(산술), 높이(기하), 조화 선분의 길이 대소 관계와 두 양수가 같을 때의 변화를 정리해 보세요.
+                </div>
+              </details>
               <MathPreviewBox text={state.reflection2} />
             </div>
           </div>

@@ -576,9 +576,17 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({
               rows={4}
               value={state.prob1ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder="(|a| + |b|)² - |a + b|² = 2(|ab| - ab) ≥ 0이므로 |a + b|² ≤ (|a| + |b|)²이다. 이때 양변이 모두 0 이상이므로 |a + b| ≤ |a| + |b|가 성립하며, 등호는 …일 때 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> 우변의 제곱에서 좌변의 제곱을 뺀 식을 정리하여 0 이상임을 보인 뒤, 양변이 모두 0 이상이라는 성질과 등호 성립 조건(<span className="mono font-bold">ab ≥ 0</span>)을 서술해 보세요.
+              </div>
+            </details>
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -744,9 +752,17 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({
                   rows={3}
                   value={state.absDiffReason}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, absDiffReason: e.target.value }))}
-                  placeholder="제곱의 차 2(|ab| + ab) = 0이 되려면 |ab| = -ab여야 하므로, 절댓값의 정의에 의해 …일 때 성립한다."
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                    💡 등호 조건 서술 힌트 보기
+                  </summary>
+                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>작성 힌트:</strong> 제곱의 차 <span className="mono font-bold">2(|ab| + ab) = 0</span>이 되려면 <span className="mono font-bold">|ab| = −ab</span>이어야 하므로 절댓값의 성질에 의해 <span className="mono font-bold">ab</span>의 부호가 어떠해야 하는지 적어보세요.
+                  </div>
+                </details>
               </div>
             </div>
           </div>
@@ -966,9 +982,17 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({
               rows={4}
               value={state.prob2ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder="(1) (|a|+|b|)² - |a-b|² = 2(|ab| + ab) ≥ 0이므로 성립하며 등호는 ab ≤ 0일 때 성립한다. (2) |a| < |b|이면 좌변이 음수여서 성립하고, |a| ≥ |b|이면 |a-b|² - (|a|-|b|)² = 2(|ab| - ab) ≥ 0이므로 성립한다."
+              placeholder=""
               className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
+            <details className="mt-1.5">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 힌트:</strong> (1)번은 양변 제곱의 차와 등호 조건(<span className="mono font-bold">ab ≤ 0</span>)을, (2)번은 <span className="mono font-bold">|a| &lt; |b|</span>인 경우와 <span className="mono font-bold">|a| ≥ |b|</span>인 경우로 나누어 증명한 과정을 차례대로 서술해 보세요.
+              </div>
+            </details>
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -1048,9 +1072,17 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({
                 rows={3}
                 value={state.reflection1}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder="절댓값은 |x|² = x²이라는 성질이 있어서, 양변이 0 이상일 때 제곱하여 빼면 복잡한 경우 나누기 없이 …을 비교할 수 있기 때문이다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 1 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 절댓값의 제곱 성질(<span className="mono font-bold">|x|² = x²</span>) 덕분에 절댓값 기호를 벗기고 대소 관계를 비교할 수 있다는 점을 적어보세요.
+                </div>
+              </details>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2.5">
@@ -1065,9 +1097,17 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({
                 rows={3}
                 value={state.reflection2}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder="식의 형태에 따라 일반 다항식은 완전제곱식으로, 양수 조건이 있으면 산술·기하평균으로, 절댓값이나 근호가 있으면 …으로 변형하여 증명한다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 2 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 다항식 부등식(완전제곱식 변형), 양수 조건 부등식(산술·기하평균), 절댓값·근호 부등식(제곱의 차 비교)의 세 가지 전략을 정리해 보세요.
+                </div>
+              </details>
             </div>
           </div>
 

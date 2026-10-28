@@ -801,7 +801,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
             정의역: 실수 전체
           </span>
           <span className="flex items-center gap-1 font-bold text-emerald-700">
-            <span className="inline-block w-2.5 h-1.5 bg-emerald-400 rounded-sm"></span> 치역: {'{y | y ≤ 3인 실수}'}
+            <span className="inline-block w-2.5 h-1.5 bg-emerald-400 rounded-sm"></span> 치역: 꼭짓점(y=3) 이하의 y값 범위
           </span>
         </div>
       </div>
@@ -1506,32 +1506,23 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      onUpdate((prev) => ({
-                        ...prev,
-                        countryMap: { ...L1_CORRECT_COUNTRY_MAP },
-                        countryMapVerified: true,
-                        examples:
-                          prev.examples.length >= 4
-                            ? prev.examples
-                            : [
-                                { n: -3, sq: 9, r: 1, valid: true },
-                                { n: 1, sq: 1, r: 1, valid: true },
-                                { n: 3, sq: 9, r: 1, valid: true },
-                                { n: 5, sq: 25, r: 1, valid: true },
-                              ],
-                      }));
-                      showNotice(
-                        'countryMap',
-                        '정확합니다! 대한민국→원(₩), 독일→유로(€), 프랑스→유로(€), 미국→달러($)로 X의 각 원소에 Y의 원소가 오직 하나씩 대응하므로 이 대응은 함수입니다.',
-                        'good'
-                      );
-                    }}
-                    className="min-h-[40px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                    onClick={() => toggleHint('countryMapHint')}
+                    className="min-h-[40px] rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1"
                   >
-                    정답 자동 연결
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.countryMapHint ? '힌트 접기' : '💡 생각 열기 힌트 보기'}</span>
                   </button>
                 </div>
+                {showHints.countryMapHint && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3 text-xs text-amber-900 space-y-1">
+                    <div>
+                      <strong>연결 힌트:</strong> 대한민국의 화폐 단위는 <strong>원(₩)</strong>, 미국의 화폐 단위는 <strong>달러($)</strong>, 독일과 프랑스는 유럽연합(EU) 회원국으로 모두 <strong>유로(€)</strong>를 사용합니다.
+                    </div>
+                    <div>
+                      집합 X의 각 나라를 클릭한 뒤 오른쪽 집합 Y에서 알맞은 화폐 단위를 클릭하여 화살표를 직접 연결해 보세요!
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1651,7 +1642,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob1_1Reason: e.target.value, prob1Verified: false }))
                     }
-                    placeholder="예: 집합 X의 원소 3에 대응하는 집합 Y의 원소가 없기 때문이다."
+                    placeholder=""
                     className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
@@ -1714,7 +1705,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob1_2Domain: e.target.value, prob1Verified: false }))
                       }
-                      placeholder="{1, 2, 3, 4}"
+                      placeholder=""
                       className="mt-0.5 w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-2.5 py-1.5 text-xs sm:text-sm mono text-slate-900"
                     />
                   </div>
@@ -1729,7 +1720,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob1_2Codomain: e.target.value, prob1Verified: false }))
                       }
-                      placeholder="{a, b, c, d}"
+                      placeholder=""
                       className="mt-0.5 w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-2.5 py-1.5 text-xs sm:text-sm mono text-slate-900"
                     />
                   </div>
@@ -1744,9 +1735,29 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob1_2Range: e.target.value, prob1Verified: false }))
                       }
-                      placeholder="{a, c, d}"
+                      placeholder=""
                       className="mt-0.5 w-full rounded-lg border border-slate-200 bg-slate-50/70 focus:bg-white px-2.5 py-1.5 text-xs sm:text-sm mono text-slate-900"
                     />
+                  </div>
+                  <div className="mt-1.5 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob1_2')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob1_2 ? '(2)번 집합 기호 힌트 접기' : '💡 (2)번 정의역·공역·치역 작성 힌트 보기'}
+                    </button>
+                    {showHints.prob1_2 && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed space-y-1">
+                        <div>
+                          • <strong>작성 형식 힌트:</strong> 집합 기호 <span className="mono font-bold">{'{ }'}</span> 안에 원소를 쉼표(<span className="mono font-bold">,</span>)로 구분하여 적어보세요.
+                        </div>
+                        <div>
+                          • <strong>개념 힌트:</strong> 정의역은 화살표가 출발하는 집합 X의 모든 원소이고, 공역은 집합 Y의 모든 원소이며, 치역은 실제로 화살표를 받은 Y의 원소들만 모은 집합입니다.
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
                     <span className="font-semibold text-slate-700">💡 집합 기호 입력 도움:</span>
@@ -1800,7 +1811,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob1_3Reason: e.target.value, prob1Verified: false }))
                     }
-                    placeholder="예: 집합 X의 원소 4에 대응하는 집합 Y의 원소가 b와 d로 2개이기 때문이다."
+                    placeholder=""
                     className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
@@ -2021,7 +2032,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob2_1Domain: e.target.value, prob2Verified: false }))
                       }
-                      placeholder="예: {x | x는 실수}"
+                      placeholder=""
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
                     />
                   </div>
@@ -2036,9 +2047,26 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob2_1Range: e.target.value, prob2Verified: false }))
                       }
-                      placeholder="예: {y | y는 실수}"
+                      placeholder=""
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
                     />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob2_1_hint')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob2_1_hint ? '(1)번 조건제시법 힌트 접기' : '💡 (1)번 작성 형식 힌트 보기'}
+                    </button>
+                    {showHints.prob2_1_hint && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed space-y-1">
+                        <div>
+                          • <strong>작성 힌트:</strong> 조건제시법 <span className="mono font-bold">{'{x | x의 조건}'}</span>, <span className="mono font-bold">{'{y | y의 조건}'}</span> 형식으로 작성하거나, 제한이 없는 경우 &lsquo;실수 전체의 집합&rsquo;으로 적어보세요.
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
                     <span className="font-semibold text-slate-700">기호 도움:</span>
@@ -2098,7 +2126,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob2_2Domain: e.target.value, prob2Verified: false }))
                       }
-                      placeholder="예: {x | x는 실수}"
+                      placeholder=""
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
                     />
                   </div>
@@ -2113,9 +2141,26 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onChange={(e) =>
                         onUpdate((prev) => ({ ...prev, prob2_2Range: e.target.value, prob2Verified: false }))
                       }
-                      placeholder="예: {y | y ≤ 3인 실수}"
+                      placeholder=""
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-3 py-2 text-sm text-slate-900"
                     />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob2_2_hint')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob2_2_hint ? '(2)번 조건제시법 힌트 접기' : '💡 (2)번 작성 형식 힌트 보기'}
+                    </button>
+                    {showHints.prob2_2_hint && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed space-y-1">
+                        <div>
+                          • <strong>작성 힌트:</strong> 모든 실수 <span className="mono font-bold">x</span>에 대하여 <span className="mono font-bold">-x² ≤ 0</span>이므로 함숫값 <span className="mono font-bold">y = -x² + 3</span>의 최댓값은 꼭짓점의 y좌표인 3입니다. 조건제시법 <span className="mono font-bold">{'{y | y의 부등식 조건인 실수}'}</span> 형식으로 작성해 보세요.
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-600">
                     <span className="font-semibold text-slate-700">기호 도움:</span>
@@ -2233,7 +2278,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                           aria-label="x=0일 때 f(0)의 값"
                           value={prob3Table.f0}
                           onChange={(e) => updateProb3Cell('f0', e.target.value)}
-                          placeholder="f(0)"
+                          placeholder=""
                           className="w-20 rounded-lg border border-blue-300 bg-blue-50/40 focus:bg-white py-1.5 text-center font-extrabold mono text-slate-900"
                         />
                       </td>
@@ -2244,7 +2289,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                           aria-label="x=1일 때 f(1)의 값"
                           value={prob3Table.f1}
                           onChange={(e) => updateProb3Cell('f1', e.target.value)}
-                          placeholder="f(1)"
+                          placeholder=""
                           className="w-20 rounded-lg border border-blue-300 bg-blue-50/40 focus:bg-white py-1.5 text-center font-extrabold mono text-slate-900"
                         />
                       </td>
@@ -2260,7 +2305,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                           aria-label="x=-1일 때 g(-1)의 값"
                           value={prob3Table.gm1}
                           onChange={(e) => updateProb3Cell('gm1', e.target.value)}
-                          placeholder="g(-1)"
+                          placeholder=""
                           className="w-20 rounded-lg border border-indigo-300 bg-indigo-50/40 focus:bg-white py-1.5 text-center font-extrabold mono text-slate-900"
                         />
                       </td>
@@ -2274,7 +2319,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                           aria-label="x=1일 때 g(1)의 값"
                           value={prob3Table.g1}
                           onChange={(e) => updateProb3Cell('g1', e.target.value)}
-                          placeholder="g(1)"
+                          placeholder=""
                           className="w-20 rounded-lg border border-indigo-300 bg-indigo-50/40 focus:bg-white py-1.5 text-center font-extrabold mono text-slate-900"
                         />
                       </td>
@@ -2328,7 +2373,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   onChange={(e) =>
                     onUpdate((prev) => ({ ...prev, prob3Reason: e.target.value, prob3Verified: false }))
                   }
-                  placeholder="정의역 {-1, 0, 1}의 모든 원소에 대하여 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2이므로 두 함수의 대응이 완전히 같아서 f = g이다."
+                  placeholder=""
                   className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                     (state.prob3Reason || '').trim().length,
                     10
@@ -2806,9 +2851,24 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob5_2Reason: e.target.value, prob5Verified: false }))
                     }
-                    placeholder="예: x = 3일 때 대응하는 y의 값이 1과 3으로 2개이기 때문에 오직 하나씩 대응해야 한다는 함수의 정의를 만족하지 않는다."
+                    placeholder=""
                     className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
+                  <div className="mt-1.5 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob5_2_hint')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob5_2_hint ? '(2)번 서술 힌트 접기' : '💡 (2)번 서술 힌트 보기'}
+                    </button>
+                    {showHints.prob5_2_hint && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                        <strong>서술 힌트:</strong> 위 시뮬레이션에서 <span className="mono font-bold">a = 3.0</span> 버튼을 눌러보세요! <span className="mono font-bold">x = 3</span>일 때 대응하는 <span className="mono font-bold">y</span>의 값이 몇 개인지 확인하고 함수의 정의와 연결해 서술해 보세요.
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label htmlFor="prob5_3Reason" className="block text-xs font-bold text-slate-700 mb-1">
@@ -2821,9 +2881,24 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     onChange={(e) =>
                       onUpdate((prev) => ({ ...prev, prob5_3Reason: e.target.value, prob5Verified: false }))
                     }
-                    placeholder="예: -1 < a < 1인 수직선 x = a를 그었을 때 원과 두 점에서 만나므로 하나의 x값에 서로 다른 2개의 y값이 대응하여 함수가 아니다."
+                    placeholder=""
                     className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
+                  <div className="mt-1.5 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleHint('prob5_3_hint')}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      {showHints.prob5_3_hint ? '(3)번 서술 힌트 접기' : '💡 (3)번 서술 힌트 보기'}
+                    </button>
+                    {showHints.prob5_3_hint && (
+                      <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                        <strong>서술 힌트:</strong> 위 시뮬레이션에서 <span className="mono font-bold">a = 0</span> 버튼을 눌러보세요! <span className="mono font-bold">-1 &lt; a &lt; 1</span>인 수직선 <span className="mono font-bold">x = a</span>를 그었을 때 원과 만나는 교점이 몇 개인지 확인하여 서술해 보세요.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -3001,6 +3076,25 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   활동 2 · 내가 찾은 실생활 속 함수 <span className="mono text-blue-700">f: X → Y</span> 설계서
                 </h3>
               </div>
+              {Boolean(state.realLifeDomainX || state.realLifeCodomainY || state.realLifeRule || state.realLifeWhyFunc) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdate((prev) => ({
+                      ...prev,
+                      realLifeDomainX: '',
+                      realLifeCodomainY: '',
+                      realLifeRule: '',
+                      realLifeWhyFunc: '',
+                      bridge: '',
+                    }))
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>설계서 입력칸 비우기</span>
+                </button>
+              )}
             </div>
 
             {/* 추천 실생활 소재 아이디어 뱅크 버튼 */}
@@ -3071,10 +3165,25 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="realLifeDomainX" className="block text-xs sm:text-sm font-bold text-slate-800 mb-1">
-                  1. 정의역 <span className="mono text-blue-600">X</span> (입력 집합)
-                </label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="realLifeDomainX" className="block text-xs sm:text-sm font-bold text-slate-800">
+                    1. 정의역 <span className="mono text-blue-600">X</span> (입력 집합)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('realLife1')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.realLife1 ? '힌트 접기' : '💡 1번 힌트 보기'}</span>
+                  </button>
+                </div>
+                {showHints.realLife1 && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>정의역 X 작성 힌트:</strong> 규칙에 넣을 ‘입력 대상 전체의 모임’을 적어보세요. (예: 우리 반 학생 전체의 집합, 편의점에 진열된 상품들의 집합 등)
+                  </div>
+                )}
                 <input
                   id="realLifeDomainX"
                   type="text"
@@ -3086,15 +3195,30 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       bridge: `[실생활 함수] 정의역(${e.target.value}) → 공역(${prev.realLifeCodomainY || ''}): ${prev.realLifeRule || ''}`,
                     }))
                   }
-                  placeholder="예: 편의점의 모든 상품 집합 X"
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
-              <div>
-                <label htmlFor="realLifeCodomainY" className="block text-xs sm:text-sm font-bold text-slate-800 mb-1">
-                  2. 공역 <span className="mono text-blue-600">Y</span> (출력 후보 집합)
-                </label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="realLifeCodomainY" className="block text-xs sm:text-sm font-bold text-slate-800">
+                    2. 공역 <span className="mono text-blue-600">Y</span> (출력 후보 집합)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('realLife2')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.realLife2 ? '힌트 접기' : '💡 2번 힌트 보기'}</span>
+                  </button>
+                </div>
+                {showHints.realLife2 && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>공역 Y 작성 힌트:</strong> 대응 결과로 나올 수 있는 ‘값이나 대상들의 후보 모임’을 적어보세요. (예: 자연수 전체의 집합, 달력의 날짜 집합, 좌석 번호 집합 등)
+                  </div>
+                )}
                 <input
                   id="realLifeCodomainY"
                   type="text"
@@ -3106,22 +3230,37 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       bridge: `[실생활 함수] 정의역(${prev.realLifeDomainX || ''}) → 공역(${e.target.value}): ${prev.realLifeRule || ''}`,
                     }))
                   }
-                  placeholder="예: 자연수 전체의 집합 Y (가격 원)"
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label htmlFor="realLifeRule" className="block text-xs sm:text-sm font-bold text-slate-800">
                   3. 대응 규칙 <span className="mono text-blue-600">x → f(x)</span> (문장 서술 · 5자 이상)
                 </label>
-                <CharCountBadge current={(state.realLifeRule || '').trim().length} min={5} />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('realLife3')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.realLife3 ? '힌트 접기' : '💡 3번 힌트 보기'}</span>
+                  </button>
+                  <CharCountBadge current={(state.realLifeRule || '').trim().length} min={5} />
+                </div>
               </div>
+              {showHints.realLife3 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>대응 규칙 작성 힌트:</strong> 정의역 X의 각 원소 <span className="mono font-bold">x</span>를 넣었을 때 공역 Y의 어떤 원소 <span className="mono font-bold">f(x)</span>를 짝지어 주는지 규칙을 한 문장으로 서술해 보세요.
+                </div>
+              )}
               <textarea
                 id="realLifeRule"
-                rows={2}
+                rows={3}
                 value={state.realLifeRule || ''}
                 onChange={(e) =>
                   onUpdate((prev) => ({
@@ -3130,18 +3269,33 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     bridge: `[실생활 함수] 정의역(${prev.realLifeDomainX || ''}) → 공역(${prev.realLifeCodomainY || ''}): ${e.target.value}`,
                   }))
                 }
-                placeholder="예: 각 상품 x에 대하여 포스기(바코드)에 등록된 해당 상품 1개의 판매 가격 f(x)원을 대응시킨다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label htmlFor="realLifeWhyFunc" className="block text-xs sm:text-sm font-bold text-slate-800">
                   4. 이 실생활 대응이 함수인 이유 (12자 이상 · ‘각 원소’, ‘하나씩’ 개념 포함 권장)
                 </label>
-                <CharCountBadge current={(state.realLifeWhyFunc || '').trim().length} min={12} />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('realLife4')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.realLife4 ? '힌트 접기' : '💡 4번 힌트 보기'}</span>
+                  </button>
+                  <CharCountBadge current={(state.realLifeWhyFunc || '').trim().length} min={12} />
+                </div>
               </div>
+              {showHints.realLife4 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>함수인 이유 작성 힌트:</strong> ① 정의역 X의 <strong>모든 원소</strong>에 빠짐없이 대응하는 결과가 있는지, ② 한 원소에 두 개 이상이 아닌 <strong>오직 하나씩</strong>만 대응하는지를 자신이 선택한 소재에 맞추어 설명해 보세요.
+                </div>
+              )}
               <textarea
                 id="realLifeWhyFunc"
                 rows={4}
@@ -3152,7 +3306,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     realLifeWhyFunc: e.target.value,
                   }))
                 }
-                placeholder="정의역 X의 모든 원소(각 상품)에 대하여 가격이 빠짐없이 존재하고, 하나의 상품에 두 개의 가격이 동시에 찍히지 않고 오직 하나씩만 대응하기 때문이다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                   (state.realLifeWhyFunc || '').trim().length,
                   12
@@ -3160,19 +3314,34 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label htmlFor="l1reflection" className="block text-xs sm:text-sm font-bold text-slate-800">
                   5. 1차시 성찰 · 대응으로서의 함수와 함수의 그래프를 배우며 새롭게 알게 된 점 (15자 이상)
                 </label>
-                <CharCountBadge current={state.reflection.trim().length} min={15} />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHint('realLife5')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{showHints.realLife5 ? '힌트 접기' : '💡 5번 힌트 보기'}</span>
+                  </button>
+                  <CharCountBadge current={state.reflection.trim().length} min={15} />
+                </div>
               </div>
+              {showHints.realLife5 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>성찰 작성 힌트:</strong> 두 집합 사이의 대응으로 정의되는 함수의 뜻, 정의역·공역·치역의 관계, 또는 좌표평면에서 수직선 <span className="mono font-bold">x = a</span>를 움직여 함수의 그래프인지 판별하는 원리 중 기억에 남는 내용을 자유롭게 정리해 보세요.
+                </div>
+              )}
               <textarea
                 id="l1reflection"
                 rows={4}
                 value={state.reflection}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection: e.target.value }))}
-                placeholder="함수는 수식뿐만 아니라 두 집합 X, Y 사이의 대응으로 정의되며, 좌표평면에서 직선 x=a와 오직 한 점에서 만난다는 수직선 판정법의 원리를 알게 되었다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-white p-3.5 text-sm sm:text-base text-slate-900 ${getCharCountBorderClass(
                   state.reflection.trim().length,
                   15
@@ -3512,7 +3681,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                         aiCheck1: false,
                       }))
                     }
-                    placeholder="예: 기계 A는 사진 ①과 ③의 출력이 모두 지민이지만 각 사진마다 출력이 오직 하나씩이므로 함수입니다. 기계 B는 사진 ②에 유나와 민수 두 개가 대응하여 오직 하나 조건에 위배되고, 기계 C는 사진 ③에 대응하는 출력이 누락되어 함수가 아닙니다."
+                    placeholder=""
                     className={`w-full rounded-xl border p-3.5 text-sm sm:text-base text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
                       (state.aiExplain || '').trim().length,
                       8
@@ -3766,7 +3935,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                     aiReflectionChecked: false,
                   }))
                 }
-                placeholder="정의역의 모든 원소와 공역의 원소 사이의 관계를 이용하여 설명하세요. (예: 서로 다른 사진 ①과 ③이 모두 지민으로 대응되어도, 각 사진마다 출력이 오직 하나씩 정해지므로...)"
+                placeholder=""
                 className={`w-full rounded-xl border p-3.5 text-sm sm:text-base text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
                   (state.aiReflection || '').trim().length,
                   8
@@ -3969,7 +4138,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                         vendCheck1: false,
                       }))
                     }
-                    placeholder="예: 2번 버튼은 주스와 우유 2개가 나오고, 3번 버튼은 음료가 안 나오므로 함수가 아닙니다. 1번과 4번이 같은 물에 연결된 것은 문제되지 않습니다."
+                    placeholder=""
                     className={`w-full rounded-xl border p-2.5 text-xs sm:text-sm text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
                       (state.vendExplain || '').trim().length,
                       6
@@ -4216,7 +4385,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       vendCheck3: false,
                     }))
                   }
-                  placeholder="예: 공역의 원소를 개별 음료가 아니라 {물, 주스}와 같은 음료 세트(부분집합)로 정의하면, 각 버튼마다 출력 세트가 오직 하나씩 결정되므로 함수가 될 수 있습니다."
+                  placeholder=""
                   className={`w-full rounded-xl border p-2.5 text-xs sm:text-sm text-slate-900 focus:ring-1 focus:ring-blue-500 ${getCharCountBorderClass(
                     (state.setExplain || '').trim().length,
                     6

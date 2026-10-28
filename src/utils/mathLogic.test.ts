@@ -810,4 +810,32 @@ test('extractFuncWorksheetFromJson & embedFuncWorksheetIntoJson preserve Props d
   assert.equal(funcReloaded.teacherMemo, 'Func 함수 교사 메모입니다.');
 });
 
+test('cleanStudentState strips legacy auto-filled REAL_LIFE_TEMPLATES strings while preserving student-written text', () => {
+  const s1 = createInitialStudentState();
+  s1.l1.realLifeDomainX = '편의점에 진열된 모든 상품의 집합 X';
+  s1.l1.realLifeCodomainY = '자연수 전체의 집합 Y (원 단위 가격)';
+  s1.l1.realLifeRule = '각 상품 x에 대하여 포스기에 등록된 판매 가격 f(x)원을 대응시킨다.';
+  s1.l1.realLifeWhyFunc =
+    '모든 상품마다 가격이 빠짐없이 존재하고, 하나의 상품을 찍었을 때 가격이 두 개로 나오지 않고 오직 하나씩만 결정되기 때문이다.';
+
+  const cleanedTemplate = cleanStudentState(s1);
+  assert.equal(cleanedTemplate.l1.realLifeDomainX, '');
+  assert.equal(cleanedTemplate.l1.realLifeCodomainY, '');
+  assert.equal(cleanedTemplate.l1.realLifeRule, '');
+  assert.equal(cleanedTemplate.l1.realLifeWhyFunc, '');
+
+  const s2 = createInitialStudentState();
+  s2.l1.realLifeDomainX = '도서관의 모든 도서 집합 X';
+  s2.l1.realLifeCodomainY = '청구기호 문자열 집합 Y';
+  s2.l1.realLifeRule = '각 도서마다 고유 청구기호를 대응시킨다.';
+  s2.l1.realLifeWhyFunc = '모든 도서마다 청구기호가 빠짐없이 오직 하나씩 부여되기 때문이다.';
+
+  const cleanedCustom = cleanStudentState(s2);
+  assert.equal(cleanedCustom.l1.realLifeDomainX, '도서관의 모든 도서 집합 X');
+  assert.equal(cleanedCustom.l1.realLifeCodomainY, '청구기호 문자열 집합 Y');
+  assert.equal(cleanedCustom.l1.realLifeRule, '각 도서마다 고유 청구기호를 대응시킨다.');
+  assert.equal(cleanedCustom.l1.realLifeWhyFunc, '모든 도서마다 청구기호가 빠짐없이 오직 하나씩 부여되기 때문이다.');
+});
+
+
 

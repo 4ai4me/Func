@@ -650,12 +650,20 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               rows={6}
               value={state.prob1ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder="명제를 부정하여 √(2)가 …라 하면, 서로소인 두 자연수 m과 n에 대하여 √(2) = …으로 나타낼 수 있다. 양변을 제곱하면 … 이므로 …이다. 다시 n = 2k를 대입하면 … 이므로 …이다. 그런데 … 이므로 서로소임에 모순이다. 따라서 …"
+              placeholder=""
               className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                 state.prob1ProofText.trim().length,
                 40
               )}`}
             />
+            <details className="mt-2">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 순서 힌트:</strong> ① 결론을 부정하여 <MathText text="√2" />를 유리수라 가정하고 서로소인 두 자연수 <span className="mono font-bold">m, n</span>에 대하여 분수로 나타낸 뒤, ② 양변을 제곱하여 <span className="mono font-bold">n</span>과 <span className="mono font-bold">m</span>이 모두 짝수가 됨을 보이고, ③ 서로소라는 가정에 모순이므로 <MathText text="√2" />는 유리수가 아니라고 마무리해 보세요.
+              </div>
+            </details>
             <MathPreviewBox text={state.prob1ProofText} />
           </div>
         </div>
@@ -797,12 +805,20 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                 rows={3}
                 value={state.closureReason}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, closureReason: e.target.value }))}
-                placeholder="우변 r − 1은 …인데 좌변 √(2)는 …이므로 서로 같을 수 없어 모순이다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.closureReason.trim().length,
                   15
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 모순 정리 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 등식의 좌변(<MathText text="√2" />)과 우변(<span className="mono font-bold">r − 1</span>)이 각각 유리수인지 무리수인지 비교하여 왜 같은 값이 될 수 없는지 설명해 보세요.
+                </div>
+              </details>
               <MathPreviewBox text={state.closureReason} />
             </div>
           </div>
@@ -969,12 +985,20 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               rows={5}
               value={state.prob2ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder="명제를 부정하여 1 + √(2)가 …라 하면, 유리수 r에 대하여 1 + √(2) = r, 즉 √(2) = …로 나타낼 수 있다. 이때 r과 1이 모두 유리수이므로 …도 유리수이다. 그런데 이는 √(2)가 …라는 사실에 모순이다. 따라서 …"
+              placeholder=""
               className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                 state.prob2ProofText.trim().length,
                 35
               )}`}
             />
+            <details className="mt-2">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 순서 힌트:</strong> ① 결론을 부정하여 <MathText text="1 + √2 = r" /> (r은 유리수)로 놓고, ② 이항하여 <MathText text="√2 = r − 1" />로 정리한 뒤, ③ 유리수의 뺄셈 성질과 <MathText text="√2" />가 무리수라는 사실이 모순됨을 밝혀 증명해 보세요.
+              </div>
+            </details>
             <MathPreviewBox text={state.prob2ProofText} />
           </div>
         </div>
@@ -1004,12 +1028,20 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                 rows={4}
                 value={state.reflection1}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder="‘…가 아니다’처럼 직접 식을 세우기 어려운 명제에서 결론을 부정하면 … 형태로 식을 쓸 수 있고, 이로부터 …에 모순됨을 보여 참임을 입증한다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.reflection1.trim().length,
                   20
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 1번 성찰 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> ‘유리수가 아니다’처럼 부정형으로 되어 있어 직접 식을 세우기 어려울 때 결론을 부정하면 어떤 등식을 세울 수 있는지 생각해 보세요.
+                </div>
+              </details>
               <MathPreviewBox text={state.reflection1} />
             </div>
 
@@ -1025,12 +1057,20 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                 rows={4}
                 value={state.reflection2}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder="대우법은 명제 p → q 대신 …가 참임을 보이는 방법이고, 귀류법은 결론을 부정하여 …이 생김을 보이는 방법이다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.reflection2.trim().length,
                   20
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 2번 성찰 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 대우법은 원래 명제와 진릿값이 같은 대우 명제(<span className="mono font-bold">~q → ~p</span>)를 직접 증명하는 방법이고, 귀류법은 결론을 부정하여 모순을 이끌어내는 간접 증명법이라는 점을 비교해 보세요.
+                </div>
+              </details>
               <MathPreviewBox text={state.reflection2} />
             </div>
           </div>

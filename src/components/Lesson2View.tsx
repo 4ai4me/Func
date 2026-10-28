@@ -319,12 +319,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                   rows={3}
                   value={state.customStatement}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, customStatement: e.target.value }))}
-                  placeholder="모든(또는 어떤) …에 대하여 …은(는) …이다."
+                  placeholder=""
                   className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                     state.customStatement.trim().length,
                     10
                   )}`}
                 />
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                    💡 명제 작성 힌트 보기
+                  </summary>
+                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>작성 힌트:</strong> &ldquo;모든(또는 어떤) …에 대하여 …이면 …이다.&rdquo;와 같이 가정과 결론이 명확한 문장으로 적어보세요.
+                  </div>
+                </details>
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
@@ -338,12 +346,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                   type="text"
                   value={state.customScope}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, customScope: e.target.value }))}
-                  placeholder="탐구 대상과 조건 (…의 정수, …인 수 등)"
+                  placeholder=""
                   className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                     state.customScope.trim().length,
                     2
                   )}`}
                 />
+                <details className="mt-1.5">
+                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                    💡 대상·조건 작성 힌트 보기
+                  </summary>
+                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                    <strong>작성 힌트:</strong> 탐구할 수의 범위(예: 자연수, 정수, 홀수, 짝수 등)를 적어보세요.
+                  </div>
+                </details>
               </div>
               <p className="text-xs text-slate-500">
                 직접 만든 명제는 자동으로 참·거짓을 판정할 수 없습니다. 학생의 논증과 반례 설명을 교사가 확인합니다.
@@ -461,7 +477,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                         type="text"
                         value={obsInputStr}
                         onChange={(e) => setObsInputStr(e.target.value)}
-                        placeholder="…일 때 식의 값이 …이므로 성립함"
+                        placeholder=""
                         className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-900"
                       />
                     </div>
@@ -593,9 +609,17 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                     rows={3}
                     value={state.guess}
                     onChange={(e) => onUpdate((prev) => ({ ...prev, guess: e.target.value }))}
-                    placeholder="어떤 결과가 반복되었나요? 참 또는 거짓이라고 추측하는 이유는 무엇인가요?"
+                    placeholder=""
                     className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900"
                   />
+                  <details className="mt-1.5">
+                    <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                      💡 추측 작성 힌트 보기
+                    </summary>
+                    <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                      <strong>작성 힌트:</strong> 앞선 사례 계산에서 어떤 나머지가 반복되었는지, 그리고 명제가 참 또는 거짓이라고 추측하는 이유를 문장으로 적어보세요.
+                    </div>
+                  </details>
                 </div>
 
                 <div>
@@ -674,7 +698,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                         type="text"
                         value={testMemoStr}
                         onChange={(e) => setTestMemoStr(e.target.value)}
-                        placeholder="반례인지 설명해 보세요."
+                        placeholder=""
                         className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-900"
                       />
                     </div>
@@ -860,7 +884,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                         inputMode="numeric"
                         value={state.counter}
                         onChange={(e) => onUpdate((prev) => ({ ...prev, counter: e.target.value }))}
-                        placeholder="반례 숫자 입력 (정수)"
+                        placeholder=""
                         className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base font-semibold mono text-slate-900 placeholder:font-normal"
                       />
                       <button
@@ -892,12 +916,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                       rows={5}
                       value={state.counterReason}
                       onChange={(e) => onUpdate((prev) => ({ ...prev, counterReason: e.target.value }))}
-                      placeholder="가정이 성립하고, …을 계산하면 … 이므로 결론이 성립하지 않는다."
+                      placeholder=""
                       className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                         state.counterReason.trim().length,
                         25
                       )}`}
                     />
+                    <details className="mt-1.5">
+                      <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                        💡 반례 서술 힌트 보기
+                      </summary>
+                      <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                        <strong>작성 힌트:</strong> 선택한 수가 명제의 가정을 만족하는지 먼저 밝히고, 식에 대입해 계산한 결과가 결론과 어긋난다는 점을 설명해 보세요.
+                      </div>
+                    </details>
                   </div>
 
                   <button
@@ -941,12 +973,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                     rows={6}
                     value={state.proofText}
                     onChange={(e) => onUpdate((prev) => ({ ...prev, proofText: e.target.value }))}
-                    placeholder="임의의 …에 대해 …이므로 …이다. 따라서 …"
+                    placeholder=""
                     className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                       state.proofText.trim().length,
                       40
                     )}`}
                   />
+                  <details className="mt-1.5">
+                    <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                      💡 증명 서술 구조 힌트 보기
+                    </summary>
+                    <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                      <strong>작성 힌트:</strong> 임의의 정수를 문자로 나타내고, 대수식을 전개·인수분해하여 항상 결론의 배수 형태가 됨을 단계별로 서술해 보세요. (아래 단계별 힌트도 참고할 수 있습니다.)
+                    </div>
+                  </details>
                 </div>
               )}
 
@@ -1048,7 +1088,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                 rows={3}
                 value={state.share}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, share: e.target.value }))}
-                placeholder="내가 탐구한 명제는 … 이고, 이를 …으로 판단했다."
+                placeholder=""
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900"
               />
             </div>
@@ -1064,7 +1104,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                   maxLength={25}
                   value={state.peer}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, peer: e.target.value }))}
-                  placeholder="예: 10312"
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white px-3.5 py-2.5 text-base text-slate-900"
                 />
               </div>
@@ -1077,7 +1117,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                   rows={2}
                   value={state.peerComment}
                   onChange={(e) => onUpdate((prev) => ({ ...prev, peerComment: e.target.value }))}
-                  placeholder="가정에 맞는 반례인가요? 설명이 모든 경우를 포함하나요?"
+                  placeholder=""
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white p-3 text-base text-slate-900"
                 />
               </div>
@@ -1092,7 +1132,7 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                 rows={2}
                 value={state.revision}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, revision: e.target.value }))}
-                placeholder="무엇을 보완했나요?"
+                placeholder=""
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white p-3 text-base text-slate-900"
               />
             </div>
@@ -1111,12 +1151,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                 rows={4}
                 value={state.reflection}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection: e.target.value }))}
-                placeholder="1차시와 비교하여 … 탐구 과정에서 … 점이 달라졌고 …을 배웠다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.reflection.trim().length,
                   20
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 성찰 작성 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 몇 가지 사례만 보고 섣불리 단정하지 않고 반례를 찾거나 문자를 이용해 일반화하는 태도에서 어떤 성장이 있었는지 적어보세요.
+                </div>
+              </details>
             </div>
 
             <div>
@@ -1131,12 +1179,20 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                 rows={3}
                 value={state.nextQuestion}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, nextQuestion: e.target.value }))}
-                placeholder="다음에는 … 조건의 명제를 탐구해 보고 싶으며, 궁금한 점은 …이다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.nextQuestion.trim().length,
                   10
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 다음 탐구 질문 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 조건을 바꾸거나 나누는 수를 바꾸었을 때에도 성립할지 궁금한 새로운 명제나 질문을 자유롭게 적어보세요.
+                </div>
+              </details>
             </div>
           </div>
 

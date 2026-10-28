@@ -112,3 +112,27 @@
   - [x] `index.html`, `ghpages-app.js`, `ghpages-app.css`:
     - 캐시 버스터 버전 `?v=20261027-l1-ai-v1`로 갱신 및 프로덕션 번들(1.88MB) 빌드 동기화 완료
 - **회귀 확인**: `lint_applet` 통과 (0 errors), `compile_applet` 통과, 단위 테스트 22/22 통과.
+
+---
+
+## [작업 기록] 1차시 06 도전!! 실생활 함수(도전 2: 자판기 수리 미션) 추가 및 전 차시 텍스트박스 내부 예시 문구 제거·힌트 기능 전환
+
+- **작업 일시**: 2026-10-27
+- **Tier**: Tier 2 (1차시 도전 2 자판기 문제 추가 + 1~7차시 전체 입력칸 내부 예시 문구(`placeholder`) 제거 및 외부 `💡 힌트 보기` 토글 기능 전환 + 이전 자동 입력 템플릿 정리)
+- **요청 내용**:
+  1. 1차시 `06 도전!! 실생활 함수`에 유첨파일(자판기 문제 — 도전 2: 고장 난 자판기를 고쳐라!) 추가
+  2. 모든 텍스트 박스(`<input>`, `<textarea>`) 내부에 남아있는 예시 문구(`placeholder`)를 완전히 삭제(`placeholder=""`)하고, 텍스트 박스 외부의 `💡 힌트 보기` 토글 버튼으로만 힌트를 확인하도록 변경
+- **구현 내역 (Definition of Done)**:
+  - [x] `src/components/Lesson1View.tsx`:
+    - 1~6단계(`01 대응과 함수`, `02 정의역과 치역`, `03 서로 같은 함수`, `04 함수의 그래프`, `05 실생활 함수 모델링`, `06 도전!! 실생활 함수 — 도전 1 AI 얼굴 인식 & 도전 2 자판기 수리`)의 모든 `<input>` 및 `<textarea>`에서 내부 `placeholder` 예시 문구를 전면 제거(`placeholder=""`)
+    - 각 입력칸 옆/아래에 클릭 시 열고 닫을 수 있는 `💡 힌트 보기` 토글 버튼 및 힌트 안내 박스를 배치하여 학습자가 스스로 사고하고 필요할 때만 힌트를 열어볼 수 있도록 개선
+    - `[생각 열기]` 화살표 다이어그램의 정답 자동 연결 버튼을 제거하고 `💡 생각 열기 힌트 보기` 토글로 전환
+    - `탐구 05 활동 2`에 `[설계서 입력칸 비우기]` 초기화 버튼 추가
+  - [x] `src/components/Lesson2View.tsx` ~ `src/components/Lesson7View.tsx`:
+    - 2~7차시의 모든 서술형 `<input>` 및 `<textarea>` 내부 `placeholder` 예시 문구를 제거(`placeholder=""`)하고 `<details>` 기반 `💡 ... 작성 힌트 보기` 토글로 전환
+  - [x] `src/utils/mathLogic.ts` & `src/utils/mathLogic.test.ts`:
+    - `cleanStudentState`에서 과거 자동 채우기 기능으로 저장되었을 수 있는 `REAL_LIFE_TEMPLATES` 기본 문구를 자동 감지·비움 처리하되, 학생이 직접 작성한 서술형 답안은 100% 보존하는 마이그레이션 로직 및 단위 테스트(23/23 통과) 추가
+  - [x] `index.html`, `ghpages-app.js`, `ghpages-app.css`:
+    - 캐시 버스터 버전 `?v=20261027-no-placeholder-hints`로 갱신 및 프로덕션 정적 번들 빌드 완료
+- **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (23/23 통과), `npm run build` 성공, `lint_applet` 및 `compile_applet` 이상 없음.
+

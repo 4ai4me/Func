@@ -669,12 +669,20 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
               rows={5}
               value={state.prob1ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder="주어진 명제의 대우는 ‘…’이다. 자연수 n이 …이면 n = … (k는 자연수)로 나타낼 수 있다. 이때 n² = … 이므로 …이다. 따라서 …"
+              placeholder=""
               className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                 state.prob1ProofText.trim().length,
                 35
               )}`}
             />
+            <details className="mt-2">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 순서 힌트:</strong> ① 주어진 명제의 대우를 먼저 밝히고, ② 자연수 n이 홀수일 때 <span className="mono font-bold">n = 2k − 1</span>(k는 자연수)로 놓은 뒤, ③ <span className="mono font-bold">n²</span>을 전개하여 홀수임을 보이고, ④ 대우가 참이므로 주어진 명제도 참이라고 마무리해 보세요.
+              </div>
+            </details>
           </div>
         </div>
       )}
@@ -721,7 +729,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                           handleAddMod3(mod3InputStr);
                         }
                       }}
-                      placeholder="자연수 입력"
+                      placeholder=""
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base font-semibold mono text-slate-900"
                     />
                     <button
@@ -1107,12 +1115,20 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
               rows={6}
               value={state.prob2ProofText}
               onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder="주어진 명제의 대우는 ‘…’이다. n이 3의 배수가 아니면 자연수 k에 대하여 (i) n = … 일 때 n² = … 이고, (ii) n = … 일 때 n² = … 이므로 두 경우 모두 …이다. 따라서 …"
+              placeholder=""
               className={`w-full rounded-xl border bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                 state.prob2ProofText.trim().length,
                 40
               )}`}
             />
+            <details className="mt-2">
+              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                💡 증명 보고서 작성 힌트 보기
+              </summary>
+              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                <strong>작성 순서 힌트:</strong> ① 주어진 명제의 대우를 쓰고, ② 자연수 k에 대하여 (i) <span className="mono font-bold">n = 3k − 2</span>일 때와 (ii) <span className="mono font-bold">n = 3k − 1</span>일 때로 나누어 각각의 <span className="mono font-bold">n²</span>이 3의 배수가 아님을 보인 뒤, ③ 대우가 참이므로 원래 명제도 참이라고 결론지어 보세요.
+              </div>
+            </details>
           </div>
         </div>
       )}
@@ -1141,12 +1157,20 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 rows={4}
                 value={state.reflection1}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder="가정이 n²에 대한 조건일 때보다 대우를 통해 n에 대한 조건으로 바꾸었을 때 식 변형이 …하기 때문에 …이다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.reflection1.trim().length,
                   20
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 1번 성찰 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 가정이 <span className="mono font-bold">n²</span>에 대한 조건일 때보다 대우를 통해 <span className="mono font-bold">n</span>에 대한 조건으로 바꾸었을 때 거듭제곱 계산과 식 변형이 어떻게 쉬워졌는지 생각해 보세요.
+                </div>
+              </details>
             </div>
 
             <div>
@@ -1161,12 +1185,20 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 rows={3}
                 value={state.reflection2}
                 onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder="짝수가 아닌 경우는 …로 한 가지뿐이지만, 3의 배수가 아닌 경우는 나머지에 따라 …로 나누어 확인해야 한다."
+                placeholder=""
                 className={`w-full rounded-xl border bg-slate-50/50 focus:bg-white p-3.5 text-base text-slate-900 transition-colors ${getCharCountBorderClass(
                   state.reflection2.trim().length,
                   15
                 )}`}
               />
+              <details className="mt-1.5">
+                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
+                  💡 2번 성찰 힌트 보기
+                </summary>
+                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
+                  <strong>작성 힌트:</strong> 2로 나눌 때 짝수가 아닌 자연수(나머지 1)와 3으로 나눌 때 3의 배수가 아닌 자연수(나머지 1, 2)의 경우의 수 차이를 비교해 보세요.
+                </div>
+              </details>
             </div>
           </div>
 
