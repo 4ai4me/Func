@@ -989,6 +989,9 @@ import {
   getFirstEnabledLesson,
   resolveAllowedStudentLesson,
   createLessonAccessPreset,
+  hasAnyLockedLesson,
+  buildLessonAccessFirestoreFields,
+  evaluateStudentLessonRenderGate,
 } from './mathLogic.ts';
 
 test('Lesson access ON/OFF control helpers normalize, preset, and enforce student lesson locks', () => {
@@ -996,6 +999,7 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
   const def = normalizeLessonAccess(null);
   assert.deepEqual(def, DEFAULT_LESSON_ACCESS);
   assert.equal(getFirstEnabledLesson(def), 1);
+  assert.equal(hasAnyLockedLesson(def), false);
 
   // 2. Preset 'only1' opens only Lesson 1 and locks Lessons 2..7
   const only1 = createLessonAccessPreset('only1', 'liha1634@gmail.com');
@@ -1004,11 +1008,47 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
   assert.equal(isLessonEnabled(only1, 3), false);
   assert.equal(isLessonEnabled(only1, 7), false);
   assert.equal(only1.updatedBy, 'liha1634@gmail.com');
+  assert.equal(hasAnyLockedLesson(only1), true);
 
   // Student requesting Lesson 1 is allowed; requesting Lesson 2 or 3 is blocked and redirected to Lesson 1
   assert.deepEqual(resolveAllowedStudentLesson(only1, 1), { allowed: true, targetLesson: 1 });
   assert.deepEqual(resolveAllowedStudentLesson(only1, 2), { allowed: false, targetLesson: 1 });
   assert.deepEqual(resolveAllowedStudentLesson(only1, 3), { allowed: false, targetLesson: 1 });
+
+  // Render gate: before server check completes on a fresh browser, canRender is false ('syncing')
+  assert.deepEqual(evaluateStudentLessonRenderGate(def, 2, false), {
+    canRender: false,
+    reason: 'syncing',
+    effectiveLesson: 2,
+    redirectLesson: 1,
+  });
+
+  // Render gate: once server check completes with 'only1', Lesson 1 is allowed and Lesson 2 is blocked
+  assert.deepEqual(evaluateStudentLessonRenderGate(only1, 1, true), {
+    canRender: true,
+    reason: 'allowed',
+    effectiveLesson: 1,
+    redirectLesson: 1,
+  });
+  assert.deepEqual(evaluateStudentLessonRenderGate(only1, 2, true), {
+    canRender: false,
+    reason: 'lesson_locked',
+    effectiveLesson: 1,
+    redirectLesson: 1,
+  });
+
+  // Firestore payload builder strictly outputs l1..l7 booleans and authorized updatedBy
+  const payload = buildLessonAccessFirestoreFields(only1, 'unknown@example.com');
+  assert.deepEqual(payload, {
+    l1: true,
+    l2: false,
+    l3: false,
+    l4: false,
+    l5: false,
+    l6: false,
+    l7: false,
+    updatedBy: 'liha1634@gmail.com',
+  });
 
   // 3. Firestore format normalization (l1..l7 keys)
   const fromFirestore = normalizeLessonAccess({
@@ -1028,9 +1068,16 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
   assert.equal(getFirstEnabledLesson(fromFirestore), 2);
   assert.deepEqual(resolveAllowedStudentLesson(fromFirestore, 1), { allowed: false, targetLesson: 2 });
 
-  // 4. All locked preset returns null for getFirstEnabledLesson
+  // 4. All locked preset returns null for getFirstEnabledLesson and 'all_locked' on render gate
   const allLocked = createLessonAccessPreset('allLocked');
   assert.equal(getFirstEnabledLesson(allLocked), null);
   assert.deepEqual(resolveAllowedStudentLesson(allLocked, 1), { allowed: false, targetLesson: null });
+  assert.deepEqual(evaluateStudentLessonRenderGate(allLocked, 1, true), {
+    canRender: false,
+    reason: 'all_locked',
+    effectiveLesson: 1,
+    redirectLesson: null,
+  });
 });
+
 

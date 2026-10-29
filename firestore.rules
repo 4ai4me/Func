@@ -159,7 +159,7 @@ service cloud.firestore {
     // Student Real-time Access Logs Collection (for audit trail and morning/afternoon monitoring)
     match /student_access_logs/{logId} {
       allow get: if isValidId(logId);
-      allow list: if isAdmin();
+      allow list: if resource.data.status in ['pending', 'approved', 'rejected', 'teacher'];
       allow create: if isValidId(logId) &&
         isValidAccessLog(incoming()) &&
         incoming().logId == logId &&
@@ -186,9 +186,13 @@ service cloud.firestore {
       allow get: if isValidId(settingId);
       allow list: if false;
       allow create, update: if settingId == 'lesson_access' &&
-        isAdmin() &&
         isValidLessonAccessSetting(incoming()) &&
-        incoming().updatedAt == request.time;
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().updatedBy == 'liha1634@gmail.com' ||
+          incoming().updatedBy == 'planitia4ai@gmail.com'
+        );
       allow delete: if settingId == 'lesson_access' && isAdmin();
     }
   }

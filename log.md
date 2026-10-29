@@ -246,3 +246,32 @@
   - [x] `src/utils/mathLogic.test.ts`:
     - 차시별 ON/OFF 정규화, 프리셋 생성, 학생 접근 허용/차단 리다이렉트 로직 단위 테스트 추가 (`26/26` 전원 통과)
 - **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (26/26 통과), `lint_applet` (0 errors), `compile_applet` 및 `npm run build` 통과, `playwright-cli` 실제 브라우저에서 교사 모드 `1차시만 열기` 클릭 후 학생 모드 `?lesson=2` 접속 시 1차시 유지 및 2~7차시 `잠김` 배지/진입 차단 동작 확인 완료.
+
+---
+
+## [2026-10-29] 다른 PC·브라우저 간 차시 잠금 미반영 원인 해결, 명시적 서버 저장 버튼 추가 및 학생 우회 예외 차단 PoC
+
+- **작업 Tier**: Tier 2 (Firestore 서버 동기화 조건 개선 + 교사 화면 서버 저장 버튼/동기화 상태 배너 추가 + 학생 초기 로딩 레이스 컨디션 및 6대 우회 경로 차단 게이트 구현 + 멀티 브라우저 세션 PoC 검증)
+- **요청 내용**:
+  - 관리자가 차시를 잠갔음에도 다른 PC나 다른 브라우저에서 테스트했을 때 여전히 열려 있는 현상의 원인을 파악하고, 별도 서버 저장 버튼/동기화 확인 기능 추가 및 학습자가 잠긴 차시에 접근할 수 있는 예외 상황이 없도록 PoC 검증 및 수정
+- **원인 분석**:
+  1. 기존 `handleUpdateLessonAccess`가 `if (firebaseUser && isAuthorizedAdminEmail(...))` 조건이 참일 때만 Firestore(`/app_settings/lesson_access`)에 저장하고, 그렇지 않으면 현재 브라우저의 `localStorage`에만 저장한 뒤 `"저장됨"` 토스트를 띄웠음 → 다른 브라우저나 다른 PC(`localStorage`가 비어 있는 환경)에서는 서버에 `/app_settings/lesson_access` 문서가 없어 기본값(`DEFAULT_LESSON_ACCESS`, 1~7차시 전체 열림)으로 동작함.
+  2. 신규 브라우저 접속 시 Firestore 응답이 도착하기 전 약 0.3~1초 동안 기본값(`전체 열림`)으로 먼저 렌더링되어, `?lesson=2` 등으로 접속 시 잠긴 차시가 잠깐 열리거나 진입되는 초기 로딩 레이스 컨디션이 존재했음.
+- **구현 내역 (Definition of Done)**:
+  - [x] `firestore.rules`:
+    - `/app_settings/lesson_access` 규칙이 스키마 검증(`isValidLessonAccessSetting`) 및 관리자 식별자(`isAdmin()` 또는 관리자 이메일) 충족 시 교사 모드에서 항상 서버에 기록되도록 업데이트 및 `DeployRules` 배포 완료
+    - `/student_access_logs/{logId}` 목록 조회 규칙 보완으로 교사 모드 콘솔 권한 오류 제거
+  - [x] `src/utils/mathLogic.ts` & `src/utils/mathLogic.test.ts`:
+    - `hasAnyLockedLesson`, `buildLessonAccessFirestoreFields`, `evaluateStudentLessonRenderGate` 순수 함수 구현 및 단위 테스트(`26/26` 통과) 검증
+  - [x] `src/components/TeacherView.tsx`:
+    - **`[차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)]`** 명시적 저장 버튼(`#btn-save-lesson-access-server`), **`[서버 상태 확인]`** 버튼, 실시간 클라우드 동기화 상태 배너(`클라우드 서버 저장 완료` / 현재 서버 기준 잠긴 차시 목록 / 마지막 동기화 시각) 추가
+  - [x] `src/App.tsx` & `src/components/StudentEvaluationModal.tsx`:
+    - `persistLessonAccessToCloud`: 토글 변경 시 자동 서버 저장 + 명시적 서버 저장 버튼 클릭 시 `setDoc` 후 `getDocFromServer`로 실제 서버 반영 여부까지 이중 확인
+    - `refreshLessonAccessFromServer`: 앱 마운트, 창 포커스(`focus`), 탭 전환(`visibilitychange`) 시 `getDocFromServer`로 서버 최신 잠금 상태를 즉시 조회하며, 기존 교사 브라우저 `localStorage`에 잠금 설정이 있고 서버 문서가 비어 있으면 자동으로 서버에 초기 동기화 수행
+    - 학생 렌더링 게이트(`evaluateStudentLessonRenderGate`): 서버 잠금 상태 확인 전(`!lessonAccessCheckedServer`)까지 잠긴 차시 렌더링을 보류(`syncing` 화면 표시)하고, `?lesson=2` URL 조작·뒤로가기(`popstate`)·평가 결과 모달 바로가기·잠긴 차시 답안 변경(`onUpdate`)을 모두 차단
+- **회귀 및 멀티 브라우저 PoC 확인**:
+  - `npx tsx --test src/utils/mathLogic.test.ts` (26/26 통과), `lint_applet` (0 errors), `compile_applet` 통과
+  - `playwright-cli` 멀티 세션 PoC:
+    1. 브라우저 세션 1(`?mode=teacher`)에서 `1차시만 열기` 및 `[차시 잠금 설정 서버 저장]` 실행 후 브라우저 완전 종료(`playwright-cli close`)
+    2. 완전히 새로운 브라우저 세션 2(`localStorage` 빈 상태)에서 `/?mode=student&lesson=2`로 접속 시 Firestore 서버에서 `2~7차시 OFF` 설정을 즉시 불러와 `2차시` 진입을 차단하고 `1차시`로 강제 이동 및 안내 배너 표시 확인 (콘솔 에러 0건)
+

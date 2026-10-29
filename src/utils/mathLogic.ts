@@ -4256,3 +4256,91 @@ export function createLessonAccessPreset(
   }
   return base;
 }
+
+export function hasAnyLockedLesson(config: LessonAccessConfig): boolean {
+  return ALL_LESSON_NUMBERS.some((num) => !config[num]);
+}
+
+export function buildLessonAccessFirestoreFields(
+  config: LessonAccessConfig,
+  updatedByEmail?: string
+): {
+  l1: boolean;
+  l2: boolean;
+  l3: boolean;
+  l4: boolean;
+  l5: boolean;
+  l6: boolean;
+  l7: boolean;
+  updatedBy: string;
+} {
+  const normalized = normalizeLessonAccess(config);
+  const rawEmail = (updatedByEmail || normalized.updatedBy || 'liha1634@gmail.com').trim();
+  const safeUpdatedBy =
+    rawEmail === 'liha1634@gmail.com' || rawEmail === 'planitia4ai@gmail.com'
+      ? rawEmail
+      : 'liha1634@gmail.com';
+  return {
+    l1: Boolean(normalized[1]),
+    l2: Boolean(normalized[2]),
+    l3: Boolean(normalized[3]),
+    l4: Boolean(normalized[4]),
+    l5: Boolean(normalized[5]),
+    l6: Boolean(normalized[6]),
+    l7: Boolean(normalized[7]),
+    updatedBy: safeUpdatedBy,
+  };
+}
+
+export interface StudentLessonRenderGateResult {
+  canRender: boolean;
+  reason: 'syncing' | 'all_locked' | 'lesson_locked' | 'allowed';
+  effectiveLesson: LessonTabNumber;
+  redirectLesson: LessonTabNumber | null;
+}
+
+export function evaluateStudentLessonRenderGate(
+  config: LessonAccessConfig,
+  requestedLesson: LessonTabNumber,
+  isServerChecked: boolean
+): StudentLessonRenderGateResult {
+  const firstOpen = getFirstEnabledLesson(config);
+  const safeEffective: LessonTabNumber = isLessonEnabled(config, requestedLesson)
+    ? requestedLesson
+    : firstOpen ?? 1;
+
+  if (!isServerChecked) {
+    return {
+      canRender: false,
+      reason: 'syncing',
+      effectiveLesson: safeEffective,
+      redirectLesson: firstOpen,
+    };
+  }
+
+  if (firstOpen === null) {
+    return {
+      canRender: false,
+      reason: 'all_locked',
+      effectiveLesson: 1,
+      redirectLesson: null,
+    };
+  }
+
+  if (!isLessonEnabled(config, requestedLesson)) {
+    return {
+      canRender: false,
+      reason: 'lesson_locked',
+      effectiveLesson: firstOpen,
+      redirectLesson: firstOpen,
+    };
+  }
+
+  return {
+    canRender: true,
+    reason: 'allowed',
+    effectiveLesson: requestedLesson,
+    redirectLesson: requestedLesson,
+  };
+}
+

@@ -91,7 +91,11 @@ interface TeacherViewProps {
   onPrintStudentReport: (student: StudentRecord) => void;
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
   lessonAccess: LessonAccessConfig;
-  onUpdateLessonAccess: (nextConfig: LessonAccessConfig, reasonLabel?: string) => void;
+  lessonAccessSyncStatus?: 'checking' | 'saving' | 'synced' | 'local_only' | 'error';
+  lessonAccessLastSyncedAt?: Date | null;
+  onUpdateLessonAccess: (nextConfig: LessonAccessConfig, reasonLabel?: string) => Promise<boolean> | void;
+  onForceSyncLessonAccessToServer?: () => Promise<boolean> | void;
+  onRefreshLessonAccessFromServer?: () => Promise<void> | void;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -103,7 +107,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onPrintStudentReport,
   onRequestConfirm,
   lessonAccess,
+  lessonAccessSyncStatus = 'synced',
+  lessonAccessLastSyncedAt = null,
   onUpdateLessonAccess,
+  onForceSyncLessonAccessToServer,
+  onRefreshLessonAccessFromServer,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -241,9 +249,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Real-time listener for student access logs
   useEffect(() => {
-    const ref = collection(db, 'student_access_logs');
+    const qLogs = query(
+      collection(db, 'student_access_logs'),
+      where('status', 'in', ['pending', 'approved', 'rejected', 'teacher'])
+    );
     const unsub = onSnapshot(
-      ref,
+      qLogs,
       (snap) => {
         const list: StudentAccessLog[] = [];
         snap.forEach((d) => {
@@ -908,8 +919,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   };
 
   const enabledLessonCount = ALL_LESSON_NUMBERS.filter((n) => lessonAccess[n]).length;
+  const lockedLessonNumbers = ALL_LESSON_NUMBERS.filter((n) => !lessonAccess[n]);
 
-  const handleToggleSingleLesson = (lessonNum: LessonTabNumber) => {
+  const handleToggleSingleLesson = async (lessonNum: LessonTabNumber) => {
     const nextVal = !lessonAccess[lessonNum];
     const nextConfig: LessonAccessConfig = {
       ...lessonAccess,
@@ -921,20 +933,48 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     const label = `${meta ? meta.fullTitle : `${lessonNum}차시`} ${
       nextVal ? '활성화(열림)' : '비활성화(선행 잠금)'
     }`;
-    onUpdateLessonAccess(nextConfig, label);
+    const ok = await onUpdateLessonAccess(nextConfig, label);
     setNotice({
-      text: `[차시 접근 설정] ${label} 처리가 완료되었습니다. 학생 화면에 실시간 반영됩니다.`,
-      type: nextVal ? 'good' : 'info',
+      text:
+        ok === false
+          ? `[차시 접근 설정] ${label} — 현재 브라우저에는 반영되었으나 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
+          : `[차시 접근 서버 저장 완료] ${label} 설정이 클라우드 서버에 저장되어 모든 PC·브라우저의 학생 화면에 즉시 반영되었습니다.`,
+      type: ok === false ? 'warn' : nextVal ? 'good' : 'info',
     });
   };
 
-  const handleApplyLessonPreset = (preset: LessonAccessPreset, presetLabel: string) => {
+  const handleApplyLessonPreset = async (preset: LessonAccessPreset, presetLabel: string) => {
     const nextConfig = createLessonAccessPreset(preset, adminEmail);
-    onUpdateLessonAccess(nextConfig, presetLabel);
+    const ok = await onUpdateLessonAccess(nextConfig, presetLabel);
     setNotice({
-      text: `[차시 일괄 설정] '${presetLabel}' 설정이 적용되었습니다. 학생 화면에 실시간 반영됩니다.`,
-      type: 'good',
+      text:
+        ok === false
+          ? `[차시 일괄 설정] '${presetLabel}' — 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
+          : `[차시 일괄 서버 저장 완료] '${presetLabel}' 설정이 클라우드 서버에 저장되어 모든 PC·브라우저의 학생 화면에 즉시 반영되었습니다.`,
+      type: ok === false ? 'warn' : 'good',
     });
+  };
+
+  const handleManualServerSaveClick = async () => {
+    if (onForceSyncLessonAccessToServer) {
+      const ok = await onForceSyncLessonAccessToServer();
+      setNotice({
+        text:
+          ok === false
+            ? '차시 잠금 설정 서버 저장 중 오류가 발생했습니다. 네트워크 연결을 확인 후 다시 시도해 주세요.'
+            : `현재 차시 활성/잠금 설정(열림 ${enabledLessonCount}개, 잠금 ${lockedLessonNumbers.length}개)이 클라우드 서버에 확실하게 저장되었습니다. 모든 PC와 다른 브라우저에서도 즉시 동일하게 잠금 적용됩니다.`,
+        type: ok === false ? 'warn' : 'good',
+      });
+    } else {
+      await onUpdateLessonAccess(
+        {
+          ...lessonAccess,
+          updatedAt: new Date().toISOString(),
+          updatedBy: adminEmail,
+        },
+        '현재 차시 잠금 설정 서버 강제 동기화'
+      );
+    }
   };
 
   return (
@@ -968,7 +1008,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <div>
               <div className="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
                 <Lock className="h-3.5 w-3.5" />
-                <span>수업 진도 통제 · 학습자 차시 선행 방지 설정</span>
+                <span>수업 진도 통제 · 학습자 차시 선행 방지 설정 (클라우드 서버 실시간 연동)</span>
               </div>
               <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
                 차시별 학습 활성(ON) / 비활성(OFF) 관리
@@ -1029,11 +1069,95 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           </div>
         </div>
 
+        {/* Cloud Server Sync Verification & Explicit Save Action Bar */}
+        <div
+          id="teacher-lesson-access-sync-bar"
+          className={`mt-4 rounded-xl border px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+            lessonAccessSyncStatus === 'synced'
+              ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
+              : lessonAccessSyncStatus === 'saving' || lessonAccessSyncStatus === 'checking'
+              ? 'border-blue-200 bg-blue-50/70 text-blue-950'
+              : 'border-amber-300 bg-amber-50/80 text-amber-950'
+          }`}
+        >
+          <div className="space-y-0.5 text-xs sm:text-sm">
+            <div className="font-extrabold flex items-center gap-1.5 flex-wrap">
+              {lessonAccessSyncStatus === 'synced' ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>
+                    클라우드 서버 저장 완료 · 모든 PC 및 다른 브라우저(크롬·엣지·사파리·태블릿) 학생 화면에 동일 적용됨
+                  </span>
+                </>
+              ) : lessonAccessSyncStatus === 'saving' || lessonAccessSyncStatus === 'checking' ? (
+                <>
+                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin shrink-0" />
+                  <span>클라우드 서버에 차시 잠금 설정을 동기화하고 있습니다…</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>
+                    로컬 설정 상태 · 우측 [차시 잠금 설정 서버 저장] 버튼을 누르면 모든 PC·브라우저에 즉시 강제 적용됩니다
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="text-[11px] sm:text-xs text-slate-600">
+              {lockedLessonNumbers.length > 0 ? (
+                <span>
+                  현재 잠금(OFF) 차시:{' '}
+                  <strong className="text-rose-700">
+                    {lockedLessonNumbers.map((n) => `${n}차시`).join(', ')}
+                  </strong>{' '}
+                  (학습자 진입·URL 우회·선행 입력 완전 차단 중)
+                </span>
+              ) : (
+                <span>현재 1~7차시가 모두 열려 있습니다 (선행 제한 없음)</span>
+              )}
+              {lessonAccessLastSyncedAt && (
+                <span className="ml-2 mono text-slate-500">
+                  · 마지막 서버 동기화: {lessonAccessLastSyncedAt.toLocaleTimeString('ko-KR')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {onRefreshLessonAccessFromServer && (
+              <button
+                type="button"
+                onClick={() => onRefreshLessonAccessFromServer()}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors"
+                title="클라우드 서버에 저장된 최신 차시 잠금 설정을 다시 불러와 확인합니다"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>서버 상태 확인</span>
+              </button>
+            )}
+            <button
+              type="button"
+              id="btn-save-lesson-access-server"
+              onClick={handleManualServerSaveClick}
+              disabled={lessonAccessSyncStatus === 'saving'}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-xs transition-all active:scale-95"
+              title="현재 ON/OFF 차시 잠금 설정을 클라우드 서버(Firestore)에 즉시 저장하여 모든 PC와 다른 브라우저에 강제 적용합니다"
+            >
+              <Save className="h-4 w-4" />
+              <span>
+                {lessonAccessSyncStatus === 'saving'
+                  ? '서버 저장 중…'
+                  : '차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)'}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {isLessonAccessOpen && (
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              각 차시를 <strong>ON(활성)</strong> 또는 <strong>OFF(비활성·잠금)</strong>으로 전환하면 학생 화면의 상단 차시 탭과 ‘다음 차시로 이동’ 버튼에 즉시 반영됩니다.
-              비활성(OFF)된 차시는 자물쇠(<Lock className="inline h-3.5 w-3.5 text-slate-500" />)로 잠기며, 학생이 진도를 앞서 나가는 것(선행 학습)을 방지합니다.
+              각 차시를 <strong>ON(활성)</strong> 또는 <strong>OFF(비활성·잠금)</strong>으로 전환하면 클라우드 서버에 즉시 저장되며, 필요 시 상단 <strong>[차시 잠금 설정 서버 저장]</strong> 버튼으로 언제든 수동 강제 저장할 수 있습니다.
+              비활성(OFF)된 차시는 자물쇠(<Lock className="inline h-3.5 w-3.5 text-slate-500" />)로 잠기며, 다른 PC나 다른 브라우저에서 접속한 학생도 탭 클릭·다음 차시 이동·URL 직접 입력(<code className="mono text-xs">?lesson=2</code>) 등 모든 경로에서 접근이 원천 차단됩니다.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
