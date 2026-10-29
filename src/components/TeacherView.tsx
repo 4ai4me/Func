@@ -706,7 +706,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ['1차시 사례 4개 이상', records.filter((x) => x.l1.examples.length >= 4).length],
     ['1차시 증명 4단계 확인', records.filter((x) => x.l1.proofVerified.every(Boolean)).length],
     ['2차시 정당화 기록', records.filter((x) => evaluateRubricL2(x.l2)[4]).length],
-    ['3차시 대우법(문제 1·2) 완료', complete3],
+    ['3차시 합성함수 탐구 완료', complete3],
     ['4차시 귀류법(문제 1·2) 완료', complete4],
     ['5차시 절대부등식1 완료', complete5],
     ['6차시 절대부등식2 완료', complete6],
@@ -1948,9 +1948,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <tr className="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-200">
                     <th className="py-3 px-3.5 text-left">학급</th>
                     <th className="py-3 px-3.5 text-left">식별코드(학번·이름)</th>
-                    <th className="py-3 px-3.5 text-left">1차시 사례/증명</th>
-                    <th className="py-3 px-3.5 text-left">2차시 주제/판단</th>
-                    <th className="py-3 px-3.5 text-left">3차시 대우법</th>
+                     <th className="py-3 px-3.5 text-left">1차시 사례/증명</th>
+                    <th className="py-3 px-3.5 text-left">2차시 여러 가지 함수</th>
+                    <th className="py-3 px-3.5 text-left">3차시 합성함수</th>
                     <th className="py-3 px-3.5 text-left">4차시 귀류법</th>
                     <th className="py-3 px-3.5 text-left">5~7차시 절대부등식</th>
                     <th className="py-3 px-3.5 text-left">교수자 평가 현황 (진행율)</th>
@@ -1980,12 +1980,34 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             사례 {x.l1.examples.length}개 · {x.l1.proofVerified.filter(Boolean).length}/4
                           </td>
                           <td className="py-3 px-3.5 text-slate-700">
-                            {tDef?.tag || '미선택'} ·{' '}
-                            <strong className="text-slate-900">
-                              {({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
-                                x.l2.decision
-                              ] || '미작성'}
-                            </strong>
+                            {x.l2.bogiVerified ||
+                            x.l2.prob6Verified ||
+                            x.l2.prob7Verified ||
+                            x.l2.think1Verified ||
+                            x.l2.think2Verified ? (
+                              <span className="mono">
+                                루브릭 {evaluateRubricL2(x.l2).filter(Boolean).length}/5 ·{' '}
+                                <strong className="text-emerald-700">
+                                  {[
+                                    x.l2.bogiVerified ? '보기' : '',
+                                    x.l2.prob6Verified ? '문6' : '',
+                                    x.l2.prob7Verified ? '문7' : '',
+                                    x.l2.think1Verified || x.l2.think2Verified ? '생각' : '',
+                                  ]
+                                    .filter(Boolean)
+                                    .join('·')}
+                                </strong>
+                              </span>
+                            ) : (
+                              <>
+                                {tDef?.tag || '미선택'} ·{' '}
+                                <strong className="text-slate-900">
+                                  {({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
+                                    x.l2.decision
+                                  ] || '미작성'}
+                                </strong>
+                              </>
+                            )}
                           </td>
                           <td className="py-3 px-3.5 mono text-slate-700">
                             {x.l3 ? evaluateRubricL3(x.l3).filter(Boolean).length : 0}/5
@@ -2166,28 +2188,43 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
-                    <div className="text-xs font-bold text-emerald-700">2차시 · 학생 주도형 수사 (반례와 정당화)</div>
+                    <div className="text-xs font-bold text-emerald-700">
+                      2차시 · 여러 가지 함수 (일대일함수·일대일대응·항등·상수함수)
+                    </div>
                     {[
                       [
-                        '선택한 명제',
-                        selectedStudent.l2.topic === 'd'
-                          ? selectedStudent.l2.customStatement
-                          : TOPICS[selectedStudent.l2.topic as TopicId]?.statement,
+                        '[보기] 일대일함수와 일대일대응 비교',
+                        selectedStudent.l2.bogi2Reason ||
+                          (selectedStudent.l2.topic === 'd'
+                            ? selectedStudent.l2.customStatement
+                            : TOPICS[selectedStudent.l2.topic as TopicId]?.statement),
                       ],
                       [
-                        '사례 탐색 / 판단',
-                        `${selectedStudent.l2.examples.length}개 · ${
-                          ({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
-                            selectedStudent.l2.decision
-                          ] || '미작성'
-                        }`,
+                        '[문제 6] 일대일함수·일대일대응 판별 이유',
+                        selectedStudent.l2.prob6BijectiveReason ||
+                          selectedStudent.l2.prob6NonOneToOneReason ||
+                          selectedStudent.l2.guess,
                       ],
-                      ['추측과 이유', selectedStudent.l2.guess],
                       [
-                        '반례 / 증명 / 미해결 탐구',
-                        selectedStudent.l2.decision === 'false'
+                        '[문제 7] 항등함수·상수함수 그래프 판별',
+                        selectedStudent.l2.prob7Graph2Reason
+                          ? `항등: (${selectedStudent.l2.prob7IdentityChoice || '?'}) · 상수: (${selectedStudent.l2.prob7ConstantChoice || '?'})\n(2) 이유: ${selectedStudent.l2.prob7Graph2Reason}`
+                          : selectedStudent.l2.decision === 'false'
                           ? `반례 n=${selectedStudent.l2.counter || '(미작성)'}\n${selectedStudent.l2.counterReason}`
                           : selectedStudent.l2.proofText,
+                      ],
+                      [
+                        '[생각 넓히기] 활동 1 (영화관) · 활동 2 (동아리 투표)',
+                        [
+                          selectedStudent.l2.think1BijectiveCase
+                            ? `[활동 1] 일대일대응: ${selectedStudent.l2.think1BijectiveCase}\n[활동 1] 상수함수: ${selectedStudent.l2.think1ConstantCase || ''}`
+                            : '',
+                          selectedStudent.l2.think2IdentityCase
+                            ? `[활동 2] 항등함수: ${selectedStudent.l2.think2IdentityCase}\n[활동 2] 상수함수: ${selectedStudent.l2.think2ConstantCase || ''}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n'),
                       ],
                       ['2차시 성찰', selectedStudent.l2.reflection],
                     ].map(([label, val]) => (
@@ -2201,15 +2238,45 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
-                    <div className="text-xs font-bold text-indigo-700">3차시 · 대우법 수사 (문제 1·2)</div>
+                    <div className="text-xs font-bold text-indigo-700">
+                      3차시 · 합성함수 탐구 (뜻·함숫값·교환법칙·결합법칙)
+                    </div>
                     {[
                       [
-                        '문제 1 (n²이 짝수이면 n도 짝수) 증명',
-                        `단계 확인: ${selectedStudent.l3?.prob1Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l3?.prob1ProofText || '미작성'}`,
+                        '[생각 열기 · 문제 1] 합성함수의 뜻과 함숫값 구하기',
+                        [
+                          selectedStudent.l3?.openMeaningReason
+                            ? `[생각 열기] 아람:${selectedStudent.l3.openAramPrice || '-'}, 재영:${selectedStudent.l3.openJaeyoungPrice || '-'}, 하영:${selectedStudent.l3.openHayoungPrice || '-'}\n${selectedStudent.l3.openMeaningReason}`
+                            : '',
+                          selectedStudent.l3?.p1Reason
+                            ? `[문제 1] (g∘f)(2)=${selectedStudent.l3.p1_1_ans || '-'}, (f∘g)(-1)=${selectedStudent.l3.p1_2_ans || '-'}, (f∘f)(-3)=${selectedStudent.l3.p1_3_ans || '-'}\n${selectedStudent.l3.p1Reason}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n') ||
+                          selectedStudent.l3?.prob1ProofText ||
+                          '미작성',
                       ],
                       [
-                        '문제 2 (n²이 3의 배수이면 n도 3의 배수) 증명',
-                        `단계 확인: ${selectedStudent.l3?.prob2Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l3?.prob2ProofText || '미작성'}`,
+                        '[문제 · 문제 2] 합성함수의 식과 교환법칙 불성립 탐구',
+                        [
+                          selectedStudent.l3?.ex1Reason
+                            ? `[교환법칙 탐구] (g∘f)(x)=${selectedStudent.l3.ex1_gf || '-'}, (f∘g)(x)=${selectedStudent.l3.ex1_fg || '-'}\n${selectedStudent.l3.ex1Reason}`
+                            : '',
+                          selectedStudent.l3?.p2Reason
+                            ? `[문제 2] (g∘f)(x)=${selectedStudent.l3.p2_1_gf || '-'}, (f∘g)(x)=${selectedStudent.l3.p2_2_fg || '-'}, (g∘g)(x)=${selectedStudent.l3.p2_3_gg || '-'}\n${selectedStudent.l3.p2Reason}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n') ||
+                          selectedStudent.l3?.prob2ProofText ||
+                          '미작성',
+                      ],
+                      [
+                        '[생각 넓히기] 세 함수의 합성과 결합법칙',
+                        selectedStudent.l3?.thinkComparison
+                          ? `((f∘g)∘h)(x)=${selectedStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${selectedStudent.l3.think_fgh_right || '-'}\n${selectedStudent.l3.thinkComparison}`
+                          : '미작성',
                       ],
                       ['3차시 성찰', selectedStudent.l3?.reflection1],
                     ].map(([label, val]) => (
@@ -2665,29 +2732,42 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-emerald-600" />
-                      2차시 · 학생 주도형 수사 (반례 또는 정당화)
+                      2차시 · 여러 가지 함수 (일대일·항등·상수함수)
                     </div>
                     {[
                       [
-                        '선택한 명제',
-                        selectedStudent.l2.topic === 'd'
-                          ? selectedStudent.l2.customStatement
-                          : TOPICS[selectedStudent.l2.topic as TopicId]?.statement,
+                        '[보기] 일대일함수와 일대일대응 비교',
+                        selectedStudent.l2.bogi2Reason ||
+                          (selectedStudent.l2.topic === 'd'
+                            ? selectedStudent.l2.customStatement
+                            : TOPICS[selectedStudent.l2.topic as TopicId]?.statement),
                       ],
                       [
-                        '사례 탐색 / 판단',
-                        `${selectedStudent.l2.examples.length}개 · ${
-                          ({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
-                            selectedStudent.l2.decision
-                          ] || '미작성'
-                        }`,
+                        '[문제 6] 일대일함수·일대일대응 판별 이유',
+                        selectedStudent.l2.prob6BijectiveReason ||
+                          selectedStudent.l2.prob6NonOneToOneReason ||
+                          selectedStudent.l2.guess,
                       ],
-                      ['추측과 이유', selectedStudent.l2.guess],
                       [
-                        '반례 / 증명 / 미해결 탐구',
-                        selectedStudent.l2.decision === 'false'
+                        '[문제 7] 항등함수·상수함수 그래프 판별',
+                        selectedStudent.l2.prob7Graph2Reason
+                          ? `항등: (${selectedStudent.l2.prob7IdentityChoice || '?'}) · 상수: (${selectedStudent.l2.prob7ConstantChoice || '?'})\n(2) 이유: ${selectedStudent.l2.prob7Graph2Reason}`
+                          : selectedStudent.l2.decision === 'false'
                           ? `반례 n=${selectedStudent.l2.counter || '(미작성)'}\n${selectedStudent.l2.counterReason}`
                           : selectedStudent.l2.proofText,
+                      ],
+                      [
+                        '[생각 넓히기] 활동 1 (영화관) · 활동 2 (동아리 투표)',
+                        [
+                          selectedStudent.l2.think1BijectiveCase
+                            ? `[활동 1] 일대일대응: ${selectedStudent.l2.think1BijectiveCase}\n[활동 1] 상수함수: ${selectedStudent.l2.think1ConstantCase || ''}`
+                            : '',
+                          selectedStudent.l2.think2IdentityCase
+                            ? `[활동 2] 항등함수: ${selectedStudent.l2.think2IdentityCase}\n[활동 2] 상수함수: ${selectedStudent.l2.think2ConstantCase || ''}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n'),
                       ],
                       ['2차시 성찰', selectedStudent.l2.reflection],
                     ].map(([label, val]) => (
@@ -2703,16 +2783,44 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-indigo-600" />
-                      3차시 · 힌트 안내형 수사 (대우법 문제 1·2)
+                      3차시 · 합성함수 탐구 (뜻·함숫값·교환법칙·결합법칙)
                     </div>
                     {[
                       [
-                        '문제 1 (n²이 짝수 → n도 짝수)',
-                        `단계 확인: ${selectedStudent.l3?.prob1Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l3?.prob1ProofText || '미작성'}`,
+                        '[생각 열기 · 문제 1] 합성함수의 뜻과 함숫값 구하기',
+                        [
+                          selectedStudent.l3?.openMeaningReason
+                            ? `[생각 열기] 아람:${selectedStudent.l3.openAramPrice || '-'}, 재영:${selectedStudent.l3.openJaeyoungPrice || '-'}, 하영:${selectedStudent.l3.openHayoungPrice || '-'}\n${selectedStudent.l3.openMeaningReason}`
+                            : '',
+                          selectedStudent.l3?.p1Reason
+                            ? `[문제 1] (g∘f)(2)=${selectedStudent.l3.p1_1_ans || '-'}, (f∘g)(-1)=${selectedStudent.l3.p1_2_ans || '-'}, (f∘f)(-3)=${selectedStudent.l3.p1_3_ans || '-'}\n${selectedStudent.l3.p1Reason}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n') ||
+                          selectedStudent.l3?.prob1ProofText ||
+                          '미작성',
                       ],
                       [
-                        '문제 2 (n²이 3의 배수 → n도 3의 배수)',
-                        `단계 확인: ${selectedStudent.l3?.prob2Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l3?.prob2ProofText || '미작성'}`,
+                        '[문제 · 문제 2] 합성함수의 식과 교환법칙 불성립 탐구',
+                        [
+                          selectedStudent.l3?.ex1Reason
+                            ? `[교환법칙 탐구] (g∘f)(x)=${selectedStudent.l3.ex1_gf || '-'}, (f∘g)(x)=${selectedStudent.l3.ex1_fg || '-'}\n${selectedStudent.l3.ex1Reason}`
+                            : '',
+                          selectedStudent.l3?.p2Reason
+                            ? `[문제 2] (g∘f)(x)=${selectedStudent.l3.p2_1_gf || '-'}, (f∘g)(x)=${selectedStudent.l3.p2_2_fg || '-'}, (g∘g)(x)=${selectedStudent.l3.p2_3_gg || '-'}\n${selectedStudent.l3.p2Reason}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join('\n\n') ||
+                          selectedStudent.l3?.prob2ProofText ||
+                          '미작성',
+                      ],
+                      [
+                        '[생각 넓히기] 세 함수의 합성과 결합법칙',
+                        selectedStudent.l3?.thinkComparison
+                          ? `((f∘g)∘h)(x)=${selectedStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${selectedStudent.l3.think_fgh_right || '-'}\n${selectedStudent.l3.thinkComparison}`
+                          : '미작성',
                       ],
                       ['3차시 성찰 1', selectedStudent.l3?.reflection1],
                       ['3차시 성찰 2', selectedStudent.l3?.reflection2],

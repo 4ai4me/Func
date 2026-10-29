@@ -620,7 +620,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/5 · 3차시 {done3.filter(Boolean).length}/5 · 4차시 {done4.filter(Boolean).length}/5 · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/5 · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
                     </span>
                   </div>
 
@@ -847,7 +847,7 @@ export default function App() {
                       {activeLessonTab === 7 && '07차시 · 무리함수 탐구 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
                     </span>
                     <span className="font-semibold mono text-slate-600">
-                      권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / 5
+                      권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / {STAGE_TITLES[activeLessonTab].length}
                     </span>
                   </div>
 
@@ -887,6 +887,8 @@ export default function App() {
                 className={`no-print grid ${
                   STAGE_TITLES[activeLessonTab].length === 6
                     ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
+                    : STAGE_TITLES[activeLessonTab].length === 4
+                    ? 'grid-cols-2 sm:grid-cols-4'
                     : 'grid-cols-5'
                 } gap-2 sm:gap-3`}
               >
@@ -1227,26 +1229,62 @@ export default function App() {
               {printingStudent.l1.proofText || printingStudent.l1.bridge || '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>2차시 선택 명제:</strong>{' '}
-              {printingStudent.l2.topic === 'd'
-                ? printingStudent.l2.customStatement
-                : TOPICS[printingStudent.l2.topic as TopicId]?.statement || '미선택'}
+              <strong>2차시 일대일함수와 일대일대응 [보기·문제 6]:</strong>{' '}
+              {printingStudent.l2.prob6BijectiveReason ||
+                printingStudent.l2.bogi2Reason ||
+                printingStudent.l2.guess ||
+                '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>2차시 판단 및 논증:</strong>{' '}
-              {({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
-                printingStudent.l2.decision
-              ] || '미작성'}{' '}
-              /{' '}
-              {printingStudent.l2.decision === 'false'
-                ? `반례 n=${printingStudent.l2.counter}: ${printingStudent.l2.counterReason}`
-                : printingStudent.l2.proofText || '미작성'}
+              <strong>2차시 항등·상수함수 및 실생활 [문제 7·생각 넓히기]:</strong>{' '}
+              {[
+                printingStudent.l2.prob7Graph2Reason
+                  ? `[문제 7] ${printingStudent.l2.prob7Graph2Reason}`
+                  : '',
+                printingStudent.l2.think1BijectiveCase
+                  ? `[활동 1] 일대일대응: ${printingStudent.l2.think1BijectiveCase} / 상수함수: ${printingStudent.l2.think1ConstantCase || ''}`
+                  : '',
+                printingStudent.l2.think2IdentityCase
+                  ? `[활동 2] 항등함수: ${printingStudent.l2.think2IdentityCase} / 상수함수: ${printingStudent.l2.think2ConstantCase || ''}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n') ||
+                printingStudent.l2.proofText ||
+                '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>3차시 대우법 [문제 1·짝수]:</strong> {printingStudent.l3?.prob1ProofText || '미작성'}
+              <strong>3차시 합성함수의 뜻과 함숫값 [생각 열기 · 문제 1]:</strong>{' '}
+              {[
+                printingStudent.l3?.openMeaningReason
+                  ? `[생각 열기] 아람:${printingStudent.l3.openAramPrice || '-'}, 재영:${printingStudent.l3.openJaeyoungPrice || '-'}, 하영:${printingStudent.l3.openHayoungPrice || '-'} / ${printingStudent.l3.openMeaningReason}`
+                  : '',
+                printingStudent.l3?.p1Reason
+                  ? `[문제 1] (g∘f)(2)=${printingStudent.l3.p1_1_ans || '-'}, (f∘g)(-1)=${printingStudent.l3.p1_2_ans || '-'}, (f∘f)(-3)=${printingStudent.l3.p1_3_ans || '-'} / ${printingStudent.l3.p1Reason}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n') ||
+                printingStudent.l3?.prob1ProofText ||
+                '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>3차시 대우법 [문제 2·3의 배수]:</strong> {printingStudent.l3?.prob2ProofText || '미작성'}
+              <strong>3차시 합성함수의 식과 교환·결합법칙 [문제 · 문제 2 · 생각 넓히기]:</strong>{' '}
+              {[
+                printingStudent.l3?.ex1Reason
+                  ? `[교환법칙 탐구] (g∘f)(x)=${printingStudent.l3.ex1_gf || '-'}, (f∘g)(x)=${printingStudent.l3.ex1_fg || '-'} / ${printingStudent.l3.ex1Reason}`
+                  : '',
+                printingStudent.l3?.p2Reason
+                  ? `[문제 2] (g∘f)(x)=${printingStudent.l3.p2_1_gf || '-'}, (f∘g)(x)=${printingStudent.l3.p2_2_fg || '-'}, (g∘g)(x)=${printingStudent.l3.p2_3_gg || '-'} / ${printingStudent.l3.p2Reason}`
+                  : '',
+                printingStudent.l3?.thinkComparison
+                  ? `[생각 넓히기] ((f∘g)∘h)(x)=${printingStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${printingStudent.l3.think_fgh_right || '-'} / ${printingStudent.l3.thinkComparison}`
+                  : '',
+              ]
+                .filter(Boolean)
+                .join('\n') ||
+                printingStudent.l3?.prob2ProofText ||
+                '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
               <strong><MathText text="4차시 귀류법 [문제 1·√2]:" /></strong>{' '}

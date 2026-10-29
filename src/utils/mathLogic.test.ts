@@ -268,7 +268,7 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   s.l2.topic = 'a';
   assert.equal(evaluateLevel2Completion(s.l2)[0], true);
 
-  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false, false]);
+  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false]);
   s.l3.parityExamples = [calc3Parity(1), calc3Parity(2), calc3Parity(3)];
   s.l3.contrapositiveChoice = 'contrapositive';
   assert.equal(evaluateLevel3Completion(s.l3)[0], true);
@@ -837,5 +837,147 @@ test('cleanStudentState strips legacy auto-filled REAL_LIFE_TEMPLATES strings wh
   assert.equal(cleanedCustom.l1.realLifeWhyFunc, '모든 도서마다 청구기호가 빠짐없이 오직 하나씩 부여되기 때문이다.');
 });
 
+import {
+  validateL2Bogi,
+  validateL2Prob6,
+  validateL2Prob7,
+  validateL2Think1,
+  validateL2Think2,
+  evaluateRubricL2,
+} from './mathLogic.ts';
 
+test('Lesson 2 (여러 가지 함수) validation, completion, and rubric helpers work accurately', () => {
+  const s = createInitialStudentState();
+  assert.deepEqual(evaluateLevel2Completion(s.l2), [false, false, false, false]);
 
+  // Step 0: [보기] 일대일함수와 일대일대응
+  assert.equal(validateL2Bogi(s.l2).ok, false);
+  s.l2.bogi1IsOneToOne = 'yes';
+  s.l2.bogi1IsBijective = 'yes';
+  s.l2.bogi2IsOneToOne = 'no';
+  s.l2.bogi2Reason = '-1 ≠ 1이지만 g(-1) = g(1) = 1이므로 일대일함수가 아니다.';
+  s.l2.bogiConditionChoice = 'range_eq_codomain';
+  assert.equal(validateL2Bogi(s.l2).ok, true);
+  s.l2.bogiVerified = true;
+  assert.equal(evaluateLevel2Completion(s.l2)[0], true);
+
+  // Step 1: [문제 6] 일대일함수와 일대일대응 판별
+  assert.equal(validateL2Prob6(s.l2).ok, false);
+  s.l2.prob6_1OneToOne = 'yes';
+  s.l2.prob6_1Bijective = 'yes';
+  s.l2.prob6_2OneToOne = 'no';
+  s.l2.prob6_2Bijective = 'no';
+  s.l2.prob6_3OneToOne = 'no';
+  s.l2.prob6_3Bijective = 'no';
+  s.l2.prob6_4OneToOne = 'yes';
+  s.l2.prob6_4Bijective = 'yes';
+  s.l2.prob6NonOneToOneReason = 'x = -1과 x = 1일 때 함숫값이 같으므로 일대일함수가 아니다.';
+  s.l2.prob6BijectiveReason = '(1)과 (4)는 일대일함수이면서 치역과 공역이 모두 실수 전체의 집합으로 같아 일대일대응이다.';
+  assert.equal(validateL2Prob6(s.l2).ok, true);
+  s.l2.prob6Verified = true;
+  assert.equal(evaluateLevel2Completion(s.l2)[1], true);
+
+  // Step 2: [문제 7] 항등함수와 상수함수의 그래프
+  assert.equal(validateL2Prob7(s.l2).ok, false);
+  s.l2.prob7IdentityChoice = '1';
+  s.l2.prob7ConstantChoice = '3';
+  s.l2.prob7Graph2Reason = 'x = 1에 무수히 많은 y값이 대응하고 1이 아닌 x에는 대응하는 y값이 없어 함수가 아니다.';
+  assert.equal(validateL2Prob7(s.l2).ok, true);
+  s.l2.prob7Verified = true;
+  assert.equal(evaluateLevel2Completion(s.l2)[2], true);
+
+  // Step 3: [생각 넓히기] 활동 1 & 활동 2 + 성찰
+  assert.equal(validateL2Think1(s.l2).ok, false);
+  s.l2.think1BijectiveCase = '학생 5명이 상영 중인 영화 5편 중 서로 다른 영화를 1편씩 선택하는 경우';
+  s.l2.think1ConstantCase = '학생 5명이 모두 같은 영화 1편만 선택하는 경우';
+  assert.equal(validateL2Think1(s.l2).ok, true);
+  s.l2.think1Verified = true;
+
+  assert.equal(validateL2Think2(s.l2).ok, false);
+  // Before think2Verified, step 3 is still false
+  assert.equal(evaluateLevel2Completion(s.l2)[3], false);
+  s.l2.think2IdentityCase = '동아리 회원 4명이 모두 자기 자신에게 투표하는 경우';
+  s.l2.think2ConstantCase = '동아리 회원 4명이 모두 특정한 한 명의 회원에게만 투표하는 경우';
+  assert.equal(validateL2Think2(s.l2).ok, true);
+  s.l2.think2Verified = true;
+
+  s.l2.reflection = '일대일함수가 일대일대응이 되려면 치역과 공역이 같아야 하며, 항등함수와 상수함수의 그래프 특징을 이해했다.';
+  assert.equal(evaluateLevel2Completion(s.l2)[3], true);
+  assert.deepEqual(evaluateRubricL2(s.l2), [true, true, true, true, true]);
+});
+
+import {
+  validateL3Open,
+  validateL3Prob1,
+  validateL3Ex1,
+  validateL3Prob2,
+  validateL3Think,
+  evaluateRubricL3,
+} from './mathLogic.ts';
+
+test('Lesson 3 (합성함수 탐구) validation, completion, and rubric helpers work accurately', () => {
+  const s = createInitialStudentState();
+  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false]);
+
+  // Step 0: [생각 열기] 음식과 가격 대응 및 합성함수의 뜻
+  assert.equal(validateL3Open(s.l3).ok, false);
+  s.l3.openAramPrice = '3000원';
+  s.l3.openJaeyoungPrice = '4,000원';
+  s.l3.openHayoungPrice = '2000';
+  s.l3.openDomainToCodomainChoice = 'X_to_Z';
+  s.l3.openMeaningReason = 'X의 각 원소 x에 함수 f를 적용한 뒤 다시 함수 g를 적용하여 Z의 원소 g(f(x))를 대응시키는 함수이다.';
+  assert.equal(validateL3Open(s.l3).ok, true);
+  s.l3.openVerified = true;
+  assert.equal(evaluateLevel3Completion(s.l3)[0], true);
+
+  // Step 1: [문제 1] 함숫값 구하기 (f(x)=2x+1, g(x)=x²-1)
+  assert.equal(validateL3Prob1(s.l3).ok, false);
+  s.l3.p1_1_f2 = '5';
+  s.l3.p1_1_ans = '24';
+  s.l3.p1_2_gm1 = '0';
+  s.l3.p1_2_ans = '1';
+  s.l3.p1_3_fm3 = '-5';
+  s.l3.p1_3_ans = '-9';
+  s.l3.p1Reason = '오른쪽(안쪽) 함수부터 차례대로 대입하여 f(2)=5→g(5)=24, g(-1)=0→f(0)=1, f(-3)=-5→f(-5)=-9를 얻었다.';
+  assert.equal(validateL3Prob1(s.l3).ok, true);
+  s.l3.p1Verified = true;
+  assert.equal(evaluateLevel3Completion(s.l3)[1], true);
+
+  // Step 2-A: [문제 (교과서 예제 1 변형)] 교환법칙 탐구 (f(x)=-x+2, g(x)=4x+1)
+  assert.equal(validateL3Ex1(s.l3).ok, false);
+  s.l3.ex1_gf = '-4x + 9';
+  s.l3.ex1_fg = '-4x + 1';
+  s.l3.ex1_commutative = 'no';
+  s.l3.ex1Reason = '(g∘f)(x)=-4x+9이고 (f∘g)(x)=-4x+1이므로 두 식이 달라 교환법칙이 성립하지 않는다.';
+  assert.equal(validateL3Ex1(s.l3).ok, true);
+  s.l3.ex1Verified = true;
+  // Step 2 requires both ex1Verified and p2Verified
+  assert.equal(evaluateLevel3Completion(s.l3)[2], false);
+
+  // Step 2-B: [문제 2] 합성함수의 식 구하기 (f(x)=x-4, g(x)=-x²)
+  assert.equal(validateL3Prob2(s.l3).ok, false);
+  s.l3.p2_1_gf = '-(x - 4)²';
+  s.l3.p2_2_fg = '-x² - 4';
+  s.l3.p2_3_gg = '-x⁴';
+  s.l3.p2Reason = 'g(x-4)=-(x-4)²=-x²+8x-16, f(-x²)=-x²-4, g(-x²)=-(-x²)²=-x⁴이다.';
+  assert.equal(validateL3Prob2(s.l3).ok, true);
+  // Also verify expanded form -x^2+8x-16 is accepted for (1)
+  s.l3.p2_1_gf = '-x^2 + 8x - 16';
+  assert.equal(validateL3Prob2(s.l3).ok, true);
+  s.l3.p2Verified = true;
+  assert.equal(evaluateLevel3Completion(s.l3)[2], true);
+
+  // Step 3: [생각 넓히기] 결합법칙 탐구 (f(x)=2x-1, g(x)=3x+2, h(x)=x²+1)
+  assert.equal(validateL3Think(s.l3).ok, false);
+  s.l3.think_fg = '6x + 3';
+  s.l3.think_fgh_left = '6x² + 9';
+  s.l3.think_gh = '3x² + 5';
+  s.l3.think_fgh_right = '6x² + 9';
+  s.l3.think_associative = 'yes';
+  s.l3.thinkComparison = '두 합성함수의 식이 모두 6x²+9로 같으므로 결합법칙 (f∘g)∘h = f∘(g∘h)가 성립한다.';
+  assert.equal(validateL3Think(s.l3).ok, true);
+  s.l3.thinkVerified = true;
+  s.l3.reflection1 = '함수의 합성에서는 교환법칙은 성립하지 않지만 결합법칙은 항상 성립함을 확인했다.';
+  assert.equal(evaluateLevel3Completion(s.l3)[3], true);
+  assert.deepEqual(evaluateRubricL3(s.l3), [true, true, true, true, true]);
+});

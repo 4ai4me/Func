@@ -127,6 +127,40 @@ export interface Lesson2State {
   revision: string;
   reflection: string;
   nextQuestion: string;
+  // 2차시 (여러 가지 함수) 인터랙티브 활동지 필드
+  // Step 0: [보기] 일대일함수와 일대일대응
+  bogi1IsOneToOne?: '' | 'yes' | 'no';
+  bogi1IsBijective?: '' | 'yes' | 'no';
+  bogi2IsOneToOne?: '' | 'yes' | 'no';
+  bogi2Reason?: string;
+  bogiConditionChoice?: '' | 'range_eq_codomain' | 'domain_eq_range' | 'always_positive';
+  bogiVerified?: boolean;
+  // Step 1: [문제 6] 일대일함수와 일대일대응 판별
+  prob6_1OneToOne?: '' | 'yes' | 'no';
+  prob6_1Bijective?: '' | 'yes' | 'no';
+  prob6_2OneToOne?: '' | 'yes' | 'no';
+  prob6_2Bijective?: '' | 'yes' | 'no';
+  prob6_3OneToOne?: '' | 'yes' | 'no';
+  prob6_3Bijective?: '' | 'yes' | 'no';
+  prob6_4OneToOne?: '' | 'yes' | 'no';
+  prob6_4Bijective?: '' | 'yes' | 'no';
+  prob6NonOneToOneReason?: string;
+  prob6BijectiveReason?: string;
+  prob6Verified?: boolean;
+  // Step 2: [문제 7] 항등함수와 상수함수의 그래프
+  prob7IdentityChoice?: '' | '1' | '2' | '3';
+  prob7ConstantChoice?: '' | '1' | '2' | '3';
+  prob7Graph2Reason?: string;
+  prob7Verified?: boolean;
+  // Step 3: [생각 넓히기] 실생활에서 여러 가지 함수가 되는 경우
+  think1Map?: Record<string, string>;
+  think1BijectiveCase?: string;
+  think1ConstantCase?: string;
+  think1Verified?: boolean;
+  think2Map?: Record<string, string>;
+  think2IdentityCase?: string;
+  think2ConstantCase?: string;
+  think2Verified?: boolean;
 }
 
 export interface L3ParityExample {
@@ -160,6 +194,48 @@ export interface Lesson3State {
   prob2ProofText: string;
   reflection1: string;
   reflection2: string;
+
+  // --- New Lesson 3: 합성함수 탐구 (3차시) fields ---
+  // Step 0: 생각 열기 · 합성함수의 뜻
+  openAramPrice?: string;
+  openJaeyoungPrice?: string;
+  openHayoungPrice?: string;
+  openDomainToCodomainChoice?: '' | 'X_to_Z' | 'Y_to_Z' | 'X_to_Y';
+  openMeaningReason?: string;
+  openVerified?: boolean;
+
+  // Step 1: [문제 1] 함숫값 구하기 (f(x)=2x+1, g(x)=x²-1)
+  p1_1_f2?: string;
+  p1_1_ans?: string;
+  p1_2_gm1?: string;
+  p1_2_ans?: string;
+  p1_3_fm3?: string;
+  p1_3_ans?: string;
+  p1Reason?: string;
+  p1Verified?: boolean;
+
+  // Step 2-A: [문제 (교과서 예제 1 변형)] 교환법칙 탐구 (f(x)=-x+2, g(x)=4x+1)
+  ex1_gf?: string;
+  ex1_fg?: string;
+  ex1_commutative?: '' | 'yes' | 'no';
+  ex1Reason?: string;
+  ex1Verified?: boolean;
+
+  // Step 2-B: [문제 2] 합성함수의 식 구하기 (f(x)=x-4, g(x)=-x²)
+  p2_1_gf?: string;
+  p2_2_fg?: string;
+  p2_3_gg?: string;
+  p2Reason?: string;
+  p2Verified?: boolean;
+
+  // Step 3: [생각 넓히기] 결합법칙 탐구 (f(x)=2x-1, g(x)=3x+2, h(x)=x²+1)
+  think_fg?: string;
+  think_fgh_left?: string;
+  think_gh?: string;
+  think_fgh_right?: string;
+  think_associative?: '' | 'yes' | 'no';
+  thinkComparison?: string;
+  thinkVerified?: boolean;
 }
 
 export interface L4FractionExample {
@@ -1045,8 +1121,8 @@ export const PROOF7_PROB2_STEPS: ProofStepQuestion[] = [
 
 export const STAGE_TITLES = {
   1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수'],
-  2: ['새 사건 선택', '현장 조사', '반례 수색', '판정서 작성', '수사 결과 공유'],
-  3: ['대우 단서 탐색', '문제 1 증명', '3의 배수 탐색', '문제 2 증명', '사건 종결·성찰'],
+  2: ['일대일함수와 일대일대응', '문제 6 · 일대일 판별', '문제 7 · 항등·상수함수', '생각 넓히기 · 실생활'],
+  3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙'],
   4: ['귀류법 단서 탐색', '문제 1 증명 (√2)', '무리수 성질 탐색', '문제 2 증명 (1+√2)', '사건 종결·성찰'],
   5: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
   6: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
@@ -1363,6 +1439,35 @@ export function createInitialStudentState(): StudentRecord {
       revision: '',
       reflection: '',
       nextQuestion: '',
+      bogi1IsOneToOne: '',
+      bogi1IsBijective: '',
+      bogi2IsOneToOne: '',
+      bogi2Reason: '',
+      bogiConditionChoice: '',
+      bogiVerified: false,
+      prob6_1OneToOne: '',
+      prob6_1Bijective: '',
+      prob6_2OneToOne: '',
+      prob6_2Bijective: '',
+      prob6_3OneToOne: '',
+      prob6_3Bijective: '',
+      prob6_4OneToOne: '',
+      prob6_4Bijective: '',
+      prob6NonOneToOneReason: '',
+      prob6BijectiveReason: '',
+      prob6Verified: false,
+      prob7IdentityChoice: '',
+      prob7ConstantChoice: '',
+      prob7Graph2Reason: '',
+      prob7Verified: false,
+      think1Map: {},
+      think1BijectiveCase: '',
+      think1ConstantCase: '',
+      think1Verified: false,
+      think2Map: {},
+      think2IdentityCase: '',
+      think2ConstantCase: '',
+      think2Verified: false,
     },
     l3: {
       parityExamples: [],
@@ -1381,6 +1486,37 @@ export function createInitialStudentState(): StudentRecord {
       prob2ProofText: '',
       reflection1: '',
       reflection2: '',
+      openAramPrice: '',
+      openJaeyoungPrice: '',
+      openHayoungPrice: '',
+      openDomainToCodomainChoice: '',
+      openMeaningReason: '',
+      openVerified: false,
+      p1_1_f2: '',
+      p1_1_ans: '',
+      p1_2_gm1: '',
+      p1_2_ans: '',
+      p1_3_fm3: '',
+      p1_3_ans: '',
+      p1Reason: '',
+      p1Verified: false,
+      ex1_gf: '',
+      ex1_fg: '',
+      ex1_commutative: '',
+      ex1Reason: '',
+      ex1Verified: false,
+      p2_1_gf: '',
+      p2_2_fg: '',
+      p2_3_gg: '',
+      p2Reason: '',
+      p2Verified: false,
+      think_fg: '',
+      think_fgh_left: '',
+      think_gh: '',
+      think_fgh_right: '',
+      think_associative: '',
+      thinkComparison: '',
+      thinkVerified: false,
     },
     l4: {
       fractionExamples: [],
@@ -1674,25 +1810,38 @@ export function evaluateLevel1Completion(p: Lesson1State): boolean[] {
 }
 
 export function evaluateLevel2Completion(p: Lesson2State): boolean[] {
-  return [
-    Boolean(p.topic) && (p.topic !== 'd' || p.customStatement.trim().length >= 10),
-    p.examples.length >= 5,
-    p.checks.length >= 2 && Boolean(p.decision),
-    p.decision === 'false'
-      ? p.counterReason.trim().length >= 25 && Boolean(String(p.counter).trim())
-      : p.proofText.trim().length >= 40,
-    p.reflection.trim().length >= 20 && p.nextQuestion.trim().length >= 10,
-  ];
+  const step0Done =
+    Boolean(p.bogiVerified) ||
+    (Boolean(p.topic) && (p.topic !== 'd' || p.customStatement.trim().length >= 10));
+  const step1Done = Boolean(p.prob6Verified) || p.examples.length >= 5;
+  const step2Done =
+    Boolean(p.prob7Verified) || (p.checks.length >= 2 && Boolean(p.decision));
+  const step3Done =
+    (Boolean(p.think1Verified) && Boolean(p.think2Verified)) ||
+    ((p.think1BijectiveCase || '').trim().length >= 8 &&
+      (p.think1ConstantCase || '').trim().length >= 8 &&
+      (p.think2IdentityCase || '').trim().length >= 8 &&
+      (p.think2ConstantCase || '').trim().length >= 8) ||
+    (p.reflection.trim().length >= 20 && p.nextQuestion.trim().length >= 10);
+
+  return [step0Done, step1Done, step2Done, step3Done];
 }
 
 export function evaluateLevel3Completion(p: Lesson3State): boolean[] {
-  return [
-    p.parityExamples.length >= 3 && p.contrapositiveChoice === 'contrapositive',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.mod3Examples.length >= 3 && p.mod3CasesChecked,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15,
-  ];
+  const step0Done =
+    Boolean(p.openVerified) ||
+    (p.parityExamples.length >= 3 && p.contrapositiveChoice === 'contrapositive');
+  const step1Done =
+    Boolean(p.p1Verified) ||
+    (p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35);
+  const step2Done =
+    (Boolean(p.ex1Verified) && Boolean(p.p2Verified)) ||
+    (p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40);
+  const step3Done =
+    (Boolean(p.thinkVerified) && (p.reflection1 || '').trim().length >= 10) ||
+    (p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15);
+
+  return [step0Done, step1Done, step2Done, step3Done];
 }
 
 export function evaluateLevel4Completion(p: Lesson4State): boolean[] {
@@ -2157,26 +2306,494 @@ export function validateL1VendMission3(
   };
 }
 
+export function validateL2Bogi(
+  p: Lesson2State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (p.bogi1IsOneToOne !== 'yes') {
+    return {
+      ok: false,
+      message: '[보기 ①] 함수 f(x) = 2x는 x₁ ≠ x₂이면 2x₁ ≠ 2x₂, 즉 f(x₁) ≠ f(x₂)이므로 일대일함수입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.bogi1IsBijective !== 'yes') {
+    return {
+      ok: false,
+      message: '[보기 ①] 함수 f(x) = 2x는 일대일함수이고 치역과 공역이 모두 실수 전체의 집합으로 같으므로 일대일대응입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.bogiConditionChoice !== 'range_eq_codomain') {
+    return {
+      ok: false,
+      message: '일대일함수가 일대일대응이 되기 위한 추가 조건은 ‘치역과 공역이 서로 같다’입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.bogi2IsOneToOne !== 'no') {
+    return {
+      ok: false,
+      message: '[보기 ②] 함수 g(x) = x²은 -1 ≠ 1이지만 g(-1) = g(1) = 1이므로 일대일함수가 아닙니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.bogi2Reason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[보기 ②] 함수 g(x) = x²이 일대일함수가 아닌 이유(예: -1 ≠ 1이지만 g(-1) = g(1) = 1임)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[보기 탐구 완료] 정확합니다! f(x) = 2x는 일대일함수이면서 치역과 공역이 같아 일대일대응이고, g(x) = x²은 g(-1) = g(1) = 1이므로 일대일함수가 아닙니다.',
+    type: 'good',
+  };
+}
+
+export function validateL2Prob6(
+  p: Lesson2State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (p.prob6_1OneToOne !== 'yes' || p.prob6_1Bijective !== 'yes') {
+    return {
+      ok: false,
+      message: '[문제 6-(1)] y = 3x - 1은 직선으로 x₁ ≠ x₂이면 3x₁ - 1 ≠ 3x₂ - 1이므로 일대일함수이고, 치역과 공역이 모두 실수 전체이므로 일대일대응입니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob6_2OneToOne !== 'no' || p.prob6_2Bijective !== 'no') {
+    return {
+      ok: false,
+      message: '[문제 6-(2)] y = -x² + 2는 x = -1과 x = 1일 때 y = 1로 함숫값이 같으므로 일대일함수도 아니고 일대일대응도 아닙니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob6_3OneToOne !== 'no' || p.prob6_3Bijective !== 'no') {
+    return {
+      ok: false,
+      message: '[문제 6-(3)] y = |x|는 x = -1과 x = 1일 때 y = 1로 함숫값이 같으므로 일대일함수도 아니고 일대일대응도 아닙니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob6_4OneToOne !== 'yes' || p.prob6_4Bijective !== 'yes') {
+    return {
+      ok: false,
+      message: '[문제 6-(4)] x < 0일 때 y = x² > 0(감소)이고, x ≥ 0일 때 y = -2x ≤ 0(감소)이므로 실수 전체에서 x₁ ≠ x₂이면 f(x₁) ≠ f(x₂)인 일대일함수이며, 치역도 실수 전체로 공역과 같아 일대일대응입니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.prob6NonOneToOneReason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '(2)번과 (3)번이 일대일함수가 아닌 이유(서로 다른 두 x값에 같은 y값이 대응하는 반례 등)를 8자 이상으로 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.prob6BijectiveReason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '(1)번과 (4)번이 일대일대응이 되는 이유(일대일함수이면서 치역과 공역이 모두 실수 전체로 같다는 점)를 8자 이상으로 적어 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 6] 완벽합니다! 일대일함수는 (1), (4)이고, 두 함수 모두 치역과 공역이 실수 전체의 집합으로 같으므로 일대일대응입니다.',
+    type: 'good',
+  };
+}
+
+export function validateL2Prob7(
+  p: Lesson2State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if (p.prob7IdentityChoice !== '1') {
+    return {
+      ok: false,
+      message: '항등함수는 모든 실수 x에 대하여 f(x) = x인 함수이므로 원점 O와 (1, 1)을 지나는 직선인 (1)번 그래프를 선택해야 합니다.',
+      type: 'warn',
+    };
+  }
+  if (p.prob7ConstantChoice !== '3') {
+    return {
+      ok: false,
+      message: '상수함수는 모든 실수 x에 대하여 f(x) = c(일정한 상수)인 함수이므로 x축에 평행한 직선 y = 1인 (3)번 그래프를 선택해야 합니다. ((2)번 x = 1은 함수가 아닙니다!)',
+      type: 'warn',
+    };
+  }
+  if ((p.prob7Graph2Reason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '(2)번 직선 x = 1이 왜 상수함수의 그래프가 아닌지(x = 1에 무수히 많은 y값이 대응하여 아예 함수가 아니라는 점)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 7] 정확합니다! 항등함수의 그래프는 (1) y = x이고, 상수함수의 그래프는 (3) y = 1입니다. (2) x = 1은 x = 1 하나에 무수히 많은 y값이 대응하므로 함수의 그래프가 아닙니다.',
+    type: 'good',
+  };
+}
+
+export function validateL2Think1(
+  p: Lesson2State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if ((p.think1BijectiveCase || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[활동 1] 일대일대응이 되는 경우(상영 영화가 5편이고 학생 5명이 모두 서로 다른 영화를 1편씩 선택하는 경우)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.think1ConstantCase || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[활동 1] 상수함수가 되는 경우(학생 5명이 모두 똑같은 영화 1편만 선택하는 경우)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[생각 넓히기 · 활동 1] 훌륭합니다! 영화 5편에 학생 5명이 서로 다른 영화를 한 편씩 빠짐없이 선택하면 일대일대응이 되고, 5명 모두가 같은 영화 1편을 선택하면 상수함수가 됩니다.',
+    type: 'good',
+  };
+}
+
+export function validateL2Think2(
+  p: Lesson2State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  if ((p.think2IdentityCase || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[활동 2] 항등함수가 되는 경우(동아리 회원 4명이 모두 자기 자신에게 투표하는 경우)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  if ((p.think2ConstantCase || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[활동 2] 상수함수가 되는 경우(동아리 회원 4명이 모두 특정한 같은 회원 1명에게 투표하는 경우)를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[생각 넓히기 · 활동 2] 정확합니다! 회원 4명이 모두 자기 자신에게 투표하면 f(x) = x인 항등함수가 되고, 4명 모두가 특정한 한 회원에게만 투표하면 상수함수가 됩니다.',
+    type: 'good',
+  };
+}
+
 export function evaluateRubricL2(p: Lesson2State): boolean[] {
   return [
-    Boolean(p.topic),
-    p.examples.length >= 5,
-    p.checks.length >= 2,
-    Boolean(p.decision),
-    p.decision === 'false'
-      ? p.counterReason.trim().length >= 25
-      : p.proofText.trim().length >= 40,
-    p.reflection.trim().length >= 20,
+    Boolean(p.bogiVerified) || Boolean(p.topic),
+    Boolean(p.prob6Verified) || p.examples.length >= 5,
+    Boolean(p.prob7Verified) || p.checks.length >= 2,
+    Boolean(p.think1Verified && p.think2Verified) || Boolean(p.decision),
+    (p.reflection || '').trim().length >= 15 ||
+      (p.think2IdentityCase || '').trim().length >= 8,
   ];
+}
+
+function normalizePriceInput(raw?: string): string {
+  return (raw || '')
+    .replace(/[,원\s]/g, '')
+    .trim();
+}
+
+function normalizeMathExpr(raw?: string): string {
+  if (!raw) return '';
+  // If user typed full equation like "(g∘f)(x) = -4x + 9", take the right-hand side after the last '='
+  const parts = raw.split('=');
+  const rhs = parts[parts.length - 1] || '';
+  return rhs
+    .replace(/\s+/g, '')
+    .replace(/[−–—]/g, '-')
+    .replace(/²/g, '^2')
+    .replace(/³/g, '^3')
+    .replace(/⁴/g, '^4')
+    .replace(/×|·|\*/g, '')
+    .toLowerCase();
+}
+
+export function validateL3Open(
+  p: Lesson3State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const aram = normalizePriceInput(p.openAramPrice);
+  const jaeyoung = normalizePriceInput(p.openJaeyoungPrice);
+  const hayoung = normalizePriceInput(p.openHayoungPrice);
+
+  if (aram !== '3000') {
+    return {
+      ok: false,
+      message: '아람이가 주문한 음식은 핫도그이고, 핫도그의 가격은 3000원입니다. 아람이의 가격을 다시 확인해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (jaeyoung !== '4000') {
+    return {
+      ok: false,
+      message: '재영이가 주문한 음식은 김밥이고, 김밥의 가격은 4000원입니다. 재영이의 가격을 다시 확인해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (hayoung !== '2000') {
+    return {
+      ok: false,
+      message: '하영이가 주문한 음식은 어묵이고, 어묵의 가격은 2000원입니다. 하영이의 가격을 다시 확인해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (p.openDomainToCodomainChoice !== 'X_to_Z') {
+    return {
+      ok: false,
+      message: '합성함수 g ∘ f는 함수 f의 정의역 X에서 함수 g의 공역 Z로의 함수(g ∘ f : X → Z)입니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.openMeaningReason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '두 함수 f: X → Y와 g: Y → Z를 연결한 합성함수 (g ∘ f)(x) = g(f(x))의 의미를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[생각 열기 완료] 정확합니다! 아람→핫도그→3000원, 재영→김밥→4000원, 하영→어묵→2000원으로 X의 각 원소 x에 Z의 원소 g(f(x))가 대응하는 합성함수 g ∘ f : X → Z가 정의됩니다.',
+    type: 'good',
+  };
+}
+
+export function validateL3Prob1(
+  p: Lesson3State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const normInt = (v?: string) => (v || '').replace(/[−–—]/g, '-').replace(/\s+/g, '');
+  if (normInt(p.p1_1_f2) !== '5') {
+    return {
+      ok: false,
+      message: '[문제 1-(1)] 먼저 안쪽 함숫값 f(2) = 2×2 + 1 = 5를 구해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (normInt(p.p1_1_ans) !== '24') {
+    return {
+      ok: false,
+      message: '[문제 1-(1)] (g ∘ f)(2) = g(f(2)) = g(5) = 5² - 1 = 24입니다.',
+      type: 'warn',
+    };
+  }
+  if (normInt(p.p1_2_gm1) !== '0') {
+    return {
+      ok: false,
+      message: '[문제 1-(2)] 먼저 안쪽 함숫값 g(-1) = (-1)² - 1 = 0을 구해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (normInt(p.p1_2_ans) !== '1') {
+    return {
+      ok: false,
+      message: '[문제 1-(2)] (f ∘ g)(-1) = f(g(-1)) = f(0) = 2×0 + 1 = 1입니다.',
+      type: 'warn',
+    };
+  }
+  if (normInt(p.p1_3_fm3) !== '-5') {
+    return {
+      ok: false,
+      message: '[문제 1-(3)] 먼저 안쪽 함숫값 f(-3) = 2×(-3) + 1 = -5를 구해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (normInt(p.p1_3_ans) !== '-9') {
+    return {
+      ok: false,
+      message: '[문제 1-(3)] (f ∘ f)(-3) = f(f(-3)) = f(-5) = 2×(-5) + 1 = -9입니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.p1Reason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '합성함수의 함숫값을 구할 때 오른쪽(안쪽) 함수부터 차례대로 대입하는 과정을 8자 이상으로 정리해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 1] 완벽합니다! (1) (g ∘ f)(2) = g(5) = 24, (2) (f ∘ g)(-1) = f(0) = 1, (3) (f ∘ f)(-3) = f(-5) = -9입니다.',
+    type: 'good',
+  };
+}
+
+export function validateL3Ex1(
+  p: Lesson3State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const gf = normalizeMathExpr(p.ex1_gf);
+  const fg = normalizeMathExpr(p.ex1_fg);
+
+  if (gf !== '-4x+9' && gf !== '9-4x') {
+    return {
+      ok: false,
+      message:
+        '(1) (g ∘ f)(x) = g(f(x)) = g(-x+2) = 4(-x+2) + 1을 전개하여 동류항끼리 정리한 일차식(-4x + 9)을 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (fg !== '-4x+1' && fg !== '1-4x') {
+    return {
+      ok: false,
+      message:
+        '(2) (f ∘ g)(x) = f(g(x)) = f(4x+1) = -(4x+1) + 2를 전개하여 정리한 일차식(-4x + 1)을 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (p.ex1_commutative !== 'no') {
+    return {
+      ok: false,
+      message:
+        '-4x + 9 ≠ -4x + 1이므로 두 합성함수 g ∘ f와 f ∘ g는 서로 같지 않습니다. 일반적으로 함수의 합성에서 교환법칙은 성립하지 않습니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.ex1Reason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '(g ∘ f)(x)와 (f ∘ g)(x)를 구한 과정과 g ∘ f ≠ f ∘ g(교환법칙 불성립)인 이유를 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 (교환법칙 탐구)] 정확합니다! (1) (g ∘ f)(x) = -4x + 9, (2) (f ∘ g)(x) = -4x + 1이며, 일반적으로 g ∘ f ≠ f ∘ g이므로 함수의 합성에서 교환법칙은 성립하지 않습니다.',
+    type: 'good',
+  };
+}
+
+export function validateL3Prob2(
+  p: Lesson3State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const gf = normalizeMathExpr(p.p2_1_gf);
+  const fg = normalizeMathExpr(p.p2_2_fg);
+  const gg = normalizeMathExpr(p.p2_3_gg);
+
+  const validGf = new Set([
+    '-(x-4)^2',
+    '-x^2+8x-16',
+    '-(x^2-8x+16)',
+  ]);
+  if (!validGf.has(gf)) {
+    return {
+      ok: false,
+      message:
+        '[문제 2-(1)] (g ∘ f)(x) = g(f(x)) = g(x - 4) = -(x - 4)² (또는 전개한 -x² + 8x - 16)을 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (fg !== '-x^2-4' && fg !== '-4-x^2' && fg !== '-(x^2+4)') {
+    return {
+      ok: false,
+      message:
+        '[문제 2-(2)] (f ∘ g)(x) = f(g(x)) = f(-x²) = -x² - 4를 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (gg !== '-x^4' && gg !== '-(x^4)') {
+    return {
+      ok: false,
+      message:
+        '[문제 2-(3)] (g ∘ g)(x) = g(g(x)) = g(-x²) = -(-x²)² = -x⁴를 입력해 보세요. (바깥쪽 - 부호가 살아있음에 유의하세요!)',
+      type: 'warn',
+    };
+  }
+  if ((p.p2Reason || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '[문제 2] (1), (2), (3)의 합성함수 식을 구한 대입 과정을 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[문제 2] 완벽합니다! (1) (g ∘ f)(x) = -(x - 4)² = -x² + 8x - 16, (2) (f ∘ g)(x) = -x² - 4, (3) (g ∘ g)(x) = -x⁴입니다.',
+    type: 'good',
+  };
+}
+
+export function validateL3Think(
+  p: Lesson3State
+): { ok: boolean; message: string; type: 'good' | 'warn' } {
+  const fg = normalizeMathExpr(p.think_fg);
+  const fghLeft = normalizeMathExpr(p.think_fgh_left);
+  const gh = normalizeMathExpr(p.think_gh);
+  const fghRight = normalizeMathExpr(p.think_fgh_right);
+
+  if (fg !== '6x+3' && fg !== '3+6x') {
+    return {
+      ok: false,
+      message: '먼저 (f ∘ g)(x) = f(g(x)) = f(3x + 2) = 2(3x + 2) - 1 = 6x + 3을 구해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (fghLeft !== '6x^2+9' && fghLeft !== '9+6x^2') {
+    return {
+      ok: false,
+      message:
+        '((f ∘ g) ∘ h)(x) = (f ∘ g)(h(x)) = 6(x² + 1) + 3을 전개하여 정리한 식(6x² + 9)을 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (gh !== '3x^2+5' && gh !== '5+3x^2') {
+    return {
+      ok: false,
+      message: '우변을 구하기 위해 먼저 (g ∘ h)(x) = g(h(x)) = g(x² + 1) = 3(x² + 1) + 2 = 3x² + 5를 구해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (fghRight !== '6x^2+9' && fghRight !== '9+6x^2') {
+    return {
+      ok: false,
+      message:
+        '(f ∘ (g ∘ h))(x) = f((g ∘ h)(x)) = 2(3x² + 5) - 1을 전개하여 정리한 식(6x² + 9)을 입력해 보세요.',
+      type: 'warn',
+    };
+  }
+  if (p.think_associative !== 'yes') {
+    return {
+      ok: false,
+      message:
+        '((f ∘ g) ∘ h)(x) = 6x² + 9이고 (f ∘ (g ∘ h))(x) = 6x² + 9로 서로 같으므로 (f ∘ g) ∘ h = f ∘ (g ∘ h) 결합법칙이 성립합니다.',
+      type: 'warn',
+    };
+  }
+  if ((p.thinkComparison || '').trim().length < 8) {
+    return {
+      ok: false,
+      message: '((f ∘ g) ∘ h)(x)와 (f ∘ (g ∘ h))(x)를 구한 결과 비교 및 결합법칙 성립에 대한 설명을 8자 이상으로 서술해 주세요.',
+      type: 'warn',
+    };
+  }
+  return {
+    ok: true,
+    message:
+      '[생각 넓히기 완료] 훌륭합니다! ((f ∘ g) ∘ h)(x) = 6x² + 9이고 (f ∘ (g ∘ h))(x) = 6x² + 9로 두 결과가 같으므로 세 함수의 합성에서 결합법칙 (f ∘ g) ∘ h = f ∘ (g ∘ h)가 성립합니다.',
+    type: 'good',
+  };
 }
 
 export function evaluateRubricL3(p: Lesson3State): boolean[] {
   return [
-    p.parityExamples.length >= 3 && p.contrapositiveChoice === 'contrapositive',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.mod3Examples.length >= 3 && p.mod3CasesChecked,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20,
+    Boolean(p.openVerified) || (p.parityExamples.length >= 3 && p.contrapositiveChoice === 'contrapositive'),
+    Boolean(p.p1Verified) || (p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35),
+    Boolean(p.ex1Verified && p.p2Verified) || (p.mod3Examples.length >= 3 && p.mod3CasesChecked),
+    Boolean(p.thinkVerified) || (p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40),
+    (p.reflection1 || '').trim().length >= 10 || (p.thinkComparison || '').trim().length >= 8,
   ];
 }
 
@@ -2435,11 +3052,11 @@ export function cleanStudentState(raw: unknown): StudentRecord {
   return cleanedResult;
 }
 
-function hasFuncLesson1Data(l1: unknown): boolean {
-  if (!l1 || typeof l1 !== 'object') return false;
-  const x = l1 as Record<string, unknown>;
-  return Boolean(
-    x.countryMapVerified ||
+function hasFuncLessonData(l1: unknown, l2?: unknown, l3?: unknown): boolean {
+  if (l1 && typeof l1 === 'object') {
+    const x = l1 as Record<string, unknown>;
+    if (
+      x.countryMapVerified ||
       x.prob1Verified ||
       x.prob2Verified ||
       x.prob3Verified ||
@@ -2449,7 +3066,37 @@ function hasFuncLesson1Data(l1: unknown): boolean {
       x.realLifeQuizVerified ||
       (typeof x.realLifeWhyFunc === 'string' && x.realLifeWhyFunc.trim().length > 0) ||
       (Array.isArray(x.prob4_1Points) && x.prob4_1Points.length > 0)
-  );
+    ) {
+      return true;
+    }
+  }
+  if (l2 && typeof l2 === 'object') {
+    const y = l2 as Record<string, unknown>;
+    if (
+      y.bogiVerified ||
+      y.prob6Verified ||
+      y.prob7Verified ||
+      y.think1Verified ||
+      y.think2Verified ||
+      (typeof y.bogi2Reason === 'string' && y.bogi2Reason.trim().length > 0)
+    ) {
+      return true;
+    }
+  }
+  if (l3 && typeof l3 === 'object') {
+    const z = l3 as Record<string, unknown>;
+    if (
+      z.openVerified ||
+      z.p1Verified ||
+      z.ex1Verified ||
+      z.p2Verified ||
+      z.thinkVerified ||
+      (typeof z.openMeaningReason === 'string' && z.openMeaningReason.trim().length > 0)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -2494,7 +3141,7 @@ export function extractFuncWorksheetFromJson(
     }
 
     // 2. Top-level record that was explicitly authored in Func
-    if (obj.courseId === 'func-v1' || hasFuncLesson1Data(obj.l1)) {
+    if (obj.courseId === 'func-v1' || hasFuncLessonData(obj.l1, obj.l2, obj.l3)) {
       const cleaned = cleanStudentState(obj);
       if (resolvedGroup) cleaned.group = resolvedGroup.slice(0, 25);
       if (resolvedCode) cleaned.code = resolvedCode.slice(0, 25);
@@ -2599,12 +3246,42 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
   result.l2 = pickNewerOrFilled(
     remote.l2,
     local.l2,
-    (l) => Boolean(l.decision || l.proofText || l.counter || l.examples?.length || l.reflection)
+    (l) =>
+      Boolean(
+        l.decision ||
+          l.proofText ||
+          l.counter ||
+          l.examples?.length ||
+          l.reflection ||
+          l.bogiVerified ||
+          l.prob6Verified ||
+          l.prob7Verified ||
+          l.think1Verified ||
+          l.think2Verified ||
+          l.think1BijectiveCase ||
+          l.think2IdentityCase
+      )
   );
   result.l3 = pickNewerOrFilled(
     remote.l3,
     local.l3,
-    (l) => Boolean(l.prob1ProofText || l.prob2ProofText || l.parityExamples?.length || l.reflection1)
+    (l) =>
+      Boolean(
+        l.prob1ProofText ||
+          l.prob2ProofText ||
+          l.parityExamples?.length ||
+          l.reflection1 ||
+          l.openVerified ||
+          l.p1Verified ||
+          l.ex1Verified ||
+          l.p2Verified ||
+          l.thinkVerified ||
+          l.openMeaningReason ||
+          l.p1Reason ||
+          l.ex1Reason ||
+          l.p2Reason ||
+          l.thinkComparison
+      )
   );
   result.l4 = pickNewerOrFilled(
     remote.l4,
@@ -2984,28 +3661,28 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, MathS
     { label: '⇒', token: ' ⇒ ', desc: '이면', shorthand: '=>' },
   ],
   2: [
+    { label: 'x₁ ≠ x₂', token: 'x₁ ≠ x₂', desc: '정의역의 서로 다른 두 원소', isTemplate: true },
+    { label: 'f(x₁) ≠ f(x₂)', token: 'f(x₁) ≠ f(x₂)', desc: '함숫값이 서로 다르다', isTemplate: true },
+    { label: 'x₁ ≠ x₂ ⇒ f(x₁) ≠ f(x₂)', token: 'x₁ ≠ x₂ ⇒ f(x₁) ≠ f(x₂)', desc: '일대일함수의 조건', isTemplate: true },
+    { label: 'f(x) = x', token: 'f(x) = x', desc: '항등함수 식', isTemplate: true },
+    { label: 'f(x) = c', token: 'f(x) = c', desc: '상수함수 식', isTemplate: true },
+    { label: 'f(-1) = f(1)', token: 'f(-1) = f(1)', desc: '일대일함수가 아닌 반례', isTemplate: true },
     { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
-    { label: '(□)²', token: '(□)²', desc: '선택한 식을 괄호 제곱으로 감싸기', isTemplate: true },
-    { label: '2k', token: '2k', desc: '짝수 일반항', isTemplate: true },
-    { label: '4k(k+1)', token: '4k(k+1)', desc: '연속한 두 짝수의 곱', isTemplate: true },
-    { label: '=', token: ' = ', desc: '등호' },
-    { label: '≠', token: ' ≠ ', desc: '같지 않다 (반례)', shorthand: '!=' },
-    { label: '≥', token: ' ≥ ', desc: '크거나 같다', shorthand: '>=' },
-    { label: '≤', token: ' ≤ ', desc: '작거나 같다', shorthand: '<=' },
-    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
+    { label: '|□|', token: '|□|', desc: '절댓값 감싸기', isTemplate: true },
+    { label: '≠', token: ' ≠ ', desc: '같지 않다', shorthand: '!=' },
     { label: '⇒', token: ' ⇒ ', desc: '이면 (함의)', shorthand: '=>' },
   ],
   3: [
-    { label: '→', token: ' → ', desc: '명제 화살표 (p → q)', shorthand: '->' },
-    { label: '~q → ~p', token: '~q → ~p', desc: '명제의 대우', isTemplate: true },
+    { label: '(g∘f)(x)', token: '(g∘f)(x)', desc: '합성함수 (g∘f)(x)', isTemplate: true },
+    { label: '(f∘g)(x)', token: '(f∘g)(x)', desc: '합성함수 (f∘g)(x)', isTemplate: true },
+    { label: '(g∘g)(x)', token: '(g∘g)(x)', desc: '합성함수 (g∘g)(x)', isTemplate: true },
+    { label: 'g(f(x))', token: 'g(f(x))', desc: 'g(f(x)) 대입식', isTemplate: true },
+    { label: 'f(g(x))', token: 'f(g(x))', desc: 'f(g(x)) 대입식', isTemplate: true },
+    { label: 'g∘f ≠ f∘g', token: 'g∘f ≠ f∘g', desc: '교환법칙 불성립', isTemplate: true },
+    { label: '(f∘g)∘h = f∘(g∘h)', token: '(f∘g)∘h = f∘(g∘h)', desc: '결합법칙 성립', isTemplate: true },
     { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
-    { label: '2k−1', token: '2k−1', desc: '홀수 표현 (k는 자연수)', isTemplate: true },
-    { label: '3k−1', token: '3k−1', desc: '3으로 나눈 나머지가 2인 자연수', isTemplate: true },
-    { label: '3k−2', token: '3k−2', desc: '3으로 나눈 나머지가 1인 자연수', isTemplate: true },
-    { label: '=', token: ' = ', desc: '등호' },
+    { label: '⁴', token: '⁴', desc: '네제곱', shorthand: '^4' },
     { label: '≠', token: ' ≠ ', desc: '같지 않다', shorthand: '!=' },
-    { label: '⇔', token: ' ⇔ ', desc: '동치', shorthand: '<=>' },
-    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
   4: [
     { label: '√2', token: '√2', desc: '루트 2', isTemplate: true },
@@ -3084,6 +3761,7 @@ export const MATH_SYMBOL_CATEGORIES: MathSymbolCategory[] = [
     items: [
       { label: '²', token: '²', desc: '제곱 (위첨자 2)', shorthand: '^2' },
       { label: '³', token: '³', desc: '세제곱 (위첨자 3)', shorthand: '^3' },
+      { label: '⁴', token: '⁴', desc: '네제곱 (위첨자 4)', shorthand: '^4' },
       { label: 'ⁿ', token: 'ⁿ', desc: 'n제곱 (위첨자 n)', shorthand: '^n' },
       { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
       { label: '√', token: '√', desc: '근호 기호' },
@@ -3251,6 +3929,7 @@ export const MATH_SHORTHAND_RULES: ReadonlyArray<{
   { shorthand: '+-', replacement: '±', desc: '플러스마이너스' },
   { shorthand: '^2', replacement: '²', desc: '제곱' },
   { shorthand: '^3', replacement: '³', desc: '세제곱' },
+  { shorthand: '^4', replacement: '⁴', desc: '네제곱' },
   { shorthand: '^n', replacement: 'ⁿ', desc: 'n제곱' },
   { shorthand: '=>', replacement: '⇒', desc: '이면' },
   { shorthand: '->', replacement: '→', desc: '화살표' },
