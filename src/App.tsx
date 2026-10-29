@@ -64,6 +64,7 @@ import { StudentEvaluationModal } from './components/StudentEvaluationModal';
 import { MathSymbolInputBar } from './components/MathSymbolInputBar';
 import { MathText } from './components/MathText';
 import { recordStudentAccessLog } from './utils/auditLogger';
+import { ensureStudentAuth } from './utils/studentAuth';
 import {
   Printer,
   CheckCircle2,
@@ -228,6 +229,10 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setFirebaseUser(u);
+      // 로그인된 사용자가 없으면 학생용 익명 계정으로 자동 로그인
+      if (!u) {
+        ensureStudentAuth().catch((err) => console.error('Anonymous sign-in failed:', err));
+      }
       if (u && isAuthorizedAdminEmail(u.email, u.emailVerified)) {
         setSessionMode('teacher');
       }
@@ -297,7 +302,7 @@ export default function App() {
 
   // Real-time listener for teacher evaluations pushed to student registration
   useEffect(() => {
-    if (sessionMode !== 'student' || !approvedProfile?.studentKey) return;
+    if (sessionMode !== 'student' || !approvedProfile?.studentKey || !firebaseUser) return;
     const unsub = onSnapshot(doc(db, 'student_registrations', approvedProfile.studentKey), (docSnap) => {
       if (!docSnap.exists()) return;
       const data = docSnap.data() as FirestoreStudentRegistrationDoc;
@@ -326,9 +331,20 @@ export default function App() {
           // ignore parsing error
         }
       }
+    }, (error) => {
+      // 다른 기기에서 다시 로그인했거나 예전 방식으로 가입한 경우: 처음 화면에서 다시 로그인
+      console.error('Student registration listener error:', error);
+      if ((error as { code?: string })?.code === 'permission-denied') {
+        try {
+          localStorage.removeItem('math_detective_active_student_key_v1');
+          localStorage.removeItem('math_detective_approved_profile_v1');
+        } catch {}
+        setApprovedProfile(null);
+        setSessionMode('gate');
+      }
     });
     return () => unsub();
-  }, [sessionMode, approvedProfile?.studentKey]);
+  }, [sessionMode, approvedProfile?.studentKey, firebaseUser]);
 
   // Sync teacher state to localStorage
   useEffect(() => {
@@ -697,12 +713,18 @@ export default function App() {
   }, []);
 
   const handleExitMode = async () => {
-    if (sessionMode === 'teacher') {
-      try {
-        await signOut(auth);
-      } catch {
-        // ignore
-      }
+    // 교사·학생 모두 로그아웃. 학생은 다음 접속 때 새 익명 계정이 만들어지므로
+    // 공용 기기에서 다음 사람이 이전 학생의 문서에 접근할 수 없습니다.
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    try {
+      await pendingSaveRef.current?.();
+    } catch {
+      // ignore
+    }
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore
     }
     try {
       localStorage.removeItem('math_detective_active_student_key_v1');
