@@ -20,6 +20,7 @@
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
+  - **전체 답안 보기 (2026-10-30)**: 상세 비교 창(인라인·비모달 모두) 아래에 차시별로 학생이 입력한 **모든 문항**을 문항 이름과 함께 표시합니다. 차시마다 `작성 n/m` 현황을 보여 주며, 비어 있는 문항과 기존 요약 칸의 `미작성`은 **빨간 굵은 글씨**로 강조됩니다. 문항 이름은 `src/utils/answerLabels.ts`에서 관리하고, 이름표가 없는 새 필드라도 값이 있으면 `기타 기록`에 표시됩니다. 학생 화면에 문항을 추가하면 `answerLabels.ts`에 이름표를 추가하세요 (`answerLabels.test.ts`가 누락을 검사합니다).
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
     - 교사가 `01차시`~`07차시`를 개별적으로 ON/OFF하거나 원클릭 프리셋(`1차시만 열기`, `1~2차시 열기`, `1~3차시 열기`, `1~4차시 열기`, `전체 열기`)으로 제어할 수 있으며, **`[차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)]`** 버튼 및 실시간 클라우드 동기화 상태 배너(`클라우드 서버 저장 완료` / `서버 상태 확인`)를 제공합니다.
     - 설정 변경 시 현재 브라우저의 `localStorage`뿐 아니라 Firebase Firestore(`/app_settings/lesson_access`) 서버에 즉시 기록·검증(`getDocFromServer`)되어, **다른 PC·시크릿 창·다른 브라우저**에서 접속하는 모든 학습자에게 동일하게 잠금이 적용됩니다.
@@ -169,6 +170,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build
