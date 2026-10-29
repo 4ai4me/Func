@@ -12,6 +12,16 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import {
+  StudentLessonSnapshot,
+  assembleRecord,
+  listenAllStudentLessons,
+  saveTeacherEvaluation,
+  teacherJson,
+} from '../utils/lessonStore';
+
+/** 교사 평가 입력을 모아서 저장하는 대기 시간 */
+const TEACHER_SAVE_DELAY_MS = 1500;
+import {
   StudentRecord,
   TOPICS,
   TopicId,
@@ -20,7 +30,6 @@ import {
   cleanStudentState,
   createSampleTeacherDataset,
   csvSafe,
-  embedFuncWorksheetIntoJson,
   ensureTeacherEval,
   evaluateRubricL1,
   evaluateRubricL2,
@@ -117,6 +126,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const [cloudRegistrations, setCloudRegistrations] = useState<FirestoreStudentRegistrationDoc[]>([]);
+  // 학생별 차시 문서(student_registrations/{studentKey}/func_lessons/*)
+  const [lessonDocsByStudent, setLessonDocsByStudent] = useState<Map<string, StudentLessonSnapshot>>(
+    () => new Map()
+  );
+  // 교사 평가 저장 대기 (학생 문서 키 → 저장할 활동지). 입력할 때마다 저장하지 않고 잠시 모아서 저장
+  const pendingTeacherSavesRef = useRef<Map<string, StudentRecord>>(new Map());
+  const teacherSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedTeacherJsonRef = useRef<Map<string, string>>(new Map());
   const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [notice, setNotice] = useState<{ text: string; type: 'good' | 'warn' | 'info' }>({
     text: '학생 가입 신청 내역과 승인된 학생들의 실시간 탐구 답안이 자동으로 동기화됩니다.',
@@ -154,47 +171,118 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [accessEventFilter, setAccessEventFilter] = useState<'all' | 'login' | 'register' | 'save' | 'resume'>('all');
   const [accessSearch, setAccessSearch] = useState<string>('');
 
-  const applySnapshotDocs = useCallback(
-    (docs: FirestoreStudentRegistrationDoc[]) => {
-      const approvedWorksheets: StudentRecord[] = [];
-      for (const data of docs) {
-        if (data.status === 'approved' && data.worksheetJson) {
-          try {
-            const groupLabel = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
-            const codeLabel = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
-              data.studentNum
-            ).padStart(2, '0')}_${data.name}`.slice(0, 25);
-            const parsed = extractFuncWorksheetFromJson(data.worksheetJson, groupLabel, codeLabel);
-            approvedWorksheets.push(parsed);
-          } catch {
-            // ignore malformed worksheet
+  const applySnapshotDocs = useCallback((docs: FirestoreStudentRegistrationDoc[]) => {
+    setCloudRegistrations(docs);
+  }, []);
+
+  // 가입 문서(예전 worksheetJson) + 차시 문서 + 교사 평가 문서를 합쳐 교사 화면의 학생 기록을 만듭니다.
+  useEffect(() => {
+    const approvedWorksheets: { regKey: string; record: StudentRecord }[] = [];
+    for (const data of cloudRegistrations) {
+      if (data.status !== 'approved') continue;
+      const groupLabel = `${data.school} ${data.grade}학년 ${data.classNum}반`.slice(0, 25);
+      const codeLabel = `${data.grade}${String(data.classNum).padStart(2, '0')}${String(
+        data.studentNum
+      ).padStart(2, '0')}_${data.name}`.slice(0, 25);
+      try {
+        const legacy = extractFuncWorksheetFromJson(data.worksheetJson, groupLabel, codeLabel);
+        const lessonSnap = lessonDocsByStudent.get(data.studentKey) || { lessons: {} };
+        approvedWorksheets.push({ regKey: data.studentKey, record: assembleRecord(legacy, lessonSnap) });
+      } catch (err) {
+        console.warn(`Skipping malformed worksheet for ${data.studentKey}:`, err);
+      }
+    }
+    if (approvedWorksheets.length === 0) return;
+
+    onUpdateRecords((prevRecords) => {
+      const merged = [...prevRecords];
+      for (const { regKey, record: cw } of approvedWorksheets) {
+        const k = studentKey(cw);
+        const idx = merged.findIndex((item) => studentKey(item) === k);
+        if (idx >= 0) {
+          const old = merged[idx];
+          if (pendingTeacherSavesRef.current.has(regKey)) {
+            // 아직 서버로 보내지 않은 교사 입력이 있으면 화면의 평가를 유지 (입력 중 덮어쓰기 방지)
+            cw.teacherMemo = old.teacherMemo;
+            cw.evaluation = old.evaluation;
+          } else {
+            cw.teacherMemo = cw.teacherMemo || old.teacherMemo || '';
+            cw.evaluation = cw.evaluation || old.evaluation;
           }
+          merged[idx] = cw;
+        } else {
+          merged.push(cw);
         }
       }
+      return merged;
+    });
+  }, [cloudRegistrations, lessonDocsByStudent, onUpdateRecords]);
 
-      setCloudRegistrations(docs);
-
-      if (approvedWorksheets.length > 0) {
-        onUpdateRecords((prevRecords) => {
-          const merged = [...prevRecords];
-          for (const cw of approvedWorksheets) {
-            const k = studentKey(cw);
-            const idx = merged.findIndex((item) => studentKey(item) === k);
-            if (idx >= 0) {
-              const old = merged[idx];
-              cw.teacherMemo = cw.teacherMemo || old.teacherMemo || '';
-              cw.evaluation = cw.evaluation || old.evaluation;
-              merged[idx] = cw;
-            } else {
-              merged.push(cw);
-            }
-          }
-          return merged;
+  // 모든 학생의 차시 문서 실시간 수신
+  useEffect(() => {
+    const unsub = listenAllStudentLessons(
+      (byStudent) => setLessonDocsByStudent(byStudent),
+      (error) => {
+        console.error('Lesson documents listener error:', error);
+        setNotice({
+          text: `학생 차시 기록 실시간 동기화 확인 필요: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          type: 'warn',
         });
       }
-    },
-    [onUpdateRecords]
-  );
+    );
+    return () => unsub();
+  }, []);
+
+  // 대기 중인 교사 평가를 서버에 저장
+  const flushTeacherSaves = useCallback(async () => {
+    if (teacherSaveTimerRef.current) {
+      clearTimeout(teacherSaveTimerRef.current);
+      teacherSaveTimerRef.current = null;
+    }
+    const pending = Array.from(pendingTeacherSavesRef.current.entries());
+    for (const [regKey, record] of pending) {
+      const json = teacherJson(record);
+      if (lastSavedTeacherJsonRef.current.get(regKey) === json) {
+        pendingTeacherSavesRef.current.delete(regKey);
+        continue;
+      }
+      try {
+        await saveTeacherEvaluation(regKey, record);
+        lastSavedTeacherJsonRef.current.set(regKey, json);
+        // 저장하는 동안 새 입력이 들어오지 않았을 때만 대기 목록에서 제거
+        if (pendingTeacherSavesRef.current.get(regKey) === record) {
+          pendingTeacherSavesRef.current.delete(regKey);
+        }
+      } catch (err) {
+        console.error(`Teacher evaluation save failed for ${regKey}:`, err);
+        setNotice({
+          text: `평가 저장 실패: 네트워크 상태를 확인해 주세요. 입력한 내용은 이 화면에 남아 있으며 다음 입력 때 다시 저장을 시도합니다. (${
+            err instanceof Error ? err.message : String(err)
+          })`,
+          type: 'warn',
+        });
+      }
+    }
+  }, []);
+
+  // 화면을 떠나거나 창을 전환할 때 대기 중인 평가를 바로 저장
+  useEffect(() => {
+    const flushNow = () => {
+      void flushTeacherSaves();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushNow();
+    };
+    window.addEventListener('pagehide', flushNow);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushNow);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      flushNow();
+    };
+  }, [flushTeacherSaves]);
 
   const handleManualRefreshRegistrations = useCallback(async () => {
     try {
@@ -710,18 +798,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       return `${g}::${c}` === selectedKey;
     });
     if (matchCloud) {
-      try {
-        const nextWorksheetJson = embedFuncWorksheetIntoJson(
-          matchCloud.worksheetJson,
-          updatedItem
-        );
-        await updateDoc(doc(db, 'student_registrations', matchCloud.studentKey), {
-          worksheetJson: nextWorksheetJson,
-          updatedAt: serverTimestamp(),
-        });
-      } catch {
-        // local fallback already updated
-      }
+      // 평가·메모는 교사 전용 문서에만 저장. 글자를 입력할 때마다 저장하지 않고 1.5초 동안 모아서 저장
+      pendingTeacherSavesRef.current.set(matchCloud.studentKey, updatedItem);
+      if (teacherSaveTimerRef.current) clearTimeout(teacherSaveTimerRef.current);
+      teacherSaveTimerRef.current = setTimeout(() => {
+        void flushTeacherSaves();
+      }, TEACHER_SAVE_DELAY_MS);
     }
   };
 

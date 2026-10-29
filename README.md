@@ -9,11 +9,11 @@
 
 - **학생·교사 승인제 게이트웨이 (`AuthGateView` — `Props` 수업과 통합 계정 연동)**:
   - **기존 `Props` 수업 학습자 무가입 즉시 연동**: [`https://4ai4me.github.io/Props/`](https://4ai4me.github.io/Props/)와 동일한 Firebase 프로젝트(`tonal-nimbus-x3kqt`) 및 Firestore 데이터베이스(`ai-studio-526dd59d-4569-47c9-82fd-c81701392bbd`)의 `student_registrations` 컬렉션을 공유합니다. 이미 `Props`(명제 수업)에서 가입·승인된 학생은 다시 가입할 필요 없이 기존 학적 정보로 즉시 로그인되며, 동일 브라우저에서는 자동 입장됩니다.
-  - **과목별 답안 무손실 분리 저장 (`funcWorksheet`)**: 동일한 학생 문서를 공유하면서도 기존의 `Props`(명제) 탐구 답안·교사 평가는 최상위 필드에 그대로 보존하고, `Func`(함수) 탐구 답안·교사 평가는 `worksheetJson` 내부의 `funcWorksheet` 네임스페이스에 분리 저장하여 두 수업 간 데이터 덮어쓰기를 원천 차단합니다.
+  - **과목별·차시별 분리 저장**: 동일한 학생 가입 문서를 공유하되, `Func`(함수) 답안은 `func_lessons/l1~l7` 차시 문서에, `Props`(명제) 답안은 `props_lessons/l1~l7`에 따로 저장하여 두 수업 간 덮어쓰기가 일어나지 않습니다. 예전 `worksheetJson`(`funcWorksheet` 포함)은 보존용으로만 읽습니다 (아래 5.1 참고).
   - **학교 공용 네트워크 최적화 (MAC 주소 해시 기반 식별)**: 동일 공인 IP를 사용하는 학교 와이파이·컴퓨터실 환경을 고려하여 IP 검사를 배제하고, 기기 고유 MAC 주소 식별자(`deviceHash`) 및 학번 기준으로 중복 신청을 방지합니다.
   - **교사(관리자) 모드**: 지정된 관리자 Google 계정(`liha1634@gmail.com` / `planitia4ai@gmail.com`) OAuth 인증을 통해서만 교사용 수사 기록실 및 학생 승인 패널에 접근할 수 있습니다.
 - **실시간 클라우드 자동 저장 및 강제 저장**:
-  - 학생이 작성하는 탐구 답안은 `localStorage`와 Firebase Firestore(`student_registrations/{studentKey}`)에 실시간 Debounce 자동 저장되며, 상단 헤더의 **`[지금 저장]`** 버튼으로 즉시 강제 동기화할 수 있습니다.
+  - 학생이 작성하는 탐구 답안은 `localStorage`에 즉시, Firebase Firestore에는 입력을 멈추고 10초 뒤 **바뀐 차시 문서만** 자동 저장되며(탭 닫기·전환 시 즉시 저장), 상단 헤더의 **`[지금 저장]`** 버튼으로 즉시 강제 동기화할 수 있습니다.
 - **스마트 수식 입력 도우미 (`MathSymbolInputBar` & `MathText`)**:
   - 함수 기호(`f(x)`, `g(x)`, `(g∘f)(x)`, `f⁻¹(x)`, `∘`, `↦`, `→`), 부등호·등호(`≥`, `≤`, `≠`, `±`), 제곱·근호(`²`, `³`, `√(□)`), 논리·집합 기호(`∴`, `∵`, `⇒`, `⇔`, `∈`, `∉`, `⊂`, `∪`, `∩`)를 원클릭 버튼 및 키보드 단축어로 입력할 수 있습니다.
   - 벡터 SVG 근호 갈고리와 윗줄(Vinculum)이 결합된 `<MathText />` 렌더러를 통해 루트 수식을 명확하게 표시합니다.
@@ -113,11 +113,52 @@
                  ▼                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        Firebase Firestore 백엔드                       │
-│  - student_registrations/{studentKey}: 가입 상태, 학적정보, 답안 JSON  │
+│  - student_registrations/{studentKey}: 가입 상태, 학적정보, uid        │
+│    └ func_lessons/l1~l7, teacher: 차시별 답안 / 교사 평가 (5.1 참고)   │
 │  - device_locks/{deviceHash}: 기기 고유 MAC 주소 기반 중복 가입 방지    │
 │  - student_access_logs/{logId}: 학생 실시간 접속 및 저장 감사 기록      │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+### 5.1 Firestore 저장 구조·보안 (2026-10-30 갱신)
+
+> `Func`와 `Props`는 **같은 Firebase 프로젝트·같은 Firestore 데이터베이스**(`ai-studio-526dd59d-…`)와 **같은 보안 규칙**(`firestore.rules`)을 공유합니다. 규칙을 바꿀 때는 두 저장소의 `firestore.rules`를 똑같이 맞추고, Firebase 콘솔에서 한 번만 게시합니다.
+
+**학생 인증 — Firebase 익명 로그인**
+- 학생은 접속 시 자동으로 익명 로그인되며(비밀번호 없음), 가입 문서에 본인 익명 계정 `uid`가 기록됩니다.
+- 다른 기기·브라우저에서 로그인하면 이름·생년월일을 **보안 규칙(서버)이 확인**한 뒤 그 기기로 연결합니다(이전 기기 연결은 해제).
+- 학생이 [나가기]를 누르면 익명 계정도 로그아웃되어, 공용 기기의 다음 사용자가 이전 학생 문서에 접근할 수 없습니다.
+- Firebase 콘솔 → Authentication → 로그인 방법에서 **익명** 제공업체가 사용 설정되어 있어야 합니다.
+
+**차시별 분리 저장**
+```text
+student_registrations/{studentKey}                 가입 정보·승인 상태·uid
+                                                    (+ 예전 worksheetJson: 보존용, 더 이상 갱신하지 않음)
+student_registrations/{studentKey}/func_lessons/l1~l7   차시별 답안 (승인된 학생 본인만 쓰기)
+student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (교사만 쓰기, 학생은 읽기만)
+```
+- 학생이 입력을 멈추고 **10초** 뒤, **내용이 바뀐 차시 문서만** 저장합니다. 탭을 닫거나 다른 창으로 전환하면 즉시 저장합니다.
+- 차시 문서가 아직 없는 차시는 예전 `worksheetJson` 내용을 그대로 사용하므로 별도 데이터 이전 작업이 필요 없습니다(학생이 그 차시를 수정할 때 자연스럽게 옮겨짐).
+- 서버 내용을 불러오기 전에는 자동 저장하지 않습니다(오래된 내용으로 서버를 덮어쓰지 않기 위해). 입력 내용은 그동안 기기(`localStorage`)에 보관됩니다.
+- 교사 평가·메모는 입력을 **1.5초** 모았다가 `teacher` 문서에만 저장합니다.
+- 차시 문서에는 `schemaVersion`(현재 1)이 기록됩니다. 문서 구조를 바꿀 때는 버전을 올리고 읽는 쪽에서 버전별로 처리합니다.
+- 관련 코드: `src/utils/lessonStore.ts`(저장·불러오기), `src/utils/lessonMerge.ts`(합치기·변경 감지, 단위 테스트 `lessonMerge.test.ts`).
+
+**보안 규칙 요약**
+| 대상 | 읽기 | 쓰기 |
+|---|---|---|
+| 가입 목록 조회 | 교사 | — |
+| 가입 문서 | 교사, 본인 | 생성: 로그인한 학생(pending), 승인·반려: 교사, 접속 정보: 본인 |
+| 차시 문서 `l1~l7` | 교사, 본인 | 승인된 본인, 교사 |
+| 교사 평가 `teacher` | 교사, 본인 | 교사 |
+| 접속 기록 | 교사 | 로그인한 사용자(생성만) |
+| 차시 잠금 설정 | 누구나 | 교사 |
+
+**사용량(무료 한도) 주의**
+- 이 데이터베이스는 AI Studio 공유 할당량 데이터베이스로, **결제를 등록해도 무료 한도(쓰기 하루 2만 단위)를 넘을 수 없습니다.** 한도는 미국 태평양 시간 자정(한국 시간 오후 4~5시)에 초기화됩니다.
+- 쓰기 단위는 저장하는 문서 크기에 비례하는 것으로 보이므로(추정), 큰 문서를 자주 저장하는 기능을 추가할 때는 바뀐 부분만 작은 문서로 저장하도록 설계합니다.
 
 ---
 
@@ -127,6 +168,7 @@
 # 단위 테스트 실행 (인증/식별자 및 수식/루브릭 로직)
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
+npx --yes tsx --test src/utils/lessonMerge.test.ts
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build
