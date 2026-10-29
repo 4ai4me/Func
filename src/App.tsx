@@ -78,6 +78,10 @@ import {
   Lock,
 } from 'lucide-react';
 
+// 학생 활동지 자동 저장 대기 시간: 입력이 멈춘 뒤 이 시간이 지나면 한 번 저장
+// (기존 0.9초 → 10초. 탭 전환·닫기 시에는 즉시 저장되므로 내용이 사라지지 않음)
+const AUTOSAVE_DELAY_MS = 10000;
+
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [sessionMode, setSessionMode] = useState<'gate' | 'student' | 'teacher'>(() => {
@@ -216,6 +220,8 @@ export default function App() {
   } | null>(null);
 
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 자동 저장 대기 중인 작업 (탭 닫힘·전환 시 즉시 실행)
+  const pendingSaveRef = useRef<(() => Promise<void>) | null>(null);
   const latestRawWorksheetJsonRef = useRef<string>(approvedProfile?.worksheetJson || '');
 
   // Track Firebase Auth state
@@ -238,16 +244,23 @@ export default function App() {
     }
 
     if (sessionMode === 'student' && approvedProfile?.studentKey) {
+      const studentKey = approvedProfile.studentKey;
+      const baseJson = latestRawWorksheetJsonRef.current || approvedProfile.worksheetJson;
+      const nextWorksheetJson = embedFuncWorksheetIntoJson(baseJson, student);
+
+      // 내용이 서버에 저장된 것과 같으면 쓰지 않음 (로그인 직후·평가 수신 시 불필요한 저장 방지)
+      if (nextWorksheetJson === baseJson) {
+        pendingSaveRef.current = null;
+        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+        return;
+      }
+
       setCloudSyncStatus('saving');
-      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = setTimeout(async () => {
+      pendingSaveRef.current = async () => {
+        pendingSaveRef.current = null;
         try {
-          const nextWorksheetJson = embedFuncWorksheetIntoJson(
-            latestRawWorksheetJsonRef.current || approvedProfile.worksheetJson,
-            student
-          );
           latestRawWorksheetJsonRef.current = nextWorksheetJson;
-          await updateDoc(doc(db, 'student_registrations', approvedProfile.studentKey), {
+          await updateDoc(doc(db, 'student_registrations', studentKey), {
             worksheetJson: nextWorksheetJson,
             updatedAt: serverTimestamp(),
           });
@@ -257,9 +270,30 @@ export default function App() {
           console.error('Firestore autosave failed:', err);
           setCloudSyncStatus('error');
         }
-      }, 900);
+      };
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => {
+        pendingSaveRef.current?.();
+      }, AUTOSAVE_DELAY_MS);
     }
   }, [student, sessionMode, approvedProfile]);
+
+  // 탭을 닫거나 다른 창으로 전환할 때는 기다리지 않고 바로 저장
+  useEffect(() => {
+    const flushNow = () => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      pendingSaveRef.current?.();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushNow();
+    };
+    window.addEventListener('pagehide', flushNow);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushNow);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // Real-time listener for teacher evaluations pushed to student registration
   useEffect(() => {
@@ -577,6 +611,8 @@ export default function App() {
       showToast('승인된 학생 계정 정보가 없어 클라우드에 저장할 수 없습니다.', 'warn');
       return;
     }
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    pendingSaveRef.current = null;
     setCloudSyncStatus('saving');
     try {
       const nextWorksheetJson = embedFuncWorksheetIntoJson(
