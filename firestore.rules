@@ -166,6 +166,31 @@ service cloud.firestore {
         incoming().createdAt == request.time;
       allow update, delete: if isAdmin();
     }
+
+    function isValidLessonAccessSetting(data) {
+      return data.keys().hasAll(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'updatedBy', 'updatedAt']) &&
+        data.keys().hasOnly(['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'updatedBy', 'updatedAt']) &&
+        data.l1 is bool &&
+        data.l2 is bool &&
+        data.l3 is bool &&
+        data.l4 is bool &&
+        data.l5 is bool &&
+        data.l6 is bool &&
+        data.l7 is bool &&
+        data.updatedBy is string && data.updatedBy.size() >= 1 && data.updatedBy.size() <= 120 &&
+        data.updatedAt is timestamp;
+    }
+
+    // Classroom-wide Lesson Access ON/OFF Settings (Readable by students, writable by Admin Teacher)
+    match /app_settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if false;
+      allow create, update: if settingId == 'lesson_access' &&
+        isAdmin() &&
+        isValidLessonAccessSetting(incoming()) &&
+        incoming().updatedAt == request.time;
+      allow delete: if settingId == 'lesson_access' && isAdmin();
+    }
   }
 }
 

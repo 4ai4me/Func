@@ -34,6 +34,12 @@ import {
   getTeacherEvaluationProgress,
   getClassEvaluationSummary,
   studentKey,
+  ALL_LESSON_NUMBERS,
+  LESSON_TAB_METADATA,
+  LessonAccessConfig,
+  LessonAccessPreset,
+  LessonTabNumber,
+  createLessonAccessPreset,
 } from '../utils/mathLogic';
 import { formatDeviceHashAsMac } from '../utils/authLogic';
 import { FirestoreStudentRegistrationDoc } from './AuthGateView';
@@ -70,6 +76,8 @@ import {
   LogIn,
   UserPlus,
   Save,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { StudentAccessLog } from '../utils/auditLogger';
 import { MathText } from './MathText';
@@ -82,6 +90,8 @@ interface TeacherViewProps {
   onUpdateRecords: React.Dispatch<React.SetStateAction<StudentRecord[]>>;
   onPrintStudentReport: (student: StudentRecord) => void;
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
+  lessonAccess: LessonAccessConfig;
+  onUpdateLessonAccess: (nextConfig: LessonAccessConfig, reasonLabel?: string) => void;
 }
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -92,6 +102,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onUpdateRecords,
   onPrintStudentReport,
   onRequestConfirm,
+  lessonAccess,
+  onUpdateLessonAccess,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -104,6 +116,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   });
 
   // Section collapse/expand states
+  const [isLessonAccessOpen, setIsLessonAccessOpen] = useState(true);
   const [isApprovalOpen, setIsApprovalOpen] = useState(true);
   const [isControlsOpen, setIsControlsOpen] = useState(true);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(true);
@@ -894,8 +907,210 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const enabledLessonCount = ALL_LESSON_NUMBERS.filter((n) => lessonAccess[n]).length;
+
+  const handleToggleSingleLesson = (lessonNum: LessonTabNumber) => {
+    const nextVal = !lessonAccess[lessonNum];
+    const nextConfig: LessonAccessConfig = {
+      ...lessonAccess,
+      [lessonNum]: nextVal,
+      updatedAt: new Date().toISOString(),
+      updatedBy: adminEmail,
+    };
+    const meta = LESSON_TAB_METADATA.find((m) => m.num === lessonNum);
+    const label = `${meta ? meta.fullTitle : `${lessonNum}차시`} ${
+      nextVal ? '활성화(열림)' : '비활성화(선행 잠금)'
+    }`;
+    onUpdateLessonAccess(nextConfig, label);
+    setNotice({
+      text: `[차시 접근 설정] ${label} 처리가 완료되었습니다. 학생 화면에 실시간 반영됩니다.`,
+      type: nextVal ? 'good' : 'info',
+    });
+  };
+
+  const handleApplyLessonPreset = (preset: LessonAccessPreset, presetLabel: string) => {
+    const nextConfig = createLessonAccessPreset(preset, adminEmail);
+    onUpdateLessonAccess(nextConfig, presetLabel);
+    setNotice({
+      text: `[차시 일괄 설정] '${presetLabel}' 설정이 적용되었습니다. 학생 화면에 실시간 반영됩니다.`,
+      type: 'good',
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* SECTION 0: Lesson Access ON/OFF Management (Prevent Jumping Ahead) */}
+      <div
+        id="teacher-lesson-access-card"
+        className="rounded-2xl border border-indigo-200/90 bg-white p-5 sm:p-7 shadow-xs"
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsLessonAccessOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-expanded={isLessonAccessOpen}
+              aria-label="차시별 학습 활성/잠금 메뉴 접기/펼치기"
+            >
+              {isLessonAccessOpen ? (
+                <>
+                  <ChevronUp className="h-4 w-4 text-slate-600" />
+                  <span>접기</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 text-slate-600" />
+                  <span>펼치기</span>
+                </>
+              )}
+            </button>
+            <div>
+              <div className="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" />
+                <span>수업 진도 통제 · 학습자 차시 선행 방지 설정</span>
+              </div>
+              <h2 className="mt-0.5 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
+                차시별 학습 활성(ON) / 비활성(OFF) 관리
+                <span
+                  className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${
+                    enabledLessonCount === 7
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : enabledLessonCount === 0
+                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                      : 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                  }`}
+                >
+                  현재 열림 {enabledLessonCount}개 / 전체 7차시
+                </span>
+              </h2>
+            </div>
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleApplyLessonPreset('only1', '1차시만 열기 (2~7차시 잠금)')}
+              className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
+            >
+              <Lock className="h-3.5 w-3.5 text-indigo-600" />
+              1차시만 열기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyLessonPreset('upTo2', '1~2차시 열기 (3~7차시 잠금)')}
+              className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
+            >
+              1~2차시 열기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyLessonPreset('upTo3', '1~3차시 열기 (4~7차시 잠금)')}
+              className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
+            >
+              1~3차시 열기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyLessonPreset('upTo4', '1~4차시 열기 (5~7차시 잠금)')}
+              className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
+            >
+              1~4차시 열기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyLessonPreset('allOpen', '전체 차시 열기 (1~7차시 모두 활성)')}
+              className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-800 hover:bg-emerald-100 transition-colors"
+            >
+              <Unlock className="h-3.5 w-3.5 text-emerald-600" />
+              전체 열기
+            </button>
+          </div>
+        </div>
+
+        {isLessonAccessOpen && (
+          <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              각 차시를 <strong>ON(활성)</strong> 또는 <strong>OFF(비활성·잠금)</strong>으로 전환하면 학생 화면의 상단 차시 탭과 ‘다음 차시로 이동’ 버튼에 즉시 반영됩니다.
+              비활성(OFF)된 차시는 자물쇠(<Lock className="inline h-3.5 w-3.5 text-slate-500" />)로 잠기며, 학생이 진도를 앞서 나가는 것(선행 학습)을 방지합니다.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {LESSON_TAB_METADATA.map((item) => {
+                const isEnabled = Boolean(lessonAccess[item.num]);
+                return (
+                  <div
+                    key={item.num}
+                    className={`rounded-xl border p-3.5 flex flex-col justify-between gap-3 transition-all ${
+                      isEnabled
+                        ? 'border-emerald-200 bg-emerald-50/40'
+                        : 'border-slate-200 bg-slate-50/80 opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-extrabold mono ${
+                            isEnabled
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {item.badge}차시
+                        </span>
+                        <div className="mt-1.5 text-sm font-extrabold text-slate-900">
+                          {item.shortTitle}
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap ${
+                          isEnabled
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-700 text-white'
+                        }`}
+                      >
+                        {isEnabled ? (
+                          <>
+                            <Unlock className="h-3 w-3" />
+                            <span>ON · 열림</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-3 w-3" />
+                            <span>OFF · 잠금</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70">
+                      <span className="text-[11px] font-semibold text-slate-600">
+                        {isEnabled ? '학생 접속·풀이 가능' : '학생 진입·선행 차단됨'}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isEnabled}
+                        aria-label={`${item.fullTitle} 활성 여부 전환`}
+                        onClick={() => handleToggleSingleLesson(item.num)}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-extrabold transition-colors whitespace-nowrap ${
+                          isEnabled
+                            ? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        }`}
+                      >
+                        {isEnabled ? '잠그기 (OFF)' : '열기 (ON)'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* SECTION 1: Student Registration Approval Management (Admin Only) */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
         <div className="flex items-center justify-between gap-3 flex-wrap">

@@ -981,3 +981,56 @@ test('Lesson 3 (합성함수 탐구) validation, completion, and rubric helpers 
   assert.equal(evaluateLevel3Completion(s.l3)[3], true);
   assert.deepEqual(evaluateRubricL3(s.l3), [true, true, true, true, true]);
 });
+
+import {
+  DEFAULT_LESSON_ACCESS,
+  normalizeLessonAccess,
+  isLessonEnabled,
+  getFirstEnabledLesson,
+  resolveAllowedStudentLesson,
+  createLessonAccessPreset,
+} from './mathLogic.ts';
+
+test('Lesson access ON/OFF control helpers normalize, preset, and enforce student lesson locks', () => {
+  // 1. Default normalization on null/invalid input opens all lessons safely
+  const def = normalizeLessonAccess(null);
+  assert.deepEqual(def, DEFAULT_LESSON_ACCESS);
+  assert.equal(getFirstEnabledLesson(def), 1);
+
+  // 2. Preset 'only1' opens only Lesson 1 and locks Lessons 2..7
+  const only1 = createLessonAccessPreset('only1', 'liha1634@gmail.com');
+  assert.equal(isLessonEnabled(only1, 1), true);
+  assert.equal(isLessonEnabled(only1, 2), false);
+  assert.equal(isLessonEnabled(only1, 3), false);
+  assert.equal(isLessonEnabled(only1, 7), false);
+  assert.equal(only1.updatedBy, 'liha1634@gmail.com');
+
+  // Student requesting Lesson 1 is allowed; requesting Lesson 2 or 3 is blocked and redirected to Lesson 1
+  assert.deepEqual(resolveAllowedStudentLesson(only1, 1), { allowed: true, targetLesson: 1 });
+  assert.deepEqual(resolveAllowedStudentLesson(only1, 2), { allowed: false, targetLesson: 1 });
+  assert.deepEqual(resolveAllowedStudentLesson(only1, 3), { allowed: false, targetLesson: 1 });
+
+  // 3. Firestore format normalization (l1..l7 keys)
+  const fromFirestore = normalizeLessonAccess({
+    l1: false,
+    l2: true,
+    l3: true,
+    l4: false,
+    l5: false,
+    l6: false,
+    l7: false,
+    updatedBy: 'planitia4ai@gmail.com',
+  });
+  assert.equal(fromFirestore[1], false);
+  assert.equal(fromFirestore[2], true);
+  assert.equal(fromFirestore[3], true);
+  assert.equal(fromFirestore[4], false);
+  assert.equal(getFirstEnabledLesson(fromFirestore), 2);
+  assert.deepEqual(resolveAllowedStudentLesson(fromFirestore, 1), { allowed: false, targetLesson: 2 });
+
+  // 4. All locked preset returns null for getFirstEnabledLesson
+  const allLocked = createLessonAccessPreset('allLocked');
+  assert.equal(getFirstEnabledLesson(allLocked), null);
+  assert.deepEqual(resolveAllowedStudentLesson(allLocked, 1), { allowed: false, targetLesson: null });
+});
+

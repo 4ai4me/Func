@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { doc, updateDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import {
   CLASSROOM_BRAND_NAME,
   STORAGE_KEY_STUDENT,
   STORAGE_KEY_TEACHER,
+  STORAGE_KEY_LESSON_ACCESS,
+  DEFAULT_LESSON_ACCESS,
+  LESSON_TAB_METADATA,
+  LessonAccessConfig,
+  LessonTabNumber,
   STAGE_TITLES,
   StudentRecord,
   TOPICS,
@@ -23,9 +28,12 @@ import {
   evaluateLevel6Completion,
   evaluateLevel7Completion,
   extractFuncWorksheetFromJson,
+  getFirstEnabledLesson,
   getTeacherEvaluationProgress,
   hasTeacherEvaluation,
+  isLessonEnabled,
   mergeStudentStates,
+  normalizeLessonAccess,
 } from './utils/mathLogic';
 import {
   ADMIN_TEACHER_EMAIL,
@@ -56,6 +64,7 @@ import {
   Award,
   RotateCw,
   Zap,
+  Lock,
 } from 'lucide-react';
 
 export default function App() {
@@ -117,15 +126,36 @@ export default function App() {
     return [];
   });
 
-  const [activeLessonTab, setActiveLessonTab] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(() => {
+  const [lessonAccess, setLessonAccess] = useState<LessonAccessConfig>(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const l = Number(params.get('lesson'));
-      if (l === 1 || l === 2 || l === 3 || l === 4 || l === 5 || l === 6 || l === 7) return l;
+      const raw = localStorage.getItem(STORAGE_KEY_LESSON_ACCESS);
+      if (raw) return normalizeLessonAccess(JSON.parse(raw));
     } catch {
       // ignore
     }
-    return 1;
+    return { ...DEFAULT_LESSON_ACCESS };
+  });
+
+  const [activeLessonTab, setActiveLessonTab] = useState<LessonTabNumber>(() => {
+    let initialLesson: LessonTabNumber = 1;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const l = Number(params.get('lesson'));
+      if (l === 1 || l === 2 || l === 3 || l === 4 || l === 5 || l === 6 || l === 7) {
+        initialLesson = l;
+      }
+      const rawAccess = localStorage.getItem(STORAGE_KEY_LESSON_ACCESS);
+      if (rawAccess) {
+        const parsedAccess = normalizeLessonAccess(JSON.parse(rawAccess));
+        if (!isLessonEnabled(parsedAccess, initialLesson)) {
+          const fallback = getFirstEnabledLesson(parsedAccess);
+          if (fallback !== null) initialLesson = fallback;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return initialLesson;
   });
   const [steps, setSteps] = useState<{
     1: number;
@@ -264,6 +294,61 @@ export default function App() {
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
+  // Real-time listener & cross-tab storage listener for lessonAccess ON/OFF settings
+  useEffect(() => {
+    const unsubFirestore = onSnapshot(
+      doc(db, 'app_settings', 'lesson_access'),
+      (docSnap) => {
+        if (!docSnap.exists()) return;
+        const normalized = normalizeLessonAccess(docSnap.data());
+        setLessonAccess(normalized);
+        try {
+          localStorage.setItem(STORAGE_KEY_LESSON_ACCESS, JSON.stringify(normalized));
+        } catch {
+          // ignore
+        }
+      },
+      () => {
+        // Ignore offline/permission errors and rely on localStorage fallback
+      }
+    );
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_LESSON_ACCESS && e.newValue) {
+        try {
+          setLessonAccess(normalizeLessonAccess(JSON.parse(e.newValue)));
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      unsubFirestore();
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Redirect student away from a locked lesson if currently viewing one
+  useEffect(() => {
+    if (sessionMode !== 'student') return;
+    if (!isLessonEnabled(lessonAccess, activeLessonTab)) {
+      const firstOpen = getFirstEnabledLesson(lessonAccess);
+      if (firstOpen !== null && firstOpen !== activeLessonTab) {
+        setActiveLessonTab(firstOpen);
+        const lockedMeta = LESSON_TAB_METADATA.find((m) => m.num === activeLessonTab);
+        const openMeta = LESSON_TAB_METADATA.find((m) => m.num === firstOpen);
+        setToast({
+          text: `${lockedMeta ? lockedMeta.fullTitle : `${activeLessonTab}차시`}는 현재 비활성(잠금) 상태여서 열려 있는 ${
+            openMeta ? openMeta.fullTitle : `${firstOpen}차시`
+          }로 이동했습니다.`,
+          type: 'warn',
+        });
+      }
+    }
+  }, [sessionMode, lessonAccess, activeLessonTab]);
+
   const showToast = (text: string, type: 'good' | 'warn' = 'good') => {
     setToast({ text, type });
     setTimeout(() => {
@@ -274,6 +359,58 @@ export default function App() {
   const requestConfirm = (title: string, message: string, onConfirm: () => void) => {
     setConfirmDialog({ title, message, onConfirm });
   };
+
+  const handleUpdateLessonAccess = useCallback(
+    async (nextConfig: LessonAccessConfig, reasonLabel?: string) => {
+      const normalized = normalizeLessonAccess(nextConfig);
+      setLessonAccess(normalized);
+      try {
+        localStorage.setItem(STORAGE_KEY_LESSON_ACCESS, JSON.stringify(normalized));
+      } catch {
+        // ignore
+      }
+      if (reasonLabel) {
+        showToast(`차시 접근 설정 저장됨: ${reasonLabel}`, 'good');
+      }
+      if (firebaseUser && isAuthorizedAdminEmail(firebaseUser.email, firebaseUser.emailVerified)) {
+        try {
+          await setDoc(doc(db, 'app_settings', 'lesson_access'), {
+            l1: Boolean(normalized[1]),
+            l2: Boolean(normalized[2]),
+            l3: Boolean(normalized[3]),
+            l4: Boolean(normalized[4]),
+            l5: Boolean(normalized[5]),
+            l6: Boolean(normalized[6]),
+            l7: Boolean(normalized[7]),
+            updatedBy: firebaseUser.email || ADMIN_TEACHER_EMAIL,
+            updatedAt: serverTimestamp(),
+          });
+        } catch (err) {
+          console.error('Failed to sync lesson_access to Firestore:', err);
+        }
+      }
+    },
+    [firebaseUser]
+  );
+
+  const handleSelectStudentLesson = useCallback(
+    (targetTab: LessonTabNumber, resetStepToZero = false) => {
+      if (sessionMode === 'student' && !isLessonEnabled(lessonAccess, targetTab)) {
+        const meta = LESSON_TAB_METADATA.find((m) => m.num === targetTab);
+        showToast(
+          `현재 선생님이 ${meta ? meta.fullTitle : `${targetTab}차시`}를 비활성(잠금) 상태로 설정하여 선행 학습할 수 없습니다.`,
+          'warn'
+        );
+        return;
+      }
+      if (resetStepToZero) {
+        setSteps((prev) => ({ ...prev, [targetTab]: 0 }));
+      }
+      setActiveLessonTab(targetTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [sessionMode, lessonAccess]
+  );
 
   const handleManualForceSave = async () => {
     if (!approvedProfile?.studentKey) {
@@ -575,42 +712,51 @@ export default function App() {
               >
                 {/* Top Row: Lesson 1 ~ 7 Tabs */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {(
-                    [
-                      [1, '01', '함수의 뜻과 그래프 (1차시)'],
-                      [2, '02', '여러 가지 함수 (2차시)'],
-                      [3, '03', '합성함수 탐구 (3차시)'],
-                      [4, '04', '역함수 탐구 (4차시)'],
-                      [5, '05', '유리함수1 (5차시)'],
-                      [6, '06', '유리함수2 (6차시)'],
-                      [7, '07', '무리함수 탐구 (7차시)'],
-                    ] as const
-                  ).map(([tabNum, badge, label]) => (
-                    <button
-                      key={tabNum}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeLessonTab === tabNum}
-                      onClick={() => {
-                        setActiveLessonTab(tabNum);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className={`min-h-[42px] rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 ${
-                        activeLessonTab === tabNum
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'bg-white/10 text-slate-200 border border-white/15 hover:bg-white/15'
-                      }`}
-                    >
-                      <span
-                        className={`mr-1.5 mono text-xs font-extrabold ${
-                          activeLessonTab === tabNum ? 'text-blue-600' : 'text-sky-300'
+                  {LESSON_TAB_METADATA.map(({ num: tabNum, badge, fullTitle: label }) => {
+                    const isUnlocked = isLessonEnabled(lessonAccess, tabNum);
+                    const isSelected = activeLessonTab === tabNum && isUnlocked;
+                    return (
+                      <button
+                        key={tabNum}
+                        type="button"
+                        role="tab"
+                        aria-selected={isSelected}
+                        aria-disabled={!isUnlocked}
+                        onClick={() => handleSelectStudentLesson(tabNum)}
+                        title={
+                          isUnlocked
+                            ? `${label} 학습하기`
+                            : `${label} — 현재 교사가 비활성(잠금) 상태로 설정하여 진입할 수 없습니다`
+                        }
+                        className={`min-h-[42px] rounded-xl px-3.5 py-2 text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : isUnlocked
+                            ? 'bg-white/10 text-slate-200 border border-white/15 hover:bg-white/15'
+                            : 'bg-slate-900/60 text-slate-400 border border-dashed border-slate-600/80 opacity-75 cursor-not-allowed'
                         }`}
                       >
-                        {badge}
-                      </span>
-                      {label}
-                    </button>
-                  ))}
+                        <span
+                          className={`mono text-xs font-extrabold ${
+                            isSelected
+                              ? 'text-blue-600'
+                              : isUnlocked
+                              ? 'text-sky-300'
+                              : 'text-slate-500'
+                          }`}
+                        >
+                          {badge}
+                        </span>
+                        <span>{label}</span>
+                        {!isUnlocked && (
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-300 border border-amber-400/30">
+                            <Lock className="h-3 w-3" />
+                            <span>잠김</span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Bottom Row: 나의 수사 진행 현황 (h3 class) with Evaluation & Print Buttons */}
@@ -939,168 +1085,160 @@ export default function App() {
                     학생: {approvedProfile ? `${approvedProfile.school} ${approvedProfile.grade}학년 ${approvedProfile.classNum}반 ${approvedProfile.studentNum}번 ${approvedProfile.name}` : `${student.group} ${student.code}`} · 출력일: {new Date().toLocaleDateString('ko-KR')}
                   </div>
                 </div>
-                {activeLessonTab === 1 && (
-                  <Lesson1View
-                    state={student.l1}
-                    step={steps[1]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 1: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l1: updater(prev.l1),
-                      }))
-                    }
-                    onGoToLesson2={() => {
-                      setSteps((prev) => ({ ...prev, 2: 0 }));
-                      setActiveLessonTab(2);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                {getFirstEnabledLesson(lessonAccess) === null ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 text-center space-y-3">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                      <Lock className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                      현재 모든 차시가 잠금(비활성) 상태입니다
+                    </h3>
+                    <p className="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
+                      선생님이 수업 진도에 맞춰 차시를 활성화(ON)하면 화면이 자동으로 열립니다. 잠시만 기다려 주세요.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {activeLessonTab === 1 && isLessonEnabled(lessonAccess, 1) && (
+                      <Lesson1View
+                        state={student.l1}
+                        step={steps[1]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 1: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l1: updater(prev.l1),
+                          }))
+                        }
+                        onGoToLesson2={() => handleSelectStudentLesson(2, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 2 && (
-                  <Lesson2View
-                    state={student.l2}
-                    step={steps[2]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 2: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l2: updater(prev.l2),
-                      }))
-                    }
-                    onChangeTopic={handleChangeTopic2}
-                    onGoToLesson3={() => {
-                      setSteps((prev) => ({ ...prev, 3: 0 }));
-                      setActiveLessonTab(3);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                    {activeLessonTab === 2 && isLessonEnabled(lessonAccess, 2) && (
+                      <Lesson2View
+                        state={student.l2}
+                        step={steps[2]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 2: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l2: updater(prev.l2),
+                          }))
+                        }
+                        onChangeTopic={handleChangeTopic2}
+                        onGoToLesson3={() => handleSelectStudentLesson(3, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 3 && (
-                  <Lesson3View
-                    state={student.l3}
-                    step={steps[3]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 3: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l3: updater(prev.l3),
-                      }))
-                    }
-                    onGoToLesson4={() => {
-                      setSteps((prev) => ({ ...prev, 4: 0 }));
-                      setActiveLessonTab(4);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                    {activeLessonTab === 3 && isLessonEnabled(lessonAccess, 3) && (
+                      <Lesson3View
+                        state={student.l3}
+                        step={steps[3]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 3: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l3: updater(prev.l3),
+                          }))
+                        }
+                        onGoToLesson4={() => handleSelectStudentLesson(4, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 4 && (
-                  <Lesson4View
-                    state={student.l4}
-                    step={steps[4]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 4: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l4: updater(prev.l4),
-                      }))
-                    }
-                    onGoToLesson5={() => {
-                      setSteps((prev) => ({ ...prev, 5: 0 }));
-                      setActiveLessonTab(5);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                    {activeLessonTab === 4 && isLessonEnabled(lessonAccess, 4) && (
+                      <Lesson4View
+                        state={student.l4}
+                        step={steps[4]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 4: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l4: updater(prev.l4),
+                          }))
+                        }
+                        onGoToLesson5={() => handleSelectStudentLesson(5, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 5 && (
-                  <Lesson5View
-                    state={student.l5}
-                    step={steps[5]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 5: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l5: updater(prev.l5),
-                      }))
-                    }
-                    onGoToLesson6={() => {
-                      setSteps((prev) => ({ ...prev, 6: 0 }));
-                      setActiveLessonTab(6);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                    {activeLessonTab === 5 && isLessonEnabled(lessonAccess, 5) && (
+                      <Lesson5View
+                        state={student.l5}
+                        step={steps[5]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 5: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l5: updater(prev.l5),
+                          }))
+                        }
+                        onGoToLesson6={() => handleSelectStudentLesson(6, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 6 && (
-                  <Lesson6View
-                    state={student.l6}
-                    step={steps[6]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 6: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l6: updater(prev.l6),
-                      }))
-                    }
-                    onGoToLesson7={() => {
-                      setSteps((prev) => ({ ...prev, 7: 0 }));
-                      setActiveLessonTab(7);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onRequestConfirm={requestConfirm}
-                  />
-                )}
+                    {activeLessonTab === 6 && isLessonEnabled(lessonAccess, 6) && (
+                      <Lesson6View
+                        state={student.l6}
+                        step={steps[6]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 6: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l6: updater(prev.l6),
+                          }))
+                        }
+                        onGoToLesson7={() => handleSelectStudentLesson(7, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
 
-                {activeLessonTab === 7 && (
-                  <Lesson7View
-                    state={student.l7}
-                    step={steps[7]}
-                    onStepChange={(next) => {
-                      setSteps((prev) => ({ ...prev, 7: next }));
-                      window.scrollTo({ top: 180, behavior: 'smooth' });
-                    }}
-                    onUpdate={(updater) =>
-                      setStudent((prev) => ({
-                        ...prev,
-                        updatedAt: new Date().toISOString(),
-                        l7: updater(prev.l7),
-                      }))
-                    }
-                    onRequestConfirm={requestConfirm}
-                  />
+                    {activeLessonTab === 7 && isLessonEnabled(lessonAccess, 7) && (
+                      <Lesson7View
+                        state={student.l7}
+                        step={steps[7]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 7: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => ({
+                            ...prev,
+                            updatedAt: new Date().toISOString(),
+                            l7: updater(prev.l7),
+                          }))
+                        }
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
+                  </>
                 )}
               </section>
             </section>
@@ -1116,6 +1254,8 @@ export default function App() {
                 onUpdateRecords={setTeacherRecords}
                 onPrintStudentReport={handlePrintStudentReport}
                 onRequestConfirm={requestConfirm}
+                lessonAccess={lessonAccess}
+                onUpdateLessonAccess={handleUpdateLessonAccess}
               />
             </section>
           )}
@@ -1187,8 +1327,7 @@ export default function App() {
           student={student}
           onPrintReport={handlePrintStudentReport}
           onGoToLesson={(lesson) => {
-            setActiveLessonTab(lesson);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            handleSelectStudentLesson(lesson);
           }}
         />
       </div>

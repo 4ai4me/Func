@@ -221,3 +221,28 @@
   - [x] `index.html`, `ghpages-app.js`, `ghpages-app.css`:
     - 캐시 버스터 `?v=20261028-lesson3-func` 갱신 및 정적 번들 최신화
 - **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (25/25 통과), `lint_applet` (0 errors), `compile_applet` 통과, `playwright-cli` 실제 브라우저 0~3단계 전체 렌더링·이미지 로드·콘솔 무오류 검증 완료.
+
+---
+
+## [2026-10-29] 관리자(교사) 차시별 활성(ON) / 비활성(OFF·잠금) 설정 및 학생 선행 학습 방지 기능 추가
+
+- **작업 Tier**: Tier 2 (교사 대시보드 차시별 ON/OFF 제어 패널 추가 + Firestore `/app_settings/lesson_access` 실시간 동기화 및 보안 규칙 배포 + 학생 모드 상단 탭/다음 차시 버튼/URL 파라미터 선행 진입 차단 + 단위 테스트 추가)
+- **요청 내용**:
+  - 각 차시(`1차시` ~ `7차시`)별로 활성/비활성 여부를 관리자가 ON/OFF할 수 있는 기능을 추가하여, 학습자가 예를 들어 1차시만 해야 하는데 2차시, 3차시 등을 미리 선행하는 것을 방지
+- **구현 내역 (Definition of Done)**:
+  - [x] `src/utils/mathLogic.ts`:
+    - `LessonTabNumber`, `LessonAccessConfig`, `LESSON_TAB_METADATA`, `DEFAULT_LESSON_ACCESS`, `STORAGE_KEY_LESSON_ACCESS` 타입 및 상수 정의
+    - `normalizeLessonAccess`, `isLessonEnabled`, `getFirstEnabledLesson`, `resolveAllowedStudentLesson`, `createLessonAccessPreset` 순수 함수 구현 (비정상 입력 시 기본 전체 열림으로 안전하게 복원하여 기존 기능 보존)
+  - [x] `firebase-blueprint.json` & `firestore.rules`:
+    - `LessonAccessSetting` 엔티티 및 `/app_settings/{settingId}` (`/app_settings/lesson_access`) 경로 추가
+    - 학생은 실시간 조회(`allow get`) 가능하고 관리자(`isAdmin()`)만 수정(`allow create, update`) 가능한 보안 규칙 작성 및 `DeployRules` RPC 배포 완료
+  - [x] `src/components/TeacherView.tsx`:
+    - 교사용 수사 기록실 최상단에 **`차시별 학습 활성(ON) / 비활성(OFF) 관리 (학습자 차시 선행 방지 설정)`** 카드 추가
+    - 원클릭 빠른 프리셋 버튼(`1차시만 열기`, `1~2차시 열기`, `1~3차시 열기`, `1~4차시 열기`, `전체 열기`) 및 `01차시`~`07차시` 개별 `열기 (ON)` / `잠그기 (OFF)` 스위치 제공
+  - [x] `src/App.tsx`:
+    - Firestore `/app_settings/lesson_access` 실시간 `onSnapshot` 리스너 및 `localStorage` 폴백 동기화 연동
+    - 학생 모드(`sessionMode === 'student'`)에서 비활성(OFF)된 차시 탭에 `🔒 잠김` 배지 표시 및 클릭 시 경고 토스트 안내와 함께 진입 차단
+    - 각 차시 마지막 단계의 `다음 차시로 이동` 콜백(`onGoToLesson2` ~ `onGoToLesson7`), 평가 모달 차시 이동, URL 쿼리(`?lesson=2` 등) 접근 시에도 잠금 여부를 검사하여 선행 진입을 원천 차단하고, 현재 보고 있던 차시가 실시간으로 잠기면 열려 있는 첫 차시로 안전하게 자동 이동
+  - [x] `src/utils/mathLogic.test.ts`:
+    - 차시별 ON/OFF 정규화, 프리셋 생성, 학생 접근 허용/차단 리다이렉트 로직 단위 테스트 추가 (`26/26` 전원 통과)
+- **회귀 확인**: `npx tsx --test src/utils/mathLogic.test.ts` (26/26 통과), `lint_applet` (0 errors), `compile_applet` 및 `npm run build` 통과, `playwright-cli` 실제 브라우저에서 교사 모드 `1차시만 열기` 클릭 후 학생 모드 `?lesson=2` 접속 시 1차시 유지 및 2~7차시 `잠김` 배지/진입 차단 동작 확인 완료.

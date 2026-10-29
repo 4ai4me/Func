@@ -4124,5 +4124,135 @@ export function tokenizeMathRadicals(text: string): MathTextToken[] {
   return tokens;
 }
 
+export type LessonTabNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
+export const ALL_LESSON_NUMBERS: LessonTabNumber[] = [1, 2, 3, 4, 5, 6, 7];
 
+export const LESSON_TAB_METADATA: {
+  num: LessonTabNumber;
+  badge: string;
+  shortTitle: string;
+  fullTitle: string;
+}[] = [
+  { num: 1, badge: '01', shortTitle: '함수의 뜻과 그래프', fullTitle: '함수의 뜻과 그래프 (1차시)' },
+  { num: 2, badge: '02', shortTitle: '여러 가지 함수', fullTitle: '여러 가지 함수 (2차시)' },
+  { num: 3, badge: '03', shortTitle: '합성함수 탐구', fullTitle: '합성함수 탐구 (3차시)' },
+  { num: 4, badge: '04', shortTitle: '역함수 탐구', fullTitle: '역함수 탐구 (4차시)' },
+  { num: 5, badge: '05', shortTitle: '유리함수1', fullTitle: '유리함수1 (5차시)' },
+  { num: 6, badge: '06', shortTitle: '유리함수2', fullTitle: '유리함수2 (6차시)' },
+  { num: 7, badge: '07', shortTitle: '무리함수 탐구', fullTitle: '무리함수 탐구 (7차시)' },
+];
+
+export interface LessonAccessConfig {
+  1: boolean;
+  2: boolean;
+  3: boolean;
+  4: boolean;
+  5: boolean;
+  6: boolean;
+  7: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export const STORAGE_KEY_LESSON_ACCESS = 'math_detective_lesson_access_v1';
+
+export const DEFAULT_LESSON_ACCESS: LessonAccessConfig = {
+  1: true,
+  2: true,
+  3: true,
+  4: true,
+  5: true,
+  6: true,
+  7: true,
+};
+
+export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
+  if (!raw || typeof raw !== 'object') {
+    return { ...DEFAULT_LESSON_ACCESS };
+  }
+  const obj = raw as Record<string, unknown>;
+  const pickBool = (num: LessonTabNumber): boolean => {
+    if (typeof obj[String(num)] === 'boolean') return obj[String(num)] as boolean;
+    if (typeof obj[`l${num}`] === 'boolean') return obj[`l${num}`] as boolean;
+    return true;
+  };
+  const result: LessonAccessConfig = {
+    1: pickBool(1),
+    2: pickBool(2),
+    3: pickBool(3),
+    4: pickBool(4),
+    5: pickBool(5),
+    6: pickBool(6),
+    7: pickBool(7),
+  };
+  if (typeof obj.updatedBy === 'string' && obj.updatedBy.trim()) {
+    result.updatedBy = obj.updatedBy.trim();
+  }
+  if (typeof obj.updatedAt === 'string' && obj.updatedAt.trim()) {
+    result.updatedAt = obj.updatedAt.trim();
+  } else if (
+    obj.updatedAt &&
+    typeof (obj.updatedAt as { toDate?: () => Date }).toDate === 'function'
+  ) {
+    try {
+      result.updatedAt = (obj.updatedAt as { toDate: () => Date }).toDate().toISOString();
+    } catch {
+      // ignore
+    }
+  }
+  return result;
+}
+
+export function isLessonEnabled(config: LessonAccessConfig, lesson: LessonTabNumber): boolean {
+  return Boolean(config[lesson]);
+}
+
+export function getFirstEnabledLesson(config: LessonAccessConfig): LessonTabNumber | null {
+  for (const num of ALL_LESSON_NUMBERS) {
+    if (config[num]) return num;
+  }
+  return null;
+}
+
+export function resolveAllowedStudentLesson(
+  config: LessonAccessConfig,
+  requestedLesson: LessonTabNumber
+): { allowed: boolean; targetLesson: LessonTabNumber | null } {
+  if (isLessonEnabled(config, requestedLesson)) {
+    return { allowed: true, targetLesson: requestedLesson };
+  }
+  return {
+    allowed: false,
+    targetLesson: getFirstEnabledLesson(config),
+  };
+}
+
+export type LessonAccessPreset =
+  | 'only1'
+  | 'upTo2'
+  | 'upTo3'
+  | 'upTo4'
+  | 'allOpen'
+  | 'allLocked';
+
+export function createLessonAccessPreset(
+  preset: LessonAccessPreset,
+  updatedBy?: string
+): LessonAccessConfig {
+  const now = new Date().toISOString();
+  const base: LessonAccessConfig = {
+    1: preset !== 'allLocked',
+    2: preset === 'upTo2' || preset === 'upTo3' || preset === 'upTo4' || preset === 'allOpen',
+    3: preset === 'upTo3' || preset === 'upTo4' || preset === 'allOpen',
+    4: preset === 'upTo4' || preset === 'allOpen',
+    5: preset === 'allOpen',
+    6: preset === 'allOpen',
+    7: preset === 'allOpen',
+    updatedAt: now,
+  };
+  if (updatedBy) {
+    base.updatedBy = updatedBy;
+  }
+  return base;
+}
