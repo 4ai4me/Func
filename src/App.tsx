@@ -54,6 +54,7 @@ import { Lesson1View } from './components/Lesson1View';
 import { Lesson2View } from './components/Lesson2View';
 import { Lesson3View } from './components/Lesson3View';
 import { Lesson4View } from './components/Lesson4View';
+import { summarizeL4 } from './utils/lesson4Logic';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
 import { Lesson7View } from './components/Lesson7View';
@@ -1220,7 +1221,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/5 · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
                     </span>
                   </div>
 
@@ -1957,12 +1958,12 @@ export default function App() {
                 '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="4차시 귀류법 [문제 1·√2]:" /></strong>{' '}
-              <MathText text={printingStudent.l4?.prob1ProofText || '미작성'} />
+              <strong><MathText text="4차시 역함수 [생각 열기·문제 1]:" /></strong>{' '}
+              <MathText text={summarizeL4(printingStudent.l4).part1 || '미작성'} />
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="4차시 귀류법 [문제 2·1+√2]:" /></strong>{' '}
-              <MathText text={printingStudent.l4?.prob2ProofText || '미작성'} />
+              <strong><MathText text="4차시 역함수 [역함수 구하기·함께하기·그래프]:" /></strong>{' '}
+              <MathText text={summarizeL4(printingStudent.l4).part2 || '미작성'} />
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
               <strong>5차시 절대부등식1 [문제 1·a²+b²≥ab]:</strong>{' '}

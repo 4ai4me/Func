@@ -20,7 +20,7 @@
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
-  - **함수 단원 기준 지표 (2026-10-30)**: 학급 탐구 역량 대시보드·학생 목록·필터·CSV(1~3차시)·체크리스트·예시 학생 데이터를 Func 1~3차시 문항 기준으로 바꿨습니다(이전: 명제 수업의 사례 수·참/거짓 판단·탐구 주제 기준). 지표 계산은 `src/utils/funcTeacherMetrics.ts`. 4~7차시는 현재 학생 화면이 명제 수업 내용(귀류법·절대부등식)이므로 그 화면에 맞춘 지표를 유지합니다.
+  - **함수 단원 기준 지표 (2026-10-30)**: 학급 탐구 역량 대시보드·학생 목록·필터·CSV·체크리스트·예시 학생 데이터를 Func 1~4차시 문항 기준으로 바꿨습니다(이전: 명제 수업의 사례 수·참/거짓 판단·탐구 주제 기준, 4차시는 2026-10-30 역함수로 교체). 지표 계산은 `src/utils/funcTeacherMetrics.ts`. 5~7차시는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로 그 화면에 맞춘 지표를 유지합니다.
   - **전체 답안 보기 (2026-10-30)**: 상세 비교 창(인라인·비모달 모두) 아래에 차시별로 학생이 입력한 **모든 문항**을 문항 이름과 함께 표시합니다. 차시마다 `작성 n/m` 현황을 보여 주며, 비어 있는 문항과 기존 요약 칸의 `미작성`은 **빨간 굵은 글씨**로 강조됩니다. 문항 이름은 `src/utils/answerLabels.ts`에서 관리하고, 이름표가 없는 새 필드라도 값이 있으면 `기타 기록`에 표시됩니다. 학생 화면에 문항을 추가하면 `answerLabels.ts`에 이름표를 추가하세요 (`answerLabels.test.ts`가 누락을 검사합니다).
   - **비모달 상세 비교 창 이동 (2026-10-30)**: 창의 어두운 제목 표시줄을 마우스로 끌거나 패드에서 손가락으로 끌어 옮길 수 있습니다(최대화·최소화 상태 제외). 창을 다시 열면 처음 위치(오른쪽 아래)에서 시작하며, 화면 밖으로 완전히 나가지 않습니다. (`src/utils/useDraggableWindow.ts`)
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
@@ -96,6 +96,21 @@
 ---
 
 - **[생각 열기] 합성함수 벤다이어그램 (2026-10-30 추가)**: 세 학생(X) → 음식(Y) → 가격(Z) 대응을 세 집합 벤다이어그램으로 보여 줍니다. 파란 실선 f, 주황 실선 g, 초록 점선 g∘f(Y를 거쳐 한 번에 대응). 위의 [학생 추적] 버튼이나 그림 속 학생을 누르면 그 학생의 경로만 강조됩니다. (`src/components/CompositeVennDiagram.tsx`)
+
+## 4-1. 4차시: 역함수 탐구 (`Lesson4View`, 2026-10-30)
+
+교과서 역함수 단원(`[생각 열기]`, `역함수와 그 성질`, `[보기]`, `[문제 1]`, `[예제 1]`, `[문제 2]`, `[함께하기]`, `[문제 3]`, 그래프 관계, `[문제 4]`, `[과학+ 문제 5]`, `공학 도구`)을 3차시와 같은 형식(교과서 그림 + 인터랙티브 + 단계별 입력·[정답 확인] + 힌트 + 성찰)으로 5단계 활동지로 만들었습니다. 이전 4차시 화면(명제 수업의 귀류법)을 대체합니다.
+
+1. **생각 열기 · 역함수의 뜻**: 온실가스 X → 화학식 Y 대응을 벤다이어그램으로 보여 주고 [화살표 뒤집기]로 Y → X 대응을 학생이 직접 연결. 일대일대응이 아닌 함수와 비교(뒤집으면 함수가 아님). 함수인지 판단, 역함수 존재 조건(일대일대응), 생각 톡톡(f의 정의역 = f⁻¹의 치역), 이유 서술. 핵심 개념(역함수의 성질 ①~④, [보기])
+2. **문제 1 · 역함수의 함숫값**: 그림 속 3을 7에 연결해 그림 완성(다른 곳에 연결하면 일대일대응이 아님을 안내) → f⁻¹(7)=3, (f⁻¹∘f)(4)=4, (f∘f⁻¹)(3)=3, (f⁻¹)⁻¹(2)=5. 완성 후 역함수 그림으로 전환
+3. **역함수 구하기**: 구하는 순서 안내 → 예제 1(y=3x+4)을 문제로(① x에 대하여 풀기 ② x, y 바꾸기, 교과서 풀이는 버튼으로) → 문제 2 → 문제 5 섭씨·화씨(온도 변환기 슬라이더, 95℉ = 35℃)
+4. **함께하기 · (g∘f)⁻¹**: 함수 기계(갔다가 되돌아오기) → 빈칸 6개와 = / ≠ 선택 → (g∘f)⁻¹ = f⁻¹∘g⁻¹ → 문제 3 ((f⁻¹∘g⁻¹)(3) = 4)
+5. **그래프와 y = x 대칭**: [보기] y=2x−2와 역함수 위의 점 (a, b)↔(b, a) 이동 → 문제 4(역함수 식을 입력하면 그래프에 바로 그려짐) → 공학 도구(GeoGebra 대신 화면 안 슬라이더로 f(x)=ax+1과 역함수·대칭이동 비교, 평행 a=1, 일치 a=−1) → 성찰
+
+- **식 채점**: 학생이 쓴 일차식을 a·x + b로 읽어 계수를 비교하므로 `1/3x`, `x/3`, `(x-4)/3`, `5/9(x-32)`처럼 다르게 써도 같은 답으로 인정합니다. 입력칸 아래에 "읽은 식"을 보여 줍니다. (`src/utils/linearExpr.ts`)
+- **문항 자료·채점·교사용 요약**: `src/utils/lesson4Logic.ts` / 좌표평면 그리기: `src/components/LinearGraph.tsx` / 교과서 그림: `public/assets/aistudio/image_l4_*.png`
+- **저장 데이터**: `Lesson4State`에 항목을 **추가만** 했습니다. 예전 귀류법 항목(`fractionExamples`, `prob1ProofText` 등)은 지우지 않고 보존하며 [전체 답안 보기]에서는 숨깁니다. 4차시 완료(단계 표시·루브릭)는 새 항목의 [정답 확인] 통과로만 판정합니다.
+- **교사 화면**: 대시보드(4차시 완성·1~4차시 완료 분포·문항별 확인 현황), 학생 목록 4차시 열·필터, CSV 4차시 열(답안 이름표 기준), 상세 비교, 학생 평가 창, 인쇄 평가서를 역함수 기준으로 변경
 
 ## 5. 시스템 아키텍처
 
@@ -190,7 +205,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

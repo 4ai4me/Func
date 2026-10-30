@@ -99,6 +99,7 @@ import {
   funcLessonProgress,
   lessonAnswerCsvColumns,
 } from '../utils/funcTeacherMetrics';
+import { summarizeL4 } from '../utils/lesson4Logic';
 import {
   hasStudentPassword,
   resetStudentPassword,
@@ -173,10 +174,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Column filter states for student records table
   const [filterGroup, setFilterGroup] = useState<string>('all');
-  // 1~3차시 진행 상태 필터 (완료 / 진행 중 / 시작 전)
+  // 1~4차시 진행 상태 필터 (완료 / 진행 중 / 시작 전)
   const [filterL1, setFilterL1] = useState<'all' | LessonProgress>('all');
   const [filterL2, setFilterL2] = useState<'all' | LessonProgress>('all');
   const [filterL3, setFilterL3] = useState<'all' | LessonProgress>('all');
+  const [filterL4, setFilterL4] = useState<'all' | LessonProgress>('all');
   const [filterEvalStatus, setFilterEvalStatus] = useState<'all' | 'complete' | 'partial' | 'none'>('all');
 
   // Modeless (비모달) dialog state for detail comparison
@@ -569,8 +571,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     });
   };
 
-  // CSV 1~3차시 열 (Func 수업 문항 이름표 기준)
-  const funcAnswerCsv = lessonAnswerCsvColumns(['l1', 'l2', 'l3']);
+  // CSV 1~4차시 열 (Func 수업 문항 이름표 기준)
+  const funcAnswerCsv = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4']);
 
   const handleExportCSV = () => {
     if (!records.length) {
@@ -581,14 +583,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       '학급',
       '식별코드',
       '수정 시각',
-      // 1~3차시: [전체 답안 보기]와 같은 문항 이름으로 모든 답안을 내보냄 (Func 수업 문항 기준)
+      // 1~4차시: [전체 답안 보기]와 같은 문항 이름으로 모든 답안을 내보냄 (Func 수업 문항 기준)
       ...funcAnswerCsv.map((c) => c.header),
-      '4차시 귀류법 문제1 단계확인',
-      '4차시 귀류법 문제1 증명서술',
-      '4차시 귀류법 문제2 단계확인',
-      '4차시 귀류법 문제2 증명서술',
-      '4차시 성찰1',
-      '4차시 성찰2',
       '5차시 수치사례수',
       '5차시 개념선택',
       '5차시 절대부등식1 문제1 단계확인',
@@ -625,7 +621,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ];
 
     const rows = records.map((x) => {
-      const d = x.l4;
       const e = x.l5;
       const f = x.l6;
       const g = x.l7;
@@ -636,12 +631,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         x.code,
         x.updatedAt,
         ...funcAnswerCsv.map((col) => col.value(x)),
-        d?.prob1Verified?.filter(Boolean).length ?? 0,
-        d?.prob1ProofText || '',
-        d?.prob2Verified?.filter(Boolean).length ?? 0,
-        d?.prob2ProofText || '',
-        d?.reflection1 || '',
-        d?.reflection2 || '',
         e?.examples?.length ?? 0,
         e?.squareConceptChoice || '',
         e?.prob1Verified?.filter(Boolean).length ?? 0,
@@ -735,6 +724,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     filterL1 !== 'all' ||
     filterL2 !== 'all' ||
     filterL3 !== 'all' ||
+    filterL4 !== 'all' ||
     filterEvalStatus !== 'all';
 
   const resetRecordsFilters = () => {
@@ -743,6 +733,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     setFilterL1('all');
     setFilterL2('all');
     setFilterL3('all');
+    setFilterL4('all');
     setFilterEvalStatus('all');
   };
 
@@ -759,10 +750,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       if (filterGroup !== 'all' && (x.group || '').trim() !== filterGroup) {
         return false;
       }
-      // 3~5. 1~3차시 진행 상태
+      // 3~6. 1~4차시 진행 상태
       if (filterL1 !== 'all' && funcLessonProgress(x, 1) !== filterL1) return false;
       if (filterL2 !== 'all' && funcLessonProgress(x, 2) !== filterL2) return false;
       if (filterL3 !== 'all' && funcLessonProgress(x, 3) !== filterL3) return false;
+      if (filterL4 !== 'all' && funcLessonProgress(x, 4) !== filterL4) return false;
       // 6. Filter by Teacher Evaluation status
       if (filterEvalStatus !== 'all') {
         const evalProg = getTeacherEvaluationProgress(x);
@@ -818,22 +810,23 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ['1차시 함수의 뜻과 그래프 완료', complete1],
     ['2차시 여러 가지 함수 완료', complete2],
     ['3차시 합성함수 탐구 완료', complete3],
-    ['4차시 귀류법(문제 1·2) 완료', complete4],
+    ['4차시 역함수 탐구 완료', complete4],
     ['5차시 절대부등식1 완료', complete5],
     ['6차시 절대부등식2 완료', complete6],
     ['7차시 절대부등식3 완료', complete7],
   ];
 
-  // 1~3차시(함수 단원) 중 완료한 차시 수별 학생 분포
+  // 1~4차시(함수 단원) 중 완료한 차시 수별 학생 분포
   const completedDist = completedLessonDistribution(records);
   const decisions: [string, number, string][] = [
-    ['3개 차시 모두 완료', completedDist[3], '#10b981'],
+    ['4개 차시 모두 완료', completedDist[4], '#10b981'],
+    ['3개 차시 완료', completedDist[3], '#14b8a6'],
     ['2개 차시 완료', completedDist[2], '#3b82f6'],
     ['1개 차시 완료', completedDist[1], '#f59e0b'],
     ['완료한 차시 없음', completedDist[0], '#94a3b8'],
   ];
 
-  // 1~3차시 문항별 확인 현황 (학생 화면의 [확인] 통과 기준)
+  // 1~4차시 문항별 확인 현황 (학생 화면의 [확인] 통과 기준)
   const topicRows: [string, number][] = FUNC_ITEM_CHECKS.map((c) => [c.title, records.filter(c.done).length]);
 
   const rated = records.filter((x) => ensureTeacherEval(x).scores.some((v) => v !== null));
@@ -1984,7 +1977,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {isControlsOpen && (
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-              승인된 학생들이 작성한 1~7차시(함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 4~7차시) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
+              승인된 학생들이 작성한 1~7차시(함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 역함수 · 5~7차시) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
@@ -2065,7 +2058,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 [complete1, '1차시(함수의 뜻) 완성'],
                 [complete2, '2차시(여러 가지 함수) 완성'],
                 [complete3, '3차시(합성함수) 완성'],
-                [complete4, '4차시(귀류) 완성'],
+                [complete4, '4차시(역함수) 완성'],
                 [complete5, '5차시(절대1) 완성'],
                 [complete6, '6차시(절대2) 완성'],
                 [complete7, '7차시(절대3) 완성'],
@@ -2158,7 +2151,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~3차시 완료 분포 (함수 단원)</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~4차시 완료 분포 (함수 단원)</h4>
                   <div className="flex items-center gap-6 flex-wrap">
                     <div
                       className="relative h-32 w-32 rounded-full shrink-0"
@@ -2188,7 +2181,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~3차시 문항별 확인 현황</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~4차시 문항별 확인 현황</h4>
                   <div className="space-y-2.5">
                     {topicRows.map(([title, n]) => {
                       const pct = count ? Math.round((n / count) * 100) : 0;
@@ -2329,7 +2322,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               </div>
 
               {/* 2. Column Filter Dropdowns */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
                 {/* Column Filter: 학급/반 */}
                 <div>
                   <label htmlFor="filter-group" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
@@ -2351,8 +2344,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </select>
                 </div>
 
-                {/* Column Filter: 1차시 사례 수 */}
-                {/* Column Filter: 1~3차시 진행 상태 */}
+                {/* Column Filter: 1~4차시 진행 상태 */}
                 <div>
                   <label htmlFor="filter-l1" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
@@ -2404,6 +2396,23 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     <option value="none">시작 전</option>
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="filter-l4" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <Filter className="h-3 w-3 text-slate-400" />
+                    <span>4차시 역함수</span>
+                  </label>
+                  <select
+                    id="filter-l4"
+                    value={filterL4}
+                    onChange={(e) => setFilterL4(e.target.value as typeof filterL4)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="all">전체</option>
+                    <option value="done">완료</option>
+                    <option value="progress">진행 중</option>
+                    <option value="none">시작 전</option>
+                  </select>
+                </div>
                 {/* Column Filter: 교수자 평가 상태 */}
                 <div>
                   <label htmlFor="filter-eval-status" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
@@ -2435,7 +2444,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                      <th className="py-3 px-3.5 text-left">1차시 함수의 뜻과 그래프</th>
                     <th className="py-3 px-3.5 text-left">2차시 여러 가지 함수</th>
                     <th className="py-3 px-3.5 text-left">3차시 합성함수</th>
-                    <th className="py-3 px-3.5 text-left">4차시 귀류법</th>
+                    <th className="py-3 px-3.5 text-left">4차시 역함수</th>
                     <th className="py-3 px-3.5 text-left">5~7차시 절대부등식</th>
                     <th className="py-3 px-3.5 text-left">교수자 평가 현황 (진행율)</th>
                     <th className="py-3 px-3.5 text-left">평가 및 비교</th>
@@ -2490,7 +2499,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             {x.l3 ? evaluateRubricL3(x.l3).filter(Boolean).length : 0}/5
                           </td>
                           <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l4 ? evaluateRubricL4(x.l4).filter(Boolean).length : 0}/5
+                            {x.l4 ? evaluateRubricL4(x.l4).filter(Boolean).length : 0}/5 ·{' '}
+                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 4)]}
                           </td>
                           <td className="py-3 px-3.5 text-xs text-slate-700 min-w-[210px]">
                             <div className="space-y-1">
@@ -2762,16 +2772,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
-                    <div className="text-xs font-bold text-purple-700">4차시 · 귀류법 수사 (문제 1·2)</div>
+                    <div className="text-xs font-bold text-purple-700">
+                      4차시 · 역함수 탐구 (루브릭 {selectedStudent.l4 ? evaluateRubricL4(selectedStudent.l4).filter(Boolean).length : 0}/5)
+                    </div>
                     {[
-                      [
-                        '문제 1 (√2는 유리수가 아니다) 증명',
-                        `단계 확인: ${selectedStudent.l4?.prob1Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l4?.prob1ProofText || '미작성'}`,
-                      ],
-                      [
-                        '문제 2 (1+√2는 유리수가 아니다) 증명',
-                        `단계 확인: ${selectedStudent.l4?.prob2Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l4?.prob2ProofText || '미작성'}`,
-                      ],
+                      ['[생각 열기·문제 1] 역함수의 뜻과 함숫값', summarizeL4(selectedStudent.l4).part1],
+                      ['[역함수 구하기·함께하기·그래프]', summarizeL4(selectedStudent.l4).part2],
                       ['4차시 성찰', selectedStudent.l4?.reflection1],
                     ].map(([label, val]) => (
                       <div key={label}>
@@ -3320,17 +3326,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-purple-600" />
-                      4차시 · 힌트 안내형 수사 (귀류법 문제 1·2)
+                      4차시 · 역함수 탐구 (루브릭 {selectedStudent.l4 ? evaluateRubricL4(selectedStudent.l4).filter(Boolean).length : 0}/5)
                     </div>
                     {[
-                      [
-                        '문제 1 (√2는 유리수가 아니다)',
-                        `단계 확인: ${selectedStudent.l4?.prob1Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l4?.prob1ProofText || '미작성'}`,
-                      ],
-                      [
-                        '문제 2 (1+√2는 유리수가 아니다)',
-                        `단계 확인: ${selectedStudent.l4?.prob2Verified?.filter(Boolean).length ?? 0}/4\n${selectedStudent.l4?.prob2ProofText || '미작성'}`,
-                      ],
+                      ['[생각 열기·문제 1] 역함수의 뜻과 함숫값', summarizeL4(selectedStudent.l4).part1],
+                      ['[역함수 구하기·함께하기·그래프]', summarizeL4(selectedStudent.l4).part2],
                       ['4차시 성찰 1', selectedStudent.l4?.reflection1],
                       ['4차시 성찰 2', selectedStudent.l4?.reflection2],
                     ].map(([label, val]) => (
@@ -3694,7 +3694,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {isChecklistOpen && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              ① 정의역의 각 원소에 공역의 원소가 ‘빠짐없이·오직 하나씩’ 대응하는지를 근거로 함수를 판별하는가? ② 정의역·공역·치역을 구분하고, 함수가 아닌 이유를 구체적인 원소로 설명하는가? ③ 일대일함수와 일대일대응의 차이(치역 = 공역)를 설명하고 항등함수·상수함수를 구별하는가? ④ 합성의 순서에 따라 결과가 달라짐(교환법칙 불성립)과 결합법칙이 성립하는 이유를 설명하는가?
+              ① 정의역의 각 원소에 공역의 원소가 ‘빠짐없이·오직 하나씩’ 대응하는지를 근거로 함수를 판별하는가? ② 정의역·공역·치역을 구분하고, 함수가 아닌 이유를 구체적인 원소로 설명하는가? ③ 일대일함수와 일대일대응의 차이(치역 = 공역)를 설명하고 항등함수·상수함수를 구별하는가? ④ 합성의 순서에 따라 결과가 달라짐(교환법칙 불성립)과 결합법칙이 성립하는 이유를 설명하는가? ⑤ 역함수가 존재할 조건(일대일대응)을 대응을 뒤집는 관점에서 설명하고, 역함수의 식을 구해 그래프가 직선 y = x에 대하여 대칭임을 확인하는가?
             </p>
           </div>
         )}

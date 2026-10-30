@@ -16,9 +16,9 @@ test('차시 진행 상태: 모두 충족 = 완료, 일부 = 진행 중, 없음 
   assert.equal(lessonProgress([false, false]), 'none');
 });
 
-test('빈 활동지는 1~3차시 모두 시작 전이고, 문항 확인 현황도 0이다', () => {
+test('빈 활동지는 1~4차시 모두 시작 전이고, 문항 확인 현황도 0이다', () => {
   const x = M.createInitialStudentState();
-  for (const l of [1, 2, 3] as const) assert.equal(funcLessonProgress(x, l), 'none');
+  for (const l of [1, 2, 3, 4] as const) assert.equal(funcLessonProgress(x, l), 'none');
   assert.equal(FUNC_ITEM_CHECKS.filter((c) => c.done(x)).length, 0);
 });
 
@@ -49,7 +49,23 @@ test('예시 학생 2명: 완료 학생은 1·2차시 완료, 진행 학생은 �
   assert.equal(funcLessonProgress(s1, 2), 'done');
   assert.equal(funcLessonProgress(s2, 2), 'progress');
   const dist = completedLessonDistribution([s1, s2]);
+  assert.equal(dist.length, 5, '0~4개 차시 완료');
   assert.equal(dist.reduce((a, b) => a + b, 0), 2, '분포 합계 = 학생 수');
+  // 4차시(역함수): 완료 학생은 완료, 진행 학생은 생각 열기만 → 진행 중
+  assert.equal(funcLessonProgress(s1, 4), 'done');
+  assert.equal(funcLessonProgress(s2, 4), 'progress');
+  assert.ok(FUNC_ITEM_CHECKS.filter((c) => c.title.startsWith('4차시')).every((c) => c.done(s1)));
+});
+
+test('CSV 4차시 열은 역함수 문항 이름을 쓰고, 귀류법 항목이 없다', () => {
+  const cols = lessonAnswerCsvColumns(['l4']);
+  const headers = cols.map((c) => c.header).join('|');
+  assert.ok(headers.includes('4차시') && headers.includes('역함수'));
+  for (const old of ['귀류', '√2', '증명 보고서']) assert.ok(!headers.includes(old), `귀류법 항목이 남아 있음: ${old}`);
+  const rec = { ...M.createInitialStudentState(), ...M.createFuncSampleLessons('complete') };
+  const row = cols.map((c) => c.value(rec));
+  assert.ok(row.includes('N2O→아산화 질소, CH4→메테인, CO2→이산화 탄소'), '대응표를 글자로');
+  assert.ok(row.includes('y = 5/9(x - 32)'));
 });
 
 test('CSV 1~3차시 열은 Func 문항 이름을 쓰고, 명제 수업 항목이 없다', () => {

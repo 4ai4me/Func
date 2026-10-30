@@ -265,6 +265,63 @@ export interface Lesson4State {
   prob2ProofText: string;
   reflection1: string;
   reflection2: string;
+
+  // --- Func 4차시: 역함수 탐구 (2026-10-30 추가) ---
+  // 위의 항목(fractionExamples ~ prob2ProofText)은 예전 귀류법 화면의 항목 — 지우지 않고 보존만 함.
+  // reflection1·2는 4차시 성찰로 계속 사용.
+
+  // 1단계 생각 열기 · 역함수의 뜻 (온실가스 대응 뒤집기)
+  /** 뒤집은 대응 Y → X (키: N2O·CH4·CO2, 값: 온실가스 이름) */
+  openReverseMap?: Record<string, string>;
+  openReverseIsFunc?: '' | 'yes' | 'no';
+  openConditionChoice?: '' | 'bijection' | 'oneToOne' | 'anyFunction';
+  openDomainRangeSame?: '' | 'yes' | 'no';
+  openReason?: string;
+  openVerified?: boolean;
+
+  // 2단계 [문제 1] 그림 완성과 역함수의 함숫값
+  /** 그림을 완성하기 위해 정한 f(3)의 값 */
+  p1_f3?: string;
+  p1_1?: string;
+  p1_2?: string;
+  p1_3?: string;
+  p1_4?: string;
+  p1Reason?: string;
+  p1Verified?: boolean;
+
+  // 3단계 역함수 구하기 — 예제 1(y=3x+4) 변형, [문제 2], [문제 5] 섭씨·화씨
+  ex1_solveX?: string;
+  ex1_ans?: string;
+  ex1Verified?: boolean;
+  p2_1?: string;
+  p2_2?: string;
+  p2Reason?: string;
+  p2Verified?: boolean;
+  p5_inv?: string;
+  p5_celsius?: string;
+  p5Verified?: boolean;
+
+  // 4단계 [함께하기] (g∘f)⁻¹ = f⁻¹∘g⁻¹, [문제 3]
+  tg_gf?: string;
+  tg_gfInv?: string;
+  tg_fInv?: string;
+  tg_gInv?: string;
+  tg_inner?: string;
+  tg_result?: string;
+  tg_relation?: '' | 'eq' | 'neq';
+  togetherVerified?: boolean;
+  p3_ans?: string;
+  p3Reason?: string;
+  p3Verified?: boolean;
+
+  // 5단계 그래프와 y = x 대칭 — [문제 4], 공학 도구 탐구
+  p4_1_inv?: string;
+  p4_2_inv?: string;
+  p4Verified?: boolean;
+  toolAlwaysOverlap?: '' | 'yes' | 'no';
+  toolParallelA?: string;
+  toolSameA?: string;
+  toolVerified?: boolean;
 }
 
 export interface L5InequalityExample {
@@ -1123,7 +1180,7 @@ export const STAGE_TITLES = {
   1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수'],
   2: ['일대일함수와 일대일대응', '문제 6 · 일대일 판별', '문제 7 · 항등·상수함수', '생각 넓히기 · 실생활'],
   3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙'],
-  4: ['귀류법 단서 탐색', '문제 1 증명 (√2)', '무리수 성질 탐색', '문제 2 증명 (1+√2)', '사건 종결·성찰'],
+  4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
   5: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
   6: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
   7: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
@@ -1844,13 +1901,17 @@ export function evaluateLevel3Completion(p: Lesson3State): boolean[] {
   return [step0Done, step1Done, step2Done, step3Done];
 }
 
+/**
+ * 4차시(역함수) 단계 완료 — 학생 화면의 [정답 확인] 통과 표시만 사용합니다.
+ * 예전 귀류법 항목은 판정에 쓰지 않습니다(같은 4차시 탭이 다른 수업 내용으로 완료 표시되지 않도록).
+ */
 export function evaluateLevel4Completion(p: Lesson4State): boolean[] {
   return [
-    p.fractionExamples.length >= 3 && p.contradictionConceptChecked,
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 40,
-    p.closureChecked && p.closureReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 35,
-    p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 20,
+    Boolean(p.openVerified),
+    Boolean(p.p1Verified),
+    Boolean(p.ex1Verified && p.p2Verified && p.p5Verified),
+    Boolean(p.togetherVerified && p.p3Verified),
+    Boolean(p.p4Verified && p.toolVerified) && (p.reflection1 || '').trim().length >= 10,
   ];
 }
 
@@ -2797,14 +2858,9 @@ export function evaluateRubricL3(p: Lesson3State): boolean[] {
   ];
 }
 
+/** 4차시(역함수) 루브릭 5항목 = 학생 화면 5단계 */
 export function evaluateRubricL4(p: Lesson4State): boolean[] {
-  return [
-    p.fractionExamples.length >= 3 && p.contradictionConceptChecked,
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 40,
-    p.closureChecked && p.closureReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 35,
-    p.reflection1.trim().length >= 20,
-  ];
+  return evaluateLevel4Completion(p);
 }
 
 export function evaluateRubricL5(p: Lesson5State): boolean[] {
@@ -2905,6 +2961,16 @@ function sanitizeNumbersArray(arr: unknown, defaultLen = 4): number[] {
     result.push(typeof v === 'number' && Number.isFinite(v) ? v : 0);
   }
   return result;
+}
+
+/** { 문자열: 문자열 } 대응 기록만 남깁니다 (없거나 형식이 다르면 undefined — 빈 대응으로 표시) */
+function sanitizeStringMap(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof val === 'string') out[k] = val;
+  }
+  return out;
 }
 
 export function cleanStudentState(raw: unknown): StudentRecord {
@@ -3010,6 +3076,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL4.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL4.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL4.prob2Hints, 4),
+      openReverseMap: sanitizeStringMap(rawL4.openReverseMap),
     },
     l5: {
       ...base.l5,
@@ -3052,7 +3119,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
   return cleanedResult;
 }
 
-function hasFuncLessonData(l1: unknown, l2?: unknown, l3?: unknown): boolean {
+function hasFuncLessonData(l1: unknown, l2?: unknown, l3?: unknown, l4?: unknown): boolean {
   if (l1 && typeof l1 === 'object') {
     const x = l1 as Record<string, unknown>;
     if (
@@ -3092,6 +3159,22 @@ function hasFuncLessonData(l1: unknown, l2?: unknown, l3?: unknown): boolean {
       z.p2Verified ||
       z.thinkVerified ||
       (typeof z.openMeaningReason === 'string' && z.openMeaningReason.trim().length > 0)
+    ) {
+      return true;
+    }
+  }
+  if (l4 && typeof l4 === 'object') {
+    const w = l4 as Record<string, unknown>;
+    if (
+      w.openVerified ||
+      w.p1Verified ||
+      w.ex1Verified ||
+      w.p2Verified ||
+      w.p5Verified ||
+      w.togetherVerified ||
+      w.p3Verified ||
+      w.p4Verified ||
+      w.toolVerified
     ) {
       return true;
     }
@@ -3141,7 +3224,7 @@ export function extractFuncWorksheetFromJson(
     }
 
     // 2. Top-level record that was explicitly authored in Func
-    if (obj.courseId === 'func-v1' || hasFuncLessonData(obj.l1, obj.l2, obj.l3)) {
+    if (obj.courseId === 'func-v1' || hasFuncLessonData(obj.l1, obj.l2, obj.l3, obj.l4)) {
       const cleaned = cleanStudentState(obj);
       if (resolvedGroup) cleaned.group = resolvedGroup.slice(0, 25);
       if (resolvedCode) cleaned.code = resolvedCode.slice(0, 25);
@@ -3286,7 +3369,35 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
   result.l4 = pickNewerOrFilled(
     remote.l4,
     local.l4,
-    (l) => Boolean(l.prob1ProofText || l.prob2ProofText || l.fractionExamples?.length || l.reflection1)
+    (l) =>
+      Boolean(
+        l.prob1ProofText ||
+          l.prob2ProofText ||
+          l.fractionExamples?.length ||
+          l.reflection1 ||
+          l.reflection2 ||
+          // 역함수 4차시 (2026-10-30~)
+          l.openVerified ||
+          l.p1Verified ||
+          l.ex1Verified ||
+          l.p2Verified ||
+          l.p5Verified ||
+          l.togetherVerified ||
+          l.p3Verified ||
+          l.p4Verified ||
+          l.toolVerified ||
+          (l.openReverseMap && Object.keys(l.openReverseMap).length) ||
+          l.openReason ||
+          l.p1_f3 ||
+          l.p1Reason ||
+          l.ex1_ans ||
+          l.p2Reason ||
+          l.p5_inv ||
+          l.tg_gf ||
+          l.p3_ans ||
+          l.p4_1_inv ||
+          l.toolParallelA
+      )
   );
   result.l5 = pickNewerOrFilled(
     remote.l5,
@@ -3392,11 +3503,13 @@ export function studentKey(x: { group?: string; code?: string }): string {
 }
 
 /**
- * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~3차시 답안.
+ * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~4차시 답안.
  * 정답은 각 문항의 채점 함수(validateL1Prob1 등)와 일치하는 값만 사용합니다.
- * - complete: 1~3차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3차시 생각 열기만
+ * - complete: 1~4차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만
  */
-export function createFuncSampleLessons(variant: 'complete' | 'partial'): Pick<StudentRecord, 'l1' | 'l2' | 'l3'> {
+export function createFuncSampleLessons(
+  variant: 'complete' | 'partial'
+): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4'> {
   const base = createInitialStudentState();
   const full = variant === 'complete';
 
@@ -3538,7 +3651,59 @@ export function createFuncSampleLessons(variant: 'complete' | 'partial'): Pick<S
         }),
   };
 
-  return { l1, l2, l3 };
+  // 4차시 역함수 — 정답은 lesson4Logic.ts의 채점 함수와 일치하는 값만 사용
+  const l4: Lesson4State = {
+    ...base.l4,
+    openReverseMap: { N2O: '아산화 질소', CH4: '메테인', CO2: '이산화 탄소' },
+    openReverseIsFunc: 'yes',
+    openConditionChoice: 'bijection',
+    openDomainRangeSame: 'yes',
+    openReason: 'Y의 각 화학식에 X의 온실가스가 하나씩 빠짐없이 대응하므로 함수이다.',
+    openVerified: true,
+    ...(full
+      ? {
+          p1_f3: '7',
+          p1_1: '3',
+          p1_2: '4',
+          p1_3: '3',
+          p1_4: '5',
+          p1Reason: 'f(3)=7이므로 f⁻¹(7)=3, 성질 ③에서 (f⁻¹∘f)(4)=4, (f∘f⁻¹)(3)=3, 성질 ④에서 (f⁻¹)⁻¹(2)=f(2)=5',
+          p1Verified: true,
+          ex1_solveX: 'x = 1/3y - 4/3',
+          ex1_ans: 'y = 1/3x - 4/3',
+          ex1Verified: true,
+          p2_1: 'y = -1/3x + 1/3',
+          p2_2: 'y = 4x - 8',
+          p2Reason: 'x에 대하여 푼 다음 x와 y를 서로 바꾸어 역함수를 구했다.',
+          p2Verified: true,
+          p5_inv: 'y = 5/9(x - 32)',
+          p5_celsius: '35',
+          p5Verified: true,
+          tg_gf: '2x + 2',
+          tg_gfInv: '1/2x - 1',
+          tg_fInv: 'x + 1',
+          tg_gInv: '1/2x - 2',
+          tg_inner: '1/2x - 2',
+          tg_result: '1/2x - 1',
+          tg_relation: 'eq' as const,
+          togetherVerified: true,
+          p3_ans: '4',
+          p3Reason: '(f⁻¹∘g⁻¹)(3)=(g∘f)⁻¹(3)=k라 하면 2k-5=3이므로 k=4',
+          p3Verified: true,
+          p4_1_inv: 'y = 1/5x + 2/5',
+          p4_2_inv: 'y = -3x + 9',
+          p4Verified: true,
+          toolAlwaysOverlap: 'yes' as const,
+          toolParallelA: '1',
+          toolSameA: '-1',
+          toolVerified: true,
+          reflection1: '역함수는 일대일대응일 때만 존재하고 그래프는 y=x에 대하여 대칭이다.',
+          reflection2: '(g∘f)⁻¹는 f⁻¹∘g⁻¹로 순서가 바뀌는 것이 신기했다.',
+        }
+      : {}),
+  };
+
+  return { l1, l2, l3, l4 };
 }
 
 export function createSampleTeacherDataset(): StudentRecord[] {
@@ -3767,14 +3932,14 @@ export function createSampleTeacherDataset(): StudentRecord[] {
   s2.evaluation = {
     scores: [3, 2, 3, 3, null, null, null],
     feedback: '대우를 이용한 두 가지 증명을 경우 나누기까지 정확하게 수행했습니다.',
-    nextStep: '4차시 귀류법과 5~7차시 절대부등식 증명을 이어서 완성해 보세요.',
+    nextStep: '4차시 역함수 탐구와 5~7차시 활동을 이어서 완성해 보세요.',
     evaluatedLessonCount: 4,
   };
 
-  // 1~3차시는 Func(함수와 그래프) 수업 답안으로 교체 (4~7차시는 현재 학생 화면 내용 그대로)
+  // 1~4차시는 Func(함수와 그래프) 수업 답안으로 교체 (5~7차시는 현재 학생 화면 내용 그대로)
   Object.assign(s1, createFuncSampleLessons('complete'));
   Object.assign(s2, createFuncSampleLessons('partial'));
-  s1.teacherMemo = '1~3차시 함수 단원에서 대응의 조건을 근거로 들어 판별하고 설명함. (4~7차시 평정 진행 중)';
+  s1.teacherMemo = '1~4차시 함수 단원에서 대응의 조건을 근거로 들어 판별하고 설명함. (5~7차시 평정 진행 중)';
   s2.teacherMemo = '1차시 일부와 2차시 [보기]·[문제 6]까지 진행. 나머지 문항 진행 후 추가 평가 예정.';
   return [s1, s2];
 }

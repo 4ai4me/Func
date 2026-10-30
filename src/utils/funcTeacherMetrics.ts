@@ -3,19 +3,21 @@ import {
   evaluateRubricL1,
   evaluateRubricL2,
   evaluateRubricL3,
+  evaluateRubricL4,
 } from './mathLogic';
 import { LESSON_ANSWER_CONFIG } from './answerLabels';
 import type { AnswerFormat } from './answerLabels';
 import type { LessonKey } from './lessonMerge';
 
 /**
- * 교사 화면의 Func(함수와 그래프) 1~3차시 지표 — 순수 로직 (단위 테스트 대상)
+ * 교사 화면의 Func(함수와 그래프) 1~4차시 지표 — 순수 로직 (단위 테스트 대상)
  * ------------------------------------------------------------------
  * 교사 화면이 명제 수업(Props) 틀에서 만들어져 1~3차시 지표가 명제 항목(사례 수, 참·거짓 판단,
  * 탐구 주제 등)을 세고 있었습니다. Func 학생 화면은 그 항목을 입력하지 않으므로 항상 0이나
  * 엉뚱한 값이 나왔습니다. 여기서는 Func 학생 화면이 실제로 기록하는 값(문항 확인 표시와 답안)만
  * 사용합니다.
- * 4~7차시는 현재 학생 화면이 명제 수업 내용(귀류법·절대부등식)이므로 기존 지표를 그대로 둡니다.
+ * 4차시는 역함수 수업으로 교체됨(2026-10-30). 5~7차시는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로
+ * 기존 지표를 그대로 둡니다.
  */
 
 export type LessonProgress = 'done' | 'progress' | 'none';
@@ -33,13 +35,18 @@ export const LESSON_PROGRESS_LABEL: Record<LessonProgress, string> = {
   none: '시작 전',
 };
 
-export function funcLessonProgress(x: StudentRecord, lesson: 1 | 2 | 3): LessonProgress {
+/** 함수 단원으로 운영 중인 차시 */
+export const FUNC_LESSONS = [1, 2, 3, 4] as const;
+export type FuncLesson = (typeof FUNC_LESSONS)[number];
+
+export function funcLessonProgress(x: StudentRecord, lesson: FuncLesson): LessonProgress {
   if (lesson === 1) return lessonProgress(evaluateRubricL1(x.l1));
   if (lesson === 2) return lessonProgress(evaluateRubricL2(x.l2));
-  return lessonProgress(x.l3 ? evaluateRubricL3(x.l3) : [false]);
+  if (lesson === 3) return lessonProgress(x.l3 ? evaluateRubricL3(x.l3) : [false]);
+  return lessonProgress(x.l4 ? evaluateRubricL4(x.l4) : [false]);
 }
 
-/** 1~3차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
+/** 1~4차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
 export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => boolean }[] = [
   { title: '1차시 [생각 열기] 나라–화폐 대응', done: (x) => Boolean(x.l1.countryMapVerified) },
   { title: '1차시 [문제 1] 함수 판별·정의역·공역·치역', done: (x) => Boolean(x.l1.prob1Verified) },
@@ -65,13 +72,21 @@ export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => bool
   { title: '3차시 교환법칙 탐구', done: (x) => Boolean(x.l3?.ex1Verified) },
   { title: '3차시 [문제 2] 합성함수 구하기', done: (x) => Boolean(x.l3?.p2Verified) },
   { title: '3차시 [생각 넓히기] 결합법칙', done: (x) => Boolean(x.l3?.thinkVerified) },
+  { title: '4차시 [생각 열기] 역함수의 뜻', done: (x) => Boolean(x.l4?.openVerified) },
+  { title: '4차시 [문제 1] 역함수의 함숫값', done: (x) => Boolean(x.l4?.p1Verified) },
+  {
+    title: '4차시 역함수 구하기 (예제·문제 2·문제 5)',
+    done: (x) => Boolean(x.l4?.ex1Verified && x.l4?.p2Verified && x.l4?.p5Verified),
+  },
+  { title: '4차시 [함께하기·문제 3] (g∘f)⁻¹', done: (x) => Boolean(x.l4?.togetherVerified && x.l4?.p3Verified) },
+  { title: '4차시 [문제 4·공학 도구] 그래프 대칭', done: (x) => Boolean(x.l4?.p4Verified && x.l4?.toolVerified) },
 ];
 
-/** 1~3차시 중 완료한 차시 수(0~3)별 학생 수 */
-export function completedLessonDistribution(records: StudentRecord[]): [number, number, number, number] {
-  const dist: [number, number, number, number] = [0, 0, 0, 0];
+/** 1~4차시 중 완료한 차시 수(0~4)별 학생 수 — 배열의 i번째 = i개 차시 완료 */
+export function completedLessonDistribution(records: StudentRecord[]): number[] {
+  const dist = new Array<number>(FUNC_LESSONS.length + 1).fill(0);
   for (const x of records) {
-    const n = ([1, 2, 3] as const).filter((l) => funcLessonProgress(x, l) === 'done').length;
+    const n = FUNC_LESSONS.filter((l) => funcLessonProgress(x, l) === 'done').length;
     dist[n] += 1;
   }
   return dist;

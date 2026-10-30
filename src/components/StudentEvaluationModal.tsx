@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { summarizeL4 } from '../utils/lesson4Logic';
 import {
   Award,
   CheckCircle2,
@@ -371,12 +372,12 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
 
                   {/* 4차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-purple-700">4차시 · 귀류법</div>
+                      <div className="font-bold text-purple-700">4차시 · 역함수 탐구</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 1 (√2 무리수):</strong> {student.l4?.prob1ProofText || '(미작성)'}
+                        <strong>[생각 열기·문제 1] 역함수의 뜻과 함숫값:</strong> {summarizeL4(student.l4).part1 || '(미작성)'}
                       </div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 2 (1+√2 무리수):</strong> {student.l4?.prob2ProofText || '(미작성)'}
+                        <strong>[역함수 구하기·함께하기·그래프]:</strong> {summarizeL4(student.l4).part2 || '(미작성)'}
                       </div>
                     </div>
 

@@ -48,7 +48,7 @@ const CHOICES: AnswerFormat = { kind: 'choices' };
 const FUNC_YN: AnswerFormat = { kind: 'yesno', yes: '함수이다 (O)', no: '함수가 아니다 (X)' };
 const ONE_TO_ONE_YN: AnswerFormat = { kind: 'yesno', yes: '예 (O)', no: '아니오 (X)' };
 
-/** 4~7차시 (Func·Props 공통 문항) */
+/** 4~7차시 (Func·Props 공통 문항) — Func는 4차시를 아래 LESSON_ANSWER_CONFIG.l4(역함수)로 바꿔 씀 */
 export const COMMON_L4_TO_L7: Record<'l4' | 'l5' | 'l6' | 'l7', LessonAnswerConfig> = {
   l4: {
     title: '4차시 · 귀류법',
@@ -533,4 +533,119 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
     ],
   },
   ...COMMON_L4_TO_L7,
+  // Func 4차시는 역함수 수업 (2026-10-30~). 공통 4차시(귀류법) 이름표 대신 사용.
+  l4: {
+    title: '4차시 · 역함수',
+    groups: [
+      {
+        title: '[생각 열기] 온실가스 대응 뒤집기와 역함수의 뜻',
+        fields: [
+          {
+            key: 'openReverseMap',
+            label: '뒤집은 대응 Y(화학식) → X(온실가스)',
+            format: { kind: 'map' },
+          },
+          {
+            key: 'openReverseIsFunc',
+            label: '뒤집은 대응 Y → X는 함수인가?',
+            format: { kind: 'yesno', yes: '함수가 된다', no: '함수가 되지 않는다' },
+          },
+          {
+            key: 'openConditionChoice',
+            label: '역함수가 존재하기 위한 f의 조건',
+            format: {
+              kind: 'choice',
+              options: {
+                bijection: 'f가 일대일대응이어야 한다',
+                oneToOne: 'f가 일대일함수이기만 하면 된다',
+                anyFunction: 'f가 함수이기만 하면 된다',
+              },
+            },
+          },
+          {
+            key: 'openDomainRangeSame',
+            label: '[생각 톡톡] f의 정의역과 f⁻¹의 치역은 같은가?',
+            format: { kind: 'yesno', yes: '같다', no: '다르다' },
+          },
+          { key: 'openReason', label: '뒤집은 대응이 함수가 되는 이유' },
+          { key: 'openVerified', label: '생각 열기 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[문제 1] 그림 완성과 역함수의 함숫값',
+        fields: [
+          { key: 'p1_f3', label: '그림 완성: f(3)의 값' },
+          { key: 'p1_1', label: '(1) f⁻¹(7)' },
+          { key: 'p1_2', label: '(2) (f⁻¹ ∘ f)(4)' },
+          { key: 'p1_3', label: '(3) (f ∘ f⁻¹)(3)' },
+          { key: 'p1_4', label: '(4) (f⁻¹)⁻¹(2)' },
+          { key: 'p1Reason', label: '구한 과정' },
+          { key: 'p1Verified', label: '문제 1 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[역함수 구하기] 예제 1 · 문제 2 · 문제 5',
+        fields: [
+          { key: 'ex1_solveX', label: '예제 y = 3x + 4 ① x에 대하여 풀기 (x = …)' },
+          { key: 'ex1_ans', label: '예제 y = 3x + 4 ② 역함수 (y = …)' },
+          { key: 'ex1Verified', label: '예제 1 확인', format: CHECK },
+          { key: 'p2_1', label: '문제 2 (1) y = −3x + 1의 역함수' },
+          { key: 'p2_2', label: '문제 2 (2) y = (1/4)x + 2의 역함수' },
+          { key: 'p2Reason', label: '문제 2 역함수를 구한 과정' },
+          { key: 'p2Verified', label: '문제 2 확인', format: CHECK },
+          { key: 'p5_inv', label: '문제 5 (1) y = (9/5)x + 32의 역함수' },
+          { key: 'p5_celsius', label: '문제 5 (2) 95℉ → ℃' },
+          { key: 'p5Verified', label: '문제 5 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[함께하기] (g∘f)⁻¹와 f⁻¹∘g⁻¹ · 문제 3',
+        fields: [
+          { key: 'tg_gf', label: '(i) (g∘f)(x)' },
+          { key: 'tg_gfInv', label: '(i) (g∘f)⁻¹(x)' },
+          { key: 'tg_fInv', label: '(ii) f⁻¹(x)' },
+          { key: 'tg_gInv', label: '(ii) g⁻¹(x)' },
+          { key: 'tg_inner', label: '(ii) f⁻¹( □ )의 괄호 안' },
+          { key: 'tg_result', label: '(ii) (f⁻¹∘g⁻¹)(x)' },
+          {
+            key: 'tg_relation',
+            label: '(g∘f)⁻¹ □ f⁻¹∘g⁻¹',
+            format: { kind: 'choice', options: { eq: '=', neq: '≠' } },
+          },
+          { key: 'togetherVerified', label: '함께하기 확인', format: CHECK },
+          { key: 'p3_ans', label: '문제 3 (f⁻¹∘g⁻¹)(3)' },
+          { key: 'p3Reason', label: '문제 3 구한 과정' },
+          { key: 'p3Verified', label: '문제 3 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[그래프] 문제 4 · 공학 도구',
+        fields: [
+          { key: 'p4_1_inv', label: '문제 4 (1) y = 5x − 2의 역함수' },
+          { key: 'p4_2_inv', label: '문제 4 (2) y = −(1/3)x + 3의 역함수' },
+          { key: 'p4Verified', label: '문제 4 확인', format: CHECK },
+          {
+            key: 'toolAlwaysOverlap',
+            label: '확인 1. g의 그래프와 대칭이동한 그래프가 항상 겹치는가?',
+            format: { kind: 'yesno', yes: '항상 겹쳐진다', no: '겹쳐지지 않을 때도 있다' },
+          },
+          { key: 'toolParallelA', label: '확인 2. 평행할 때 a' },
+          { key: 'toolSameA', label: '확인 3. 일치할 때 a' },
+          { key: 'toolVerified', label: '공학 도구 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '성찰',
+        fields: [
+          { key: 'reflection1', label: '성찰 1. 역함수가 존재하기 위한 조건과 이유' },
+          { key: 'reflection2', label: '성찰 2. 그래프가 y = x에 대하여 대칭인 이유 / 새롭게 알게 된 점' },
+        ],
+      },
+    ],
+    // 예전 4차시(귀류법) 화면의 항목 — 데이터는 보존하되 표시하지 않음
+    hidden: [
+      'fractionExamples', 'contradictionConceptChecked', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+      'closureChecked', 'closureReason', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+    ],
+  },
 };

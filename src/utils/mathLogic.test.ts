@@ -274,8 +274,11 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   assert.equal(evaluateLevel3Completion(s.l3)[0], true);
 
   assert.deepEqual(evaluateLevel4Completion(s.l4), [false, false, false, false, false]);
+  // 4차시는 역함수 수업으로 교체됨: 예전 귀류법 기록만으로는 완료되지 않고, 역함수 [정답 확인] 통과로 완료
   s.l4.fractionExamples = [calc4Coprime(1, 1), calc4Coprime(2, 3), calc4Coprime(5, 7)];
   s.l4.contradictionConceptChecked = true;
+  assert.equal(evaluateLevel4Completion(s.l4)[0], false);
+  s.l4.openVerified = true;
   assert.equal(evaluateLevel4Completion(s.l4)[0], true);
 
   assert.deepEqual(evaluateLevel5Completion(s.l5), [false, false, false, false, false]);
