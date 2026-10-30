@@ -95,6 +95,8 @@
 
 ---
 
+- **[생각 열기] 합성함수 벤다이어그램 (2026-10-30 추가)**: 세 학생(X) → 음식(Y) → 가격(Z) 대응을 세 집합 벤다이어그램으로 보여 줍니다. 파란 실선 f, 주황 실선 g, 초록 점선 g∘f(Y를 거쳐 한 번에 대응). 위의 [학생 추적] 버튼이나 그림 속 학생을 누르면 그 학생의 경로만 강조됩니다. (`src/components/CompositeVennDiagram.tsx`)
+
 ## 5. 시스템 아키텍처
 
 ```text
@@ -188,7 +190,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

@@ -8,6 +8,7 @@ import {
   validateL3Think,
 } from '../utils/mathLogic';
 import { MathText } from './MathText';
+import { CompositeVennDiagram } from './CompositeVennDiagram';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -481,6 +482,28 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                   })()
                 )}
               </div>
+            </div>
+
+            {/* 합성함수 대응 벤다이어그램 (X → Y → Z, 위의 학생 선택과 연동) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+              <div className="mb-1 text-xs sm:text-sm font-extrabold text-slate-800">
+                벤다이어그램으로 보는 합성함수 <MathText text="g ∘ f" />
+              </div>
+              <CompositeVennDiagram
+                setX={STUDENTS_X.map((s) => s.id)}
+                setY={FOODS_Y}
+                setZ={PRICES_Z}
+                f={Object.fromEntries(STUDENTS_X.map((s) => [s.id, s.food]))}
+                g={FOOD_TO_PRICE}
+                labels={{ x: 'X (학생)', y: 'Y (음식)', z: 'Z (가격)' }}
+                highlight={selectedStudent === 'all' ? null : selectedStudent}
+                onSelectDomain={(x) =>
+                  setSelectedStudent((prev) => (prev === x ? 'all' : (x as '아람' | '재영' | '하영')))
+                }
+                ariaLabel={`합성함수 벤다이어그램: ${STUDENTS_X.map(
+                  (s) => `${s.id}→${s.food}→${s.price}`
+                ).join(', ')}, 떡볶이→${FOOD_TO_PRICE['떡볶이']}`}
+              />
             </div>
 
             {/* Key Textbook Definition Box */}
