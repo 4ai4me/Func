@@ -24,6 +24,7 @@ import { parseLinear, formatLinear, fractionText } from '../utils/linearExpr';
 import { MathText } from './MathText';
 import { MappingVennDiagram } from './MappingVennDiagram';
 import { LinearGraph, GraphLegend } from './LinearGraph';
+import { ScratchPadButton, ScratchPadWindow, PadStroke } from './ScratchPad';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -206,11 +207,14 @@ function ActivityHeader({
   kicker,
   title,
   done,
+  extra,
 }: {
   theme: ThemeKey;
   kicker: string;
   title: React.ReactNode;
   done?: boolean;
+  /** 오른쪽에 함께 둘 버튼 (예: 연습장) */
+  extra?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
@@ -218,7 +222,10 @@ function ActivityHeader({
         <span className={`text-xs font-extrabold ${THEME[theme].label}`}>{kicker}</span>
         <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">{title}</h4>
       </div>
-      <DoneBadge show={done} />
+      <div className="flex items-center gap-2">
+        <DoneBadge show={done} />
+        {extra}
+      </div>
     </div>
   );
 }
@@ -497,6 +504,24 @@ function ToggleButton({ on, onClick, onLabel, offLabel }: { on: boolean; onClick
 
 const linearLabel = (a: number, b: number) => `y = ${formatLinear({ a, b })}`;
 
+/** 3·4단계 문제별 연습장 (창 제목) */
+const PAD_TITLES = {
+  ex1: '[예제 1] y = 3x + 4의 역함수',
+  p2: '[문제 2] 역함수 구하기',
+  p5: '[문제 5] 섭씨·화씨',
+  together: '[함께하기] (g∘f)⁻¹와 f⁻¹∘g⁻¹',
+  p3: '[문제 3] (f⁻¹∘g⁻¹)(3)',
+} as const;
+type PadId = keyof typeof PAD_TITLES;
+/** 연습장이 속한 단계 (다른 단계로 가면 창을 숨김) */
+const PAD_STEP: Record<PadId, number> = { ex1: 2, p2: 2, p5: 2, together: 3, p3: 3 };
+
+/** 1단계 비교용: 일대일대응이 아닌 함수 h : A → B와 그 화살표를 뒤집은 대응 */
+const NO_INV_A = ['1', '2', '3'] as const;
+const NO_INV_B = ['a', 'b', 'c'] as const;
+const NO_INV_MAP: Record<string, string> = { '1': 'a', '2': 'a', '3': 'b' };
+const NO_INV_REVERSED: [string, string][] = Object.entries(NO_INV_MAP).map(([x, y]) => [y, x]);
+
 // ─────────────────────────────────────────────
 // 4차시 화면
 // ─────────────────────────────────────────────
@@ -513,7 +538,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L4Feedback | null>>>({});
 
   // 1단계: 화살표 방향, 뒤집은 대응에서 고르는 중인 화학식, 역함수가 없는 예
-  const [reversed, setReversed] = useState(false);
+  const [noInvReversed, setNoInvReversed] = useState(false);
   const [pickFormula, setPickFormula] = useState<string>(L4_FORMULAS[0]);
   const [showNoInverse, setShowNoInverse] = useState(false);
   // 2단계: 완성한 그림을 역함수로 보기, 이미 그려진 화살표를 누른 경우 안내
@@ -529,6 +554,16 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   const [sliderA, setSliderA] = useState(2);
   const [showReflect, setShowReflect] = useState(true);
   const [showToolImg, setShowToolImg] = useState(false);
+  // 3·4단계 연습장: 문제별 그림(화면 안에서만 보관 — 저장 데이터에 넣지 않음)과 열려 있는 연습장
+  const [pads, setPads] = useState<Partial<Record<PadId, PadStroke[]>>>({});
+  const [openPad, setOpenPad] = useState<PadId | null>(null);
+  const padButton = (id: PadId) => (
+    <ScratchPadButton
+      onClick={() => setOpenPad((cur) => (cur === id ? null : id))}
+      used={Boolean(pads[id]?.length)}
+      active={openPad === id}
+    />
+  );
 
   /** 답 입력: 해당 문항의 [정답 확인] 표시를 해제합니다 */
   const setField = <K extends keyof Lesson4State>(key: K, value: Lesson4State[K]) => {
@@ -660,74 +695,30 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             alt="역함수 생각 열기 - 온실가스(메테인, 이산화 탄소, 아산화 질소)의 집합 X와 화학식(N2O, CH4, CO2)의 집합 Y 사이의 대응 그림"
           >
             <div className="rounded-2xl border border-indigo-200/90 bg-indigo-50/40 p-4 sm:p-5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs font-extrabold text-indigo-700 flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-indigo-600" />
-                    <span>인터랙티브 대응 뒤집기</span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-600">
-                    [화살표 뒤집기]를 누르면 <strong>Y → X</strong> 방향의 그림이 됩니다. 그림에서 화학식을 누른 뒤 온실가스를 눌러
-                    화살표를 직접 이어 보세요.
-                  </p>
+              <div>
+                <div className="text-xs font-extrabold text-indigo-700 flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-indigo-600" />
+                  <span>벤다이어그램으로 보는 대응 f : X → Y</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    aria-pressed={!reversed}
-                    onClick={() => setReversed(false)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                      !reversed ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-indigo-50'
-                    }`}
-                  >
-                    원래 대응 f : X → Y
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={reversed}
-                    onClick={() => setReversed(true)}
-                    className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                      reversed ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-indigo-50'
-                    }`}
-                  >
-                    <FlipHorizontal2 className="h-3.5 w-3.5" />
-                    화살표 뒤집기 : Y → X
-                  </button>
-                </div>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  서로 다른 온실가스는 서로 다른 화학식에 대응하고, 화살표를 받지 못한 화학식이 없습니다. 아래 [탐구 활동 01]에서 화살표를 거꾸로
+                  이어 보세요.
+                </p>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
-                {!reversed ? (
-                  <MappingVennDiagram
-                    domainLabel="X (온실가스)"
-                    codomainLabel="Y (화학식)"
-                    domain={L4_GASES}
-                    codomain={L4_FORMULAS.map((f) => L4_FORMULA_LABEL[f])}
-                    mapping={forwardDiagramMap}
-                    ariaLabel={`원래 대응 f: ${L4_GASES.map((g) => `${g}→${forwardDiagramMap[g]}`).join(', ')}`}
-                  />
-                ) : (
-                  <MappingVennDiagram
-                    domainLabel="Y (화학식)"
-                    codomainLabel="X (온실가스)"
-                    domain={L4_FORMULAS.map((f) => L4_FORMULA_LABEL[f])}
-                    codomain={L4_GASES}
-                    mapping={reverseDiagramMap}
-                    selectedDomain={L4_FORMULA_LABEL[pickFormula]}
-                    onSelectDomain={(label) => {
-                      const key = L4_FORMULAS.find((f) => L4_FORMULA_LABEL[f] === label);
-                      if (key) setPickFormula(key);
-                    }}
-                    onPickCodomain={(gas) => assignReverse(pickFormula, gas)}
-                    ariaLabel={`뒤집은 대응: ${L4_FORMULAS.map((f) => `${L4_FORMULA_LABEL[f]}→${reverseMap[f] || '미선택'}`).join(', ')}`}
-                  />
-                )}
+                <MappingVennDiagram
+                  domainLabel="X (온실가스)"
+                  codomainLabel="Y (화학식)"
+                  domain={L4_GASES}
+                  codomain={L4_FORMULAS.map((f) => L4_FORMULA_LABEL[f])}
+                  mapping={forwardDiagramMap}
+                  functionLabel="f"
+                  ariaLabel={`원래 대응 f: ${L4_GASES.map((g) => `${g}→${forwardDiagramMap[g]}`).join(', ')}`}
+                />
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs text-slate-600">
-                  💬 원래 대응에서 서로 다른 온실가스는 서로 다른 화학식에 대응하고, 화학식이 남지 않습니다.
-                </p>
+              <div className="flex justify-end">
                 <ToggleButton
                   on={showNoInverse}
                   onClick={() => setShowNoInverse((v) => !v)}
@@ -737,20 +728,68 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               </div>
 
               {showNoInverse && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 sm:p-4 space-y-2">
-                  <div className="text-xs font-extrabold text-rose-800">비교: 일대일대응이 아닌 함수 h : A → B</div>
-                  <MappingVennDiagram
-                    domainLabel="A"
-                    codomainLabel="B"
-                    domain={['1', '2', '3']}
-                    codomain={['a', 'b', 'c']}
-                    mapping={{ '1': 'a', '2': 'a', '3': 'b' }}
-                    ariaLabel="일대일대응이 아닌 함수: 1→a, 2→a, 3→b, c는 대응 없음"
-                  />
-                  <p className="text-xs text-rose-900 leading-relaxed">
-                    화살표를 뒤집으면 B의 원소 <strong>a에는 1과 2가 동시에</strong> 대응하고, <strong>c에는 대응하는 원소가 없습니다</strong>.
-                    따라서 B → A 대응은 함수가 아닙니다.
-                  </p>
+                <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-3 sm:p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-extrabold text-rose-800">비교: 일대일대응이 아닌 함수 h : A → B</div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        aria-pressed={!noInvReversed}
+                        onClick={() => setNoInvReversed(false)}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                          !noInvReversed ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-rose-50'
+                        }`}
+                      >
+                        원래 대응 h : A → B
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={noInvReversed}
+                        onClick={() => setNoInvReversed(true)}
+                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                          noInvReversed ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-rose-50'
+                        }`}
+                      >
+                        <FlipHorizontal2 className="h-3.5 w-3.5" />
+                        화살표 뒤집기 : B → A
+                      </button>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-rose-100 bg-white p-2 sm:p-3">
+                    {!noInvReversed ? (
+                      <MappingVennDiagram
+                        domainLabel="A"
+                        codomainLabel="B"
+                        domain={NO_INV_A}
+                        codomain={NO_INV_B}
+                        mapping={NO_INV_MAP}
+                        functionLabel="h"
+                        ariaLabel="일대일대응이 아닌 함수 h: 1→a, 2→a, 3→b, c는 대응 없음"
+                      />
+                    ) : (
+                      <MappingVennDiagram
+                        domainLabel="B"
+                        codomainLabel="A"
+                        domain={NO_INV_B}
+                        codomain={NO_INV_A}
+                        mapping={{}}
+                        pairs={NO_INV_REVERSED}
+                        problemDomain={['a', 'c']}
+                        ariaLabel="화살표를 뒤집은 대응: a→1, a→2, b→3, c는 대응 없음 — 함수가 아님"
+                      />
+                    )}
+                  </div>
+                  {!noInvReversed ? (
+                    <p className="text-xs text-rose-900 leading-relaxed">
+                      h는 A의 각 원소에 B의 원소가 하나씩 대응하므로 함수입니다. 하지만 1과 2가 같은 a에 대응하고, c는 화살표를 받지 못했어요.
+                      [화살표 뒤집기]를 눌러 보세요.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-rose-900 leading-relaxed">
+                      뒤집으면 B의 원소 <strong>a에는 1과 2가 동시에</strong> 대응하고, <strong>c에는 대응하는 원소가 없습니다</strong>(빨간색).
+                      따라서 B → A 대응은 함수가 아니므로 h의 역함수는 존재하지 않습니다.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -767,49 +806,52 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="text-xs sm:text-sm font-bold text-slate-900">
-                  1. 화살표의 방향을 반대로 바꾼 대응 <MathText text="Y → X" />를 완성해 보세요. (위 그림에서 눌러도 됩니다)
+                  1. 화살표의 방향을 반대로 바꾼 대응 <MathText text="Y → X" />를 벤다이어그램에 완성해 보세요.
                 </div>
                 <HintToggle open={!!hints.openMap} onClick={() => toggleHint('openMap')} />
               </div>
               {hints.openMap && (
                 <HintBox>
-                  원래 그림에서 화학식으로 <strong>들어오는</strong> 화살표가 어느 온실가스에서 <strong>출발</strong>하는지 보세요. 뒤집으면 그
+                  위 그림에서 화학식으로 <strong>들어오는</strong> 화살표가 어느 온실가스에서 <strong>출발</strong>하는지 보세요. 뒤집으면 그
                   온실가스가 화학식의 짝이 됩니다.
                 </HintBox>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {L4_FORMULAS.map((formula) => (
-                  <div
-                    key={formula}
-                    className={`rounded-xl border p-3 space-y-2 ${
-                      pickFormula === formula && reversed ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-slate-50/60'
-                    }`}
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-3 sm:p-4 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-700">
+                  <span>
+                    ① 왼쪽(Y)에서 화학식을 누르고 → ② 오른쪽(X)에서 짝이 되는 온실가스를 누르세요.{' '}
+                    <span className="text-indigo-700">
+                      지금 고르는 화학식: <MathText text={L4_FORMULA_LABEL[pickFormula]} />
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setField('openReverseMap', {});
+                      setPickFormula(L4_FORMULAS[0]);
+                    }}
+                    disabled={!Object.keys(reverseMap).length}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                   >
-                    <div className="text-xs font-bold text-slate-700">
-                      <MathText text={L4_FORMULA_LABEL[formula]} /> → <span className="text-indigo-700">{reverseMap[formula] || '?'}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {L4_GASES.map((gas) => (
-                        <button
-                          key={gas}
-                          type="button"
-                          aria-pressed={reverseMap[formula] === gas}
-                          onClick={() => {
-                            setPickFormula(formula);
-                            assignReverse(formula, gas);
-                          }}
-                          className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
-                            reverseMap[formula] === gas
-                              ? 'border-indigo-600 bg-indigo-600 text-white'
-                              : 'border-slate-200 bg-white text-slate-700 hover:bg-indigo-50'
-                          }`}
-                        >
-                          {gas}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                    <RotateCcw className="h-3.5 w-3.5" /> 다시 연결하기
+                  </button>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-2 sm:p-3">
+                  <MappingVennDiagram
+                    domainLabel="Y (화학식)"
+                    codomainLabel="X (온실가스)"
+                    domain={L4_FORMULAS.map((f) => L4_FORMULA_LABEL[f])}
+                    codomain={L4_GASES}
+                    mapping={reverseDiagramMap}
+                    selectedDomain={L4_FORMULA_LABEL[pickFormula]}
+                    onSelectDomain={(label) => {
+                      const key = L4_FORMULAS.find((f) => L4_FORMULA_LABEL[f] === label);
+                      if (key) setPickFormula(key);
+                    }}
+                    onPickCodomain={(gas) => assignReverse(pickFormula, gas)}
+                    ariaLabel={`뒤집은 대응 Y → X: ${L4_FORMULAS.map((f) => `${L4_FORMULA_LABEL[f]}→${reverseMap[f] || '미선택'}`).join(', ')}`}
+                  />
+                </div>
               </div>
             </div>
 
@@ -934,6 +976,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                   domain={['1', '2', '3', '4']}
                   codomain={['3', '4', '5', '6']}
                   mapping={{ '1': '6', '2': '3', '3': '4', '4': '5' }}
+                  functionLabel="f"
                   ariaLabel="보기의 함수 f: 1→6, 2→3, 3→4, 4→5"
                 />
                 <ul className="space-y-1.5 text-xs sm:text-sm text-slate-800">
@@ -981,6 +1024,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                   domain={L4_P1_X}
                   codomain={L4_P1_Y}
                   mapping={p1Map}
+                  functionLabel="f"
                   selectedDomain="3"
                   onSelectDomain={(x) =>
                     setP1Notice(x === '3' ? '' : `${x}의 화살표는 교과서 그림에 이미 그려져 있어요. 비어 있는 3의 화살표만 정하면 됩니다.`)
@@ -1004,6 +1048,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                       domain={L4_P1_Y}
                       codomain={L4_P1_X}
                       mapping={p1InverseMap}
+                      functionLabel="f⁻¹"
                       ariaLabel={`역함수 f⁻¹: ${L4_P1_Y.map((y) => `${y}→${p1InverseMap[y]}`).join(', ')}`}
                     />
                   </div>
@@ -1145,6 +1190,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               <div className="flex items-center gap-2">
                 <DoneBadge show={state.ex1Verified} />
                 <ToggleButton on={showEx1Img} onClick={() => setShowEx1Img((v) => !v)} onLabel="교과서 풀이 닫기" offLabel="교과서 풀이 보기" />
+                {padButton('ex1')}
               </div>
             </div>
             {showEx1Img && (
@@ -1190,7 +1236,13 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
 
           {/* 문제 2 */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
-            <ActivityHeader theme="sky" kicker="탐구 활동 03-B" title="[문제 2] 다음 함수의 역함수를 구하시오." done={state.p2Verified} />
+            <ActivityHeader
+              theme="sky"
+              kicker="탐구 활동 03-B"
+              title="[문제 2] 다음 함수의 역함수를 구하시오."
+              done={state.p2Verified}
+              extra={padButton('p2')}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ExprInput
                 id="l4-p2-1"
@@ -1274,7 +1326,13 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           </TextbookCard>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
-            <ActivityHeader theme="sky" kicker="탐구 활동 03-C" title="[문제 5] 화씨온도를 섭씨온도로" done={state.p5Verified} />
+            <ActivityHeader
+              theme="sky"
+              kicker="탐구 활동 03-C"
+              title="[문제 5] 화씨온도를 섭씨온도로"
+              done={state.p5Verified}
+              extra={padButton('p5')}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ExprInput
                 id="l4-p5-inv"
@@ -1379,7 +1437,13 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           </TextbookCard>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
-            <ActivityHeader theme="violet" kicker="탐구 활동 04" title="[함께하기] □ 안에 알맞은 것 써넣기" done={state.togetherVerified} />
+            <ActivityHeader
+              theme="violet"
+              kicker="탐구 활동 04"
+              title="[함께하기] □ 안에 알맞은 것 써넣기"
+              done={state.togetherVerified}
+              extra={padButton('together')}
+            />
             <div className="space-y-3">
               <div className="text-xs sm:text-sm font-bold text-slate-900">
                 (i) <MathText text="(g ∘ f)(x) = g(f(x)) = g(x − 1)" />을 정리하면
@@ -1434,6 +1498,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               kicker="탐구 활동 04-B"
               title={<>[문제 3] <MathText text="(g ∘ f)(x) = 2x − 5" />일 때, <MathText text="(f⁻¹ ∘ g⁻¹)(3)" />의 값을 구하시오.</>}
               done={state.p3Verified}
+              extra={padButton('p3')}
             />
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="w-full sm:w-64">
@@ -1739,6 +1804,19 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* 문제별 연습장 (3·4단계에서만) */}
+      {openPad && PAD_STEP[openPad] === step && (
+        <ScratchPadWindow
+          key={openPad}
+          title={PAD_TITLES[openPad]}
+          strokes={pads[openPad] || []}
+          onChange={(next) => setPads((prev) => ({ ...prev, [openPad]: next }))}
+          onClose={() => setOpenPad(null)}
+          onRequestConfirm={onRequestConfirm}
+          fileName={`4차시_연습장_${openPad}`}
+        />
       )}
     </div>
   );

@@ -48,3 +48,32 @@ test('항등함수(X → X): 각 원소가 자기 자신으로 가는 화살표'
   );
   for (const m of M) assert.ok(html.includes(`data-arrow="${m}-&gt;${m}"`));
 });
+
+test('pairs: 한 원소에서 화살표가 여러 개 나가는 대응(뒤집은 대응)도 그린다', () => {
+  const A = ['a', 'b', 'c'] as const;
+  const B = ['1', '2', '3'] as const;
+  const html = renderToStaticMarkup(
+    <MappingVennDiagram
+      domainLabel="B"
+      codomainLabel="A"
+      domain={A}
+      codomain={B}
+      mapping={{}}
+      pairs={[['a', '1'], ['a', '2'], ['b', '3']]}
+      problemDomain={['a', 'c']}
+      ariaLabel="t"
+    />
+  );
+  assert.equal((html.match(/data-arrow=/g) || []).length, 3);
+  assert.ok(html.includes('data-arrow="a-&gt;1"') && html.includes('data-arrow="a-&gt;2"'));
+  assert.equal((html.match(/data-problem="true"/g) || []).length, 2, '문제 원소 a, c 강조');
+  assert.ok(html.includes('{1, 2, 3}'), '치역');
+});
+
+test('functionLabel: 두 집합 사이에 함수 이름 화살표를 그리고, 없으면 그리지 않는다', () => {
+  const withLabel = renderToStaticMarkup(
+    <MappingVennDiagram domainLabel="X" codomainLabel="Y" domain={X} codomain={Y} mapping={{}} functionLabel="f" ariaLabel="t" />
+  );
+  assert.ok(withLabel.includes('data-function-label="f"'));
+  assert.ok(!render({}).includes('data-function-label'));
+});

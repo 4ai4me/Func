@@ -7,6 +7,9 @@ import React, { useId } from 'react';
  * - 화살표를 받은 Y의 원소(치역)는 색을 채워 강조하고, 아래에 치역을 글로 보여 줍니다.
  * - onSelectDomain / onPickCodomain 을 주면 그림 속 원소를 눌러 대응을 만들 수 있습니다
  *   (기존 버튼과 같은 처리 함수를 사용 — 마우스·터치 모두 가능).
+ * - pairs: 한 원소에서 화살표가 여러 개 나가는 대응(함수가 아닌 대응)을 그릴 때 사용 (mapping 대신)
+ * - functionLabel: 두 집합 이름 사이에 'X —f→ Y'처럼 함수 이름이 붙은 화살표를 그림
+ * - problemDomain: 문제가 있는 X의 원소(화살표가 둘 이상이거나 없음)를 빨간색으로 강조
  */
 
 export interface MappingVennDiagramProps {
@@ -22,6 +25,12 @@ export interface MappingVennDiagramProps {
   onPickCodomain?: (y: string) => void;
   /** 그림 설명 (화면 읽기 프로그램용) */
   ariaLabel: string;
+  /** 화살표 목록 [x, y] — 주면 mapping 대신 사용 (한 원소에서 여러 화살표 가능) */
+  pairs?: readonly (readonly [string, string])[];
+  /** 두 집합 이름 사이 화살표 위에 쓸 함수 이름 (예: 'f', 'f⁻¹') */
+  functionLabel?: string;
+  /** 빨간색으로 강조할 X의 원소 */
+  problemDomain?: readonly string[];
 }
 
 const WIDTH = 520;
@@ -41,6 +50,19 @@ export function elementY(i: number, n: number, height: number): number {
 export function rangeOf(codomain: readonly string[], mapping: Record<string, string>): string[] {
   const hit = new Set(Object.values(mapping).filter(Boolean));
   return codomain.filter((y) => hit.has(y));
+}
+
+/** 그릴 화살표 목록: pairs가 있으면 그것을, 없으면 mapping을 [x, y] 목록으로 (정의역·공역에 없는 값은 제외) */
+export function arrowPairs(
+  domain: readonly string[],
+  codomain: readonly string[],
+  mapping: Record<string, string>,
+  pairs?: readonly (readonly [string, string])[]
+): [string, string][] {
+  const list: [string, string][] = pairs
+    ? pairs.map(([x, y]) => [x, y])
+    : domain.map((x) => [x, mapping[x]] as [string, string]);
+  return list.filter(([x, y]) => Boolean(y) && domain.includes(x) && codomain.includes(y));
 }
 
 function activate(handler?: () => void) {
@@ -70,14 +92,20 @@ export function MappingVennDiagram({
   onSelectDomain,
   onPickCodomain,
   ariaLabel,
+  pairs,
+  functionLabel,
+  problemDomain,
 }: MappingVennDiagramProps) {
   const markerId = `venn-arrow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const n = Math.max(domain.length, codomain.length);
   const height = Math.max(240, (n - 1) * ROW + PAD_Y * 2 + 30);
   const ry = ((n - 1) * ROW) / 2 + 40;
   const cy = height / 2;
-  const range = rangeOf(codomain, mapping);
-  const rangeSet = new Set(range);
+  const arrows = arrowPairs(domain, codomain, mapping, pairs);
+  const rangeSet = new Set(arrows.map(([, y]) => y));
+  const range = codomain.filter((y) => rangeSet.has(y));
+  const problemSet = new Set(problemDomain ?? []);
+  const mappedSet = new Set(arrows.map(([x]) => x));
 
   const yPos = (list: readonly string[], v: string) => elementY(list.indexOf(v), list.length, height);
 
@@ -93,7 +121,20 @@ export function MappingVennDiagram({
           <marker id={markerId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
           </marker>
+          <marker id={`${markerId}-fn`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+          </marker>
         </defs>
+
+        {/* 함수 이름 화살표 (X —f→ Y) */}
+        {functionLabel && (
+          <g data-function-label={functionLabel}>
+            <line x1={X_CX + 58} y1={17} x2={Y_CX - 58} y2={17} stroke="#475569" strokeWidth="1.8" markerEnd={`url(#${markerId}-fn)`} />
+            <text x={(X_CX + Y_CX) / 2} y={12} textAnchor="middle" fontSize="15" fontWeight="700" fontStyle="italic" fill="#334155">
+              {functionLabel}
+            </text>
+          </g>
+        )}
 
         {/* 집합 이름 */}
         <text x={X_CX} y={22} textAnchor="middle" className="fill-slate-700" fontSize="15" fontWeight="800">
@@ -108,9 +149,7 @@ export function MappingVennDiagram({
         <ellipse cx={Y_CX} cy={cy + 8} rx={RX} ry={ry} fill="#f0fdf4" stroke="#16a34a" strokeWidth="2" />
 
         {/* 대응 화살표 */}
-        {domain.map((x) => {
-          const y = mapping[x];
-          if (!y || !codomain.includes(y)) return null;
+        {arrows.map(([x, y]) => {
           const y1 = yPos(domain, x) + 8;
           const y2 = yPos(codomain, y) + 8;
           return (
@@ -133,7 +172,8 @@ export function MappingVennDiagram({
         {domain.map((x) => {
           const y = yPos(domain, x) + 8;
           const selected = selectedDomain === x;
-          const mapped = Boolean(mapping[x]);
+          const mapped = mappedSet.has(x);
+          const problem = problemSet.has(x);
           return (
             <g key={`d-${x}`} {...activate(onSelectDomain ? () => onSelectDomain(x) : undefined)} aria-label={`${domainLabel}의 원소 ${x}`}>
               <rect
@@ -142,11 +182,12 @@ export function MappingVennDiagram({
                 width={88}
                 height={30}
                 rx={15}
-                fill={selected ? '#2563eb' : mapped ? '#dbeafe' : '#ffffff'}
-                stroke={selected ? '#1d4ed8' : '#93c5fd'}
-                strokeWidth="1.5"
+                fill={selected ? '#2563eb' : problem ? '#ffe4e6' : mapped ? '#dbeafe' : '#ffffff'}
+                stroke={selected ? '#1d4ed8' : problem ? '#e11d48' : '#93c5fd'}
+                strokeWidth={problem ? 2.2 : 1.5}
+                data-problem={problem ? 'true' : undefined}
               />
-              <text x={X_CX} y={y + 5} textAnchor="middle" fontSize="13" fontWeight="700" fill={selected ? '#ffffff' : '#1e3a8a'}>
+              <text x={X_CX} y={y + 5} textAnchor="middle" fontSize="13" fontWeight="700" fill={selected ? '#ffffff' : problem ? '#9f1239' : '#1e3a8a'}>
                 {x}
               </text>
             </g>
