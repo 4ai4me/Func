@@ -20,6 +20,7 @@
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
+  - **함수 단원 기준 지표 (2026-10-30)**: 학급 탐구 역량 대시보드·학생 목록·필터·CSV(1~3차시)·체크리스트·예시 학생 데이터를 Func 1~3차시 문항 기준으로 바꿨습니다(이전: 명제 수업의 사례 수·참/거짓 판단·탐구 주제 기준). 지표 계산은 `src/utils/funcTeacherMetrics.ts`. 4~7차시는 현재 학생 화면이 명제 수업 내용(귀류법·절대부등식)이므로 그 화면에 맞춘 지표를 유지합니다.
   - **전체 답안 보기 (2026-10-30)**: 상세 비교 창(인라인·비모달 모두) 아래에 차시별로 학생이 입력한 **모든 문항**을 문항 이름과 함께 표시합니다. 차시마다 `작성 n/m` 현황을 보여 주며, 비어 있는 문항과 기존 요약 칸의 `미작성`은 **빨간 굵은 글씨**로 강조됩니다. 문항 이름은 `src/utils/answerLabels.ts`에서 관리하고, 이름표가 없는 새 필드라도 값이 있으면 `기타 기록`에 표시됩니다. 학생 화면에 문항을 추가하면 `answerLabels.ts`에 이름표를 추가하세요 (`answerLabels.test.ts`가 누락을 검사합니다).
   - **비모달 상세 비교 창 이동 (2026-10-30)**: 창의 어두운 제목 표시줄을 마우스로 끌거나 패드에서 손가락으로 끌어 옮길 수 있습니다(최대화·최소화 상태 제외). 창을 다시 열면 처음 위치(오른쪽 아래)에서 시작하며, 화면 밖으로 완전히 나가지 않습니다. (`src/utils/useDraggableWindow.ts`)
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
@@ -71,6 +72,8 @@
    - **활동 2 (`동아리 회원 4명의 대표 투표`)**: 동아리 회원 4명의 투표 대응 화살표 시뮬레이터를 조작하여 **항등함수**가 되는 경우(4명 모두 자기 자신에게 투표)와 **상수함수**가 되는 경우(4명 모두 특정한 한 회원에게만 투표)를 실험하고 서술합니다.
 
 ---
+
+- **[생각 넓히기] 대응 벤다이어그램 (2026-10-30 추가)**: 활동 1(학생 5명 → 영화)과 활동 2(회원 4명 → 투표 대상)에서 학생이 만든 대응을 두 집합(타원)과 화살표로 그려 보여 줍니다. 화살표를 받은 원소(치역)는 초록색으로 채우고 치역을 글로 표시하며, 그림 속 원소를 눌러도(마우스·터치) 대응을 만들 수 있습니다. (`src/components/MappingVennDiagram.tsx`)
 
 ## 4. 3차시: 합성함수 탐구 (`Lesson3View`)
 
@@ -185,7 +188,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

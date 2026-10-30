@@ -23,8 +23,6 @@ import {
 const TEACHER_SAVE_DELAY_MS = 1500;
 import {
   StudentRecord,
-  TOPICS,
-  TopicId,
   EVAL_CRITERIA,
   EVAL_DESCRIPTIONS,
   cleanStudentState,
@@ -93,6 +91,14 @@ import { StudentAccessLog } from '../utils/auditLogger';
 import { MathText } from './MathText';
 import { AnswerText, UnwrittenMark } from './AnswerText';
 import { useDraggableWindow } from '../utils/useDraggableWindow';
+import {
+  FUNC_ITEM_CHECKS,
+  LESSON_PROGRESS_LABEL,
+  LessonProgress,
+  completedLessonDistribution,
+  funcLessonProgress,
+  lessonAnswerCsvColumns,
+} from '../utils/funcTeacherMetrics';
 import {
   hasStudentPassword,
   resetStudentPassword,
@@ -167,9 +173,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Column filter states for student records table
   const [filterGroup, setFilterGroup] = useState<string>('all');
-  const [filterExamples, setFilterExamples] = useState<'all' | '4plus' | '1to3' | '0'>('all');
-  const [filterTopic, setFilterTopic] = useState<'all' | TopicId>('all');
-  const [filterDecision, setFilterDecision] = useState<'all' | 'true' | 'false' | 'unknown' | 'none'>('all');
+  // 1~3차시 진행 상태 필터 (완료 / 진행 중 / 시작 전)
+  const [filterL1, setFilterL1] = useState<'all' | LessonProgress>('all');
+  const [filterL2, setFilterL2] = useState<'all' | LessonProgress>('all');
+  const [filterL3, setFilterL3] = useState<'all' | LessonProgress>('all');
   const [filterEvalStatus, setFilterEvalStatus] = useState<'all' | 'complete' | 'partial' | 'none'>('all');
 
   // Modeless (비모달) dialog state for detail comparison
@@ -562,6 +569,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     });
   };
 
+  // CSV 1~3차시 열 (Func 수업 문항 이름표 기준)
+  const funcAnswerCsv = lessonAnswerCsvColumns(['l1', 'l2', 'l3']);
+
   const handleExportCSV = () => {
     if (!records.length) {
       setNotice({ text: '먼저 승인된 학생 답안이나 JSON 파일을 불러와 주세요.', type: 'warn' });
@@ -571,33 +581,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       '학급',
       '식별코드',
       '수정 시각',
-      '1차시 사례 수',
-      '1차시 추측',
-      '1차시 반례 검사 수',
-      '1차시 검증 한계',
-      '1차시 증명 단계',
-      '1차시 증명 서술',
-      '1차시 성찰',
-      '1차시 다음 질문',
-      '2차시 주제',
-      '2차시 명제',
-      '2차시 사례 수',
-      '2차시 반례 검사 수',
-      '2차시 추측',
-      '2차시 판단',
-      '2차시 반례 숫자',
-      '2차시 반례 이유',
-      '2차시 증명 또는 미해결 서술',
-      '2차시 동료 피드백',
-      '2차시 수정',
-      '2차시 성찰',
-      '2차시 다음 질문',
-      '3차시 대우법 문제1 단계확인',
-      '3차시 대우법 문제1 증명서술',
-      '3차시 대우법 문제2 단계확인',
-      '3차시 대우법 문제2 증명서술',
-      '3차시 성찰1',
-      '3차시 성찰2',
+      // 1~3차시: [전체 답안 보기]와 같은 문항 이름으로 모든 답안을 내보냄 (Func 수업 문항 기준)
+      ...funcAnswerCsv.map((c) => c.header),
       '4차시 귀류법 문제1 단계확인',
       '4차시 귀류법 문제1 증명서술',
       '4차시 귀류법 문제2 단계확인',
@@ -640,47 +625,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ];
 
     const rows = records.map((x) => {
-      const a = x.l1;
-      const b = x.l2;
-      const c = x.l3;
       const d = x.l4;
       const e = x.l5;
       const f = x.l6;
       const g = x.l7;
       const ev = ensureTeacherEval(x);
       const evalProg = getTeacherEvaluationProgress(x);
-      const tDef = b.topic ? TOPICS[b.topic as TopicId] : null;
       return [
         x.group,
         x.code,
         x.updatedAt,
-        a.examples.length,
-        a.claim,
-        a.checks.length,
-        a.limits,
-        a.proofVerified.filter(Boolean).length,
-        a.proofText,
-        a.reflection,
-        a.bridge,
-        tDef?.tag || '',
-        b.topic === 'd' ? b.customStatement : tDef?.statement || '',
-        b.examples.length,
-        b.checks.length,
-        b.guess,
-        b.decision,
-        b.counter,
-        b.counterReason,
-        b.proofText,
-        b.peerComment,
-        b.revision,
-        b.reflection,
-        b.nextQuestion,
-        c?.prob1Verified?.filter(Boolean).length ?? 0,
-        c?.prob1ProofText || '',
-        c?.prob2Verified?.filter(Boolean).length ?? 0,
-        c?.prob2ProofText || '',
-        c?.reflection1 || '',
-        c?.reflection2 || '',
+        ...funcAnswerCsv.map((col) => col.value(x)),
         d?.prob1Verified?.filter(Boolean).length ?? 0,
         d?.prob1ProofText || '',
         d?.prob2Verified?.filter(Boolean).length ?? 0,
@@ -777,17 +732,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const isAnyRecordsFilterActive =
     recordsSearchName.trim() !== '' ||
     filterGroup !== 'all' ||
-    filterExamples !== 'all' ||
-    filterTopic !== 'all' ||
-    filterDecision !== 'all' ||
+    filterL1 !== 'all' ||
+    filterL2 !== 'all' ||
+    filterL3 !== 'all' ||
     filterEvalStatus !== 'all';
 
   const resetRecordsFilters = () => {
     setRecordsSearchName('');
     setFilterGroup('all');
-    setFilterExamples('all');
-    setFilterTopic('all');
-    setFilterDecision('all');
+    setFilterL1('all');
+    setFilterL2('all');
+    setFilterL3('all');
     setFilterEvalStatus('all');
   };
 
@@ -804,25 +759,10 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       if (filterGroup !== 'all' && (x.group || '').trim() !== filterGroup) {
         return false;
       }
-      // 3. Filter by L1 examples count
-      if (filterExamples !== 'all') {
-        const count = x.l1.examples.length;
-        if (filterExamples === '4plus' && count < 4) return false;
-        if (filterExamples === '1to3' && (count < 1 || count > 3)) return false;
-        if (filterExamples === '0' && count !== 0) return false;
-      }
-      // 4. Filter by L2 topic
-      if (filterTopic !== 'all' && x.l2.topic !== filterTopic) {
-        return false;
-      }
-      // 5. Filter by L2 decision
-      if (filterDecision !== 'all') {
-        if (filterDecision === 'none') {
-          if (x.l2.decision) return false;
-        } else {
-          if (x.l2.decision !== filterDecision) return false;
-        }
-      }
+      // 3~5. 1~3차시 진행 상태
+      if (filterL1 !== 'all' && funcLessonProgress(x, 1) !== filterL1) return false;
+      if (filterL2 !== 'all' && funcLessonProgress(x, 2) !== filterL2) return false;
+      if (filterL3 !== 'all' && funcLessonProgress(x, 3) !== filterL3) return false;
       // 6. Filter by Teacher Evaluation status
       if (filterEvalStatus !== 'all') {
         const evalProg = getTeacherEvaluationProgress(x);
@@ -875,9 +815,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Analytics calculations
   const checkRows: [string, number][] = [
-    ['1차시 사례 4개 이상', records.filter((x) => x.l1.examples.length >= 4).length],
-    ['1차시 증명 4단계 확인', records.filter((x) => x.l1.proofVerified.every(Boolean)).length],
-    ['2차시 정당화 기록', records.filter((x) => evaluateRubricL2(x.l2)[4]).length],
+    ['1차시 함수의 뜻과 그래프 완료', complete1],
+    ['2차시 여러 가지 함수 완료', complete2],
     ['3차시 합성함수 탐구 완료', complete3],
     ['4차시 귀류법(문제 1·2) 완료', complete4],
     ['5차시 절대부등식1 완료', complete5],
@@ -885,16 +824,17 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ['7차시 절대부등식3 완료', complete7],
   ];
 
+  // 1~3차시(함수 단원) 중 완료한 차시 수별 학생 분포
+  const completedDist = completedLessonDistribution(records);
   const decisions: [string, number, string][] = [
-    ['참', records.filter((x) => x.l2.decision === 'true').length, '#10b981'],
-    ['거짓', records.filter((x) => x.l2.decision === 'false').length, '#f59e0b'],
-    ['미해결', records.filter((x) => x.l2.decision === 'unknown').length, '#94a3b8'],
-    ['미작성', records.filter((x) => !x.l2.decision).length, '#3b82f6'],
+    ['3개 차시 모두 완료', completedDist[3], '#10b981'],
+    ['2개 차시 완료', completedDist[2], '#3b82f6'],
+    ['1개 차시 완료', completedDist[1], '#f59e0b'],
+    ['완료한 차시 없음', completedDist[0], '#94a3b8'],
   ];
 
-  const topicRows: [string, number][] = (
-    Object.entries(TOPICS) as [TopicId, typeof TOPICS[TopicId]][]
-  ).map(([id, v]) => [v.tag, records.filter((x) => x.l2.topic === id).length]);
+  // 1~3차시 문항별 확인 현황 (학생 화면의 [확인] 통과 기준)
+  const topicRows: [string, number][] = FUNC_ITEM_CHECKS.map((c) => [c.title, records.filter(c.done).length]);
 
   const rated = records.filter((x) => ensureTeacherEval(x).scores.some((v) => v !== null));
   const means = EVAL_CRITERIA.map((t, i) => {
@@ -2037,7 +1977,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {isControlsOpen && (
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-              승인된 학생들이 작성한 1~7차시(직접증명 · 반례 · 대우법 · 귀류법 · 절대부등식1·2·3) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
+              승인된 학생들이 작성한 1~7차시(함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 4~7차시) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
@@ -2115,9 +2055,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-9">
               {[
                 [count, '수합 학생 (명)'],
-                [complete1, '1차시 완성'],
-                [complete2, '2차시 완성'],
-                [complete3, '3차시(대우) 완성'],
+                [complete1, '1차시(함수의 뜻) 완성'],
+                [complete2, '2차시(여러 가지 함수) 완성'],
+                [complete3, '3차시(합성함수) 완성'],
                 [complete4, '4차시(귀류) 완성'],
                 [complete5, '5차시(절대1) 완성'],
                 [complete6, '6차시(절대2) 완성'],
@@ -2211,7 +2151,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">2차시 학생 판단 분포</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~3차시 완료 분포 (함수 단원)</h4>
                   <div className="flex items-center gap-6 flex-wrap">
                     <div
                       className="relative h-32 w-32 rounded-full shrink-0"
@@ -2236,12 +2176,12 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-slate-500">
-                    참·거짓은 학생이 선택한 판단이며 정답률이 아닙니다.
+                    차시의 확인 문항을 모두 통과하면 '완료'로 셉니다. 답안의 질은 교사 평정으로 판단하세요.
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">2차시 탐구주제 선택 현황</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~3차시 문항별 확인 현황</h4>
                   <div className="space-y-2.5">
                     {topicRows.map(([title, n]) => {
                       const pct = count ? Math.round((n / count) * 100) : 0;
@@ -2405,65 +2345,58 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 {/* Column Filter: 1차시 사례 수 */}
+                {/* Column Filter: 1~3차시 진행 상태 */}
                 <div>
-                  <label htmlFor="filter-examples" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label htmlFor="filter-l1" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
-                    <span>1차시 사례 수</span>
+                    <span>1차시 함수의 뜻과 그래프</span>
                   </label>
                   <select
-                    id="filter-examples"
-                    value={filterExamples}
-                    onChange={(e) => setFilterExamples(e.target.value as typeof filterExamples)}
+                    id="filter-l1"
+                    value={filterL1}
+                    onChange={(e) => setFilterL1(e.target.value as typeof filterL1)}
                     className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="all">전체 사례 수</option>
-                    <option value="4plus">사례 4개 이상 (충분한 관찰)</option>
-                    <option value="1to3">사례 1~3개 (관찰 진행 중)</option>
-                    <option value="0">사례 0개 (미작성)</option>
+                    <option value="all">전체</option>
+                    <option value="done">완료</option>
+                    <option value="progress">진행 중</option>
+                    <option value="none">시작 전</option>
                   </select>
                 </div>
-
-                {/* Column Filter: 2차시 탐구 주제 */}
                 <div>
-                  <label htmlFor="filter-topic" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label htmlFor="filter-l2" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
-                    <span>2차시 탐구 주제</span>
+                    <span>2차시 여러 가지 함수</span>
                   </label>
                   <select
-                    id="filter-topic"
-                    value={filterTopic}
-                    onChange={(e) => setFilterTopic(e.target.value as typeof filterTopic)}
+                    id="filter-l2"
+                    value={filterL2}
+                    onChange={(e) => setFilterL2(e.target.value as typeof filterL2)}
                     className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="all">전체 탐구 주제</option>
-                    {(Object.entries(TOPICS) as [TopicId, typeof TOPICS[TopicId]][]).map(([id, t]) => (
-                      <option key={id} value={id}>
-                        [{t.tag}] {t.title}
-                      </option>
-                    ))}
+                    <option value="all">전체</option>
+                    <option value="done">완료</option>
+                    <option value="progress">진행 중</option>
+                    <option value="none">시작 전</option>
                   </select>
                 </div>
-
-                {/* Column Filter: 2차시 판단 */}
                 <div>
-                  <label htmlFor="filter-decision" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label htmlFor="filter-l3" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
-                    <span>2차시 참/거짓 판단</span>
+                    <span>3차시 합성함수</span>
                   </label>
                   <select
-                    id="filter-decision"
-                    value={filterDecision}
-                    onChange={(e) => setFilterDecision(e.target.value as typeof filterDecision)}
+                    id="filter-l3"
+                    value={filterL3}
+                    onChange={(e) => setFilterL3(e.target.value as typeof filterL3)}
                     className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="all">전체 판단</option>
-                    <option value="true">참 (증명 완료)</option>
-                    <option value="false">거짓 (반례 발견)</option>
-                    <option value="unknown">미해결</option>
-                    <option value="none">미작성</option>
+                    <option value="all">전체</option>
+                    <option value="done">완료</option>
+                    <option value="progress">진행 중</option>
+                    <option value="none">시작 전</option>
                   </select>
                 </div>
-
                 {/* Column Filter: 교수자 평가 상태 */}
                 <div>
                   <label htmlFor="filter-eval-status" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
@@ -2492,7 +2425,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   <tr className="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-200">
                     <th className="py-3 px-3.5 text-left">학급</th>
                     <th className="py-3 px-3.5 text-left">식별코드(학번·이름)</th>
-                     <th className="py-3 px-3.5 text-left">1차시 사례/증명</th>
+                     <th className="py-3 px-3.5 text-left">1차시 함수의 뜻과 그래프</th>
                     <th className="py-3 px-3.5 text-left">2차시 여러 가지 함수</th>
                     <th className="py-3 px-3.5 text-left">3차시 합성함수</th>
                     <th className="py-3 px-3.5 text-left">4차시 귀류법</th>
@@ -2506,7 +2439,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     filteredSortedRecords.map((x) => {
                       const k = studentKey(x);
                       const isSel = k === selectedKey;
-                      const tDef = x.l2.topic ? TOPICS[x.l2.topic as TopicId] : null;
                       const evalProg = getTeacherEvaluationProgress(x);
                       const avgScore = getTeacherEvalAverage(ensureTeacherEval(x).scores);
                       return (
@@ -2521,7 +2453,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <td className="py-3 px-3.5 text-slate-700">{x.group || '—'}</td>
                           <td className="py-3 px-3.5 font-bold mono text-slate-900">{x.code || '미입력'}</td>
                           <td className="py-3 px-3.5 mono text-slate-700">
-                            사례 {x.l1.examples.length}개 · {x.l1.proofVerified.filter(Boolean).length}/4
+                            루브릭 {evaluateRubricL1(x.l1).filter(Boolean).length}/5 ·{' '}
+                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 1)]}
                           </td>
                           <td className="py-3 px-3.5 text-slate-700">
                             {x.l2.bogiVerified ||
@@ -2543,14 +2476,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                 </strong>
                               </span>
                             ) : (
-                              <>
-                                {tDef?.tag || '미선택'} ·{' '}
-                                <strong className="text-slate-900">
-                                  {({ true: '참', false: '거짓', unknown: '미해결' } as Record<string, string>)[
-                                    x.l2.decision
-                                  ] || <UnwrittenMark />}
-                                </strong>
-                              </>
+                              <UnwrittenMark text="시작 전" />
                             )}
                           </td>
                           <td className="py-3 px-3.5 mono text-slate-700">
@@ -2738,10 +2664,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     {[
                       [
                         '[보기] 일대일함수와 일대일대응 비교',
-                        selectedStudent.l2.bogi2Reason ||
-                          (selectedStudent.l2.topic === 'd'
-                            ? selectedStudent.l2.customStatement
-                            : TOPICS[selectedStudent.l2.topic as TopicId]?.statement),
+                        selectedStudent.l2.bogi2Reason || selectedStudent.l2.guess,
                       ],
                       [
                         '[문제 6] 일대일함수·일대일대응 판별 이유',
@@ -2753,9 +2676,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         '[문제 7] 항등함수·상수함수 그래프 판별',
                         selectedStudent.l2.prob7Graph2Reason
                           ? `항등: (${selectedStudent.l2.prob7IdentityChoice || '?'}) · 상수: (${selectedStudent.l2.prob7ConstantChoice || '?'})\n(2) 이유: ${selectedStudent.l2.prob7Graph2Reason}`
-                          : selectedStudent.l2.decision === 'false'
-                          ? `반례 n=${selectedStudent.l2.counter || '(미작성)'}\n${selectedStudent.l2.counterReason}`
-                          : selectedStudent.l2.proofText,
+                          : selectedStudent.l2.counterReason,
                       ],
                       [
                         '[생각 넓히기] 활동 1 (영화관) · 활동 2 (동아리 투표)',
@@ -3126,7 +3047,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               return { ...item, evaluation: { ...ev, nextStep: e.target.value } };
                             })
                           }
-                          placeholder="예: 반례가 가정을 만족하는지 먼저 확인하고, 문자로 일반화해 보세요."
+                          placeholder="예: 함수가 아닌 이유를 ‘X의 원소 3에 대응하는 Y의 원소가 없다’처럼 구체적인 원소를 들어 설명해 보세요."
                           className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         />
                       </div>
@@ -3297,10 +3218,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     {[
                       [
                         '[보기] 일대일함수와 일대일대응 비교',
-                        selectedStudent.l2.bogi2Reason ||
-                          (selectedStudent.l2.topic === 'd'
-                            ? selectedStudent.l2.customStatement
-                            : TOPICS[selectedStudent.l2.topic as TopicId]?.statement),
+                        selectedStudent.l2.bogi2Reason || selectedStudent.l2.guess,
                       ],
                       [
                         '[문제 6] 일대일함수·일대일대응 판별 이유',
@@ -3312,9 +3230,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         '[문제 7] 항등함수·상수함수 그래프 판별',
                         selectedStudent.l2.prob7Graph2Reason
                           ? `항등: (${selectedStudent.l2.prob7IdentityChoice || '?'}) · 상수: (${selectedStudent.l2.prob7ConstantChoice || '?'})\n(2) 이유: ${selectedStudent.l2.prob7Graph2Reason}`
-                          : selectedStudent.l2.decision === 'false'
-                          ? `반례 n=${selectedStudent.l2.counter || '(미작성)'}\n${selectedStudent.l2.counterReason}`
-                          : selectedStudent.l2.proofText,
+                          : selectedStudent.l2.counterReason,
                       ],
                       [
                         '[생각 넓히기] 활동 1 (영화관) · 활동 2 (동아리 투표)',
@@ -3603,7 +3519,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       onChange={(e) =>
                         updateSelectedStudent((item) => ({ ...item, teacherMemo: e.target.value }))
                       }
-                      placeholder="예: 1차시는 사례 나열에 머물렀지만 2차시는 조건에 맞는 반례를 직접 구성함."
+                      placeholder="예: 1차시는 대응 판별에 머물렀지만 2차시는 치역과 공역을 비교해 일대일대응임을 스스로 정당화함."
                       className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
@@ -3715,7 +3631,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             return { ...item, evaluation: { ...ev, nextStep: e.target.value } };
                           })
                         }
-                        placeholder="예: 반례가 가정을 만족하는지 먼저 확인하고, 문자로 일반화해 보세요."
+                        placeholder="예: 함수가 아닌 이유를 ‘X의 원소 3에 대응하는 Y의 원소가 없다’처럼 구체적인 원소를 들어 설명해 보세요."
                         className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       />
                     </div>
@@ -3750,7 +3666,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               onClick={() => setIsChecklistOpen((prev) => !prev)}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
               aria-expanded={isChecklistOpen}
-              aria-label="교사용 수사 체크리스트 접기/펼치기"
+              aria-label="교사용 함수 탐구 체크리스트 접기/펼치기"
             >
               {isChecklistOpen ? (
                 <>
@@ -3764,14 +3680,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </>
               )}
             </button>
-            <h3 className="text-base sm:text-lg font-extrabold text-slate-900">교사용 수사 체크리스트</h3>
+            <h3 className="text-base sm:text-lg font-extrabold text-slate-900">교사용 함수 탐구 체크리스트</h3>
           </div>
         </div>
 
         {isChecklistOpen && (
           <div className="mt-3 pt-3 border-t border-slate-100">
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              ① 사례를 여러 개 확인한 것과 일반적 증명을 구별하는가? ② 새로운 명제에서 반례가 가정에 맞는지 확인하는가? ③ 참이라고 판단했을 때 문자·정수의 성질 등을 이용해 모든 경우를 설명하는가? ④ 처음 추측을 수정한 이유를 설명하는가?
+              ① 정의역의 각 원소에 공역의 원소가 ‘빠짐없이·오직 하나씩’ 대응하는지를 근거로 함수를 판별하는가? ② 정의역·공역·치역을 구분하고, 함수가 아닌 이유를 구체적인 원소로 설명하는가? ③ 일대일함수와 일대일대응의 차이(치역 = 공역)를 설명하고 항등함수·상수함수를 구별하는가? ④ 합성의 순서에 따라 결과가 달라짐(교환법칙 불성립)과 결합법칙이 성립하는 이유를 설명하는가?
             </p>
           </div>
         )}

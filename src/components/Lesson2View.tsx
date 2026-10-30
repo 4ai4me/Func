@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
+import { MappingVennDiagram } from './MappingVennDiagram';
 
 interface Lesson2ViewProps {
   state: Lesson2State;
@@ -1985,6 +1986,23 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                 </div>
               </div>
 
+              {/* 대응 관계 벤다이어그램 (그림 속 원소를 눌러도 연결 가능) */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <MappingVennDiagram
+                  domainLabel="X (학생)"
+                  codomainLabel="Y (영화)"
+                  domain={MOVIE_STUDENTS}
+                  codomain={MOVIE_LIST}
+                  mapping={think1Map}
+                  selectedDomain={selectedStudentForMovie}
+                  onSelectDomain={(x) => setSelectedStudentForMovie(x as (typeof MOVIE_STUDENTS)[number])}
+                  onPickCodomain={(y) => assignMovieToStudent(selectedStudentForMovie, y)}
+                  ariaLabel={`활동 1 대응 벤다이어그램: ${
+                    MOVIE_STUDENTS.map((x) => `${x}→${think1Map[x] || '미선택'}`).join(', ')
+                  }`}
+                />
+              </div>
+
               {(() => {
                 const status = getMovieMapClassification();
                 const badgeClass =
@@ -2231,6 +2249,23 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* 대응 관계 벤다이어그램 (그림 속 원소를 눌러도 연결 가능) */}
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <MappingVennDiagram
+                  domainLabel="X (투표하는 회원)"
+                  codomainLabel="X (투표받는 회원)"
+                  domain={CLUB_MEMBERS}
+                  codomain={CLUB_MEMBERS}
+                  mapping={think2Map}
+                  selectedDomain={selectedVoter}
+                  onSelectDomain={(x) => setSelectedVoter(x)}
+                  onPickCodomain={(y) => assignVoteToMember(selectedVoter, y)}
+                  ariaLabel={`활동 2 대응 벤다이어그램: ${
+                    CLUB_MEMBERS.map((x) => `${x}→${think2Map[x] || '미선택'}`).join(', ')
+                  }`}
+                />
               </div>
 
               {(() => {

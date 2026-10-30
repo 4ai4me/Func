@@ -2054,7 +2054,7 @@ export default function App() {
             </div>
 
             <div className="pt-4 border-t border-[#ccd5df] text-center text-xs text-[#516780] font-semibold">
-              {CLASSROOM_BRAND_NAME} · 공통수학2 명제의 증명과 절대부등식 탐구 프로젝트 공식 평가서
+              {CLASSROOM_BRAND_NAME} · 공통수학2 함수와 그래프 탐구 프로젝트 공식 평가서
             </div>
           </div>
         )}

@@ -27,8 +27,6 @@ import {
   getTeacherEvaluationProgress,
   hasTeacherEvaluation,
   isLessonEnabled,
-  TOPICS,
-  TopicId,
 } from '../utils/mathLogic';
 
 export interface StudentEvaluationModalProps {
@@ -192,7 +190,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       {student.code} 탐정의 {EVAL_CRITERIA.length}대 수학적 탐구 역량
                     </div>
                     <p className="text-xs text-slate-600">
-                      1~7차시 단서, 반례 탐색, 대우법·귀류법 및 절대부등식 증명 서술을 종합하여 평정되었습니다.
+                      1~7차시 탐구 활동(함수의 뜻과 그래프, 여러 가지 함수, 합성함수 등)의 기록과 서술을 종합하여 평정되었습니다.
                     </p>
                   </div>
 
@@ -346,33 +344,32 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
 
                     {/* 2차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-emerald-700">2차시 · 반례와 정당화</div>
+                      <div className="font-bold text-emerald-700">2차시 · 여러 가지 함수</div>
                       <div className="text-slate-600">
-                        <strong>선택 주제:</strong>{' '}
-                        {student.l2.topic === 'd'
-                          ? student.l2.customStatement
-                          : TOPICS[student.l2.topic as TopicId]?.statement || '(미선택)'}
+                        <strong>[보기·문제 6] 일대일함수·일대일대응:</strong>{' '}
+                        {student.l2.prob6BijectiveReason || student.l2.bogi2Reason || '(미작성)'}
                       </div>
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>판단 및 논증:</strong>{' '}
-                        {student.l2.decision === 'false'
-                          ? `반례 n=${student.l2.counter}: ${student.l2.counterReason}`
-                          : student.l2.proofText || '(미작성)'}
+                      <div className="text-slate-600">
+                        <strong>[문제 7] 항등함수·상수함수:</strong> {student.l2.prob7Graph2Reason || '(미작성)'}
+                      </div>
+                      <div className="text-slate-600">
+                        <strong>[생각 넓히기] 활동 1·2:</strong>{' '}
+                        {[student.l2.think1BijectiveCase, student.l2.think2IdentityCase].filter(Boolean).join(' / ') || '(미작성)'}
                       </div>
                     </div>
 
-                    {/* 3차시 */}
+                  {/* 3차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-indigo-700">3차시 · 대우를 이용한 증명</div>
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 1 (짝수):</strong> {student.l3?.prob1ProofText || '(미작성)'}
+                      <div className="font-bold text-indigo-700">3차시 · 합성함수 탐구</div>
+                      <div className="text-slate-600">
+                        <strong>[생각 열기·문제 1] 합성함수의 뜻과 함숫값:</strong> {student.l3?.prob1ProofText || '(미작성)'}
                       </div>
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 2 (3의 배수):</strong> {student.l3?.prob2ProofText || '(미작성)'}
+                      <div className="text-slate-600">
+                        <strong>[교환법칙·문제 2·생각 넓히기]:</strong> {student.l3?.prob2ProofText || '(미작성)'}
                       </div>
                     </div>
 
-                    {/* 4차시 */}
+                  {/* 4차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
                       <div className="font-bold text-purple-700">4차시 · 귀류법</div>
                       <div className="text-slate-600 whitespace-pre-wrap">

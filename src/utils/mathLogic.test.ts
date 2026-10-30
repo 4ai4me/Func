@@ -771,7 +771,14 @@ test('Lesson 1 (함수의 뜻과 그래프) validation and completion helpers wo
 
 test('extractFuncWorksheetFromJson & embedFuncWorksheetIntoJson preserve Props data while isolating Func worksheet', () => {
   // 1. Simulate a student who already registered and completed work in Props (명제 수업)
-  const propsSample = createSampleTeacherDataset()[0];
+  //    (예시 학생 데이터는 Func 1~3차시 답안으로 바뀌었으므로, 명제 수업 형태의 기록을 직접 만듦)
+  const propsSample = createInitialStudentState();
+  propsSample.l1 = {
+    ...propsSample.l1,
+    examples: [calc1(-3), calc1(1), calc1(3), calc1(5)],
+    claim: '모든 홀수 n에 대하여 n을 제곱한 수를 8로 나눈 나머지는 항상 1이다.',
+    claimChecked: true,
+  };
   propsSample.group = '수일고등학교 1학년 9반';
   propsSample.code = '10915_홍길동';
   propsSample.l1.reflection = 'Props 명제 1차시 성찰 기록입니다.';

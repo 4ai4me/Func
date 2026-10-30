@@ -3391,6 +3391,156 @@ export function studentKey(x: { group?: string; code?: string }): string {
   return `${(x.group || '').trim()}::${(x.code || '').trim()}`;
 }
 
+/**
+ * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~3차시 답안.
+ * 정답은 각 문항의 채점 함수(validateL1Prob1 등)와 일치하는 값만 사용합니다.
+ * - complete: 1~3차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3차시 생각 열기만
+ */
+export function createFuncSampleLessons(variant: 'complete' | 'partial'): Pick<StudentRecord, 'l1' | 'l2' | 'l3'> {
+  const base = createInitialStudentState();
+  const full = variant === 'complete';
+
+  const prob1_1Reason = 'X의 원소 3에 대응하는 Y의 원소가 없으므로 함수가 아니다.';
+  const prob1_3Reason = 'X의 원소 4에 대응하는 Y의 원소가 b, d 두 개이므로 함수가 아니다.';
+  const prob3Reason = '정의역 {-1, 0, 1}의 모든 원소에서 f(x)와 g(x)의 함숫값이 같으므로 f = g이다.';
+  const prob5_2Reason = 'x = a인 직선과 두 점에서 만나는 경우가 있어 x 하나에 y가 두 개 대응하므로 함수의 그래프가 아니다.';
+  const prob5_3Reason = 'x = 3일 때 대응하는 y의 값이 두 개이므로 함수의 그래프가 아니다.';
+
+  const l1: Lesson1State = {
+    ...base.l1,
+    countryMap: { ...L1_CORRECT_COUNTRY_MAP },
+    countryMapVerified: true,
+    prob1_1IsFunc: 'no',
+    prob1_1Reason,
+    prob1_2IsFunc: 'yes',
+    prob1_2Domain: '{1, 2, 3, 4}',
+    prob1_2Codomain: '{a, b, c, d}',
+    prob1_2Range: '{a, c, d}',
+    prob1_3IsFunc: 'no',
+    prob1_3Reason,
+    prob1Verified: true,
+    prob2_1Domain: '{x | x는 실수}',
+    prob2_1Range: '{y | y는 실수}',
+    prob2_2Domain: '{x | x는 실수}',
+    prob2_2Range: '{y | y ≤ 3인 실수}',
+    prob2Verified: true,
+    claimChecked: true,
+    claim: `[문제 1] 함수: (2)번 (정의역 {1, 2, 3, 4}, 공역 {a, b, c, d}, 치역 {a, c, d}) / (1) 아님: ${prob1_1Reason} / (3) 아님: ${prob1_3Reason}`,
+    ...(full
+      ? {
+          prob3Table: { f0: '0', f1: '2', gm1: '2', g1: '2' },
+          prob3IsEqual: 'yes' as const,
+          prob3Reason,
+          prob3Verified: true,
+          limits: `[문제 3] 정의역 {-1, 0, 1}에서 f(x)=|2x|와 g(x)=2x²은 f(-1)=g(-1)=2, f(0)=g(0)=0, f(1)=g(1)=2이므로 f=g이다. (${prob3Reason})`,
+          prob4_1Points: [
+            { x: 0, y: 3 },
+            { x: 1, y: 1 },
+            { x: 2, y: -1 },
+            { x: 3, y: -3 },
+          ],
+          prob4_1Verified: true,
+          prob4_2LinePoints: [
+            { x: 0, y: 3 },
+            { x: 2, y: -1 },
+          ],
+          prob4_2Verified: true,
+          prob5Choice: '1' as const,
+          prob5_2Reason,
+          prob5_3Reason,
+          prob5Verified: true,
+          proofVerified: [true, true, true, true],
+          proofText: `[문제 4] y=-2x+3 그래프: (1) 점 (0,3),(1,1),(2,-1),(3,-3), (2) 실수 전체 직선 완료. [문제 5] 함수의 그래프는 (1)번. (2) 아님: ${prob5_2Reason} / (3) 아님: ${prob5_3Reason}`,
+          realLifeQuizVerified: true,
+          realLifeDomainX: '우리 반 학생 전체의 집합',
+          realLifeCodomainY: '1부터 31까지 자연수의 집합',
+          realLifeRule: '각 학생에게 그 학생의 생일(일)을 대응',
+          realLifeWhyFunc: '각 학생마다 생일인 날짜가 하나씩만 정해지므로 함수이다.',
+          bridge: '[실생활 함수] 정의역(우리 반 학생 전체의 집합) → 공역(1부터 31까지 자연수의 집합): 각 학생에게 그 학생의 생일(일)을 대응',
+          reflection: '함수는 정의역의 모든 원소에 공역의 원소가 오직 하나씩 대응하는 관계라는 것을 알게 되었다.',
+        }
+      : {}),
+  };
+
+  const bogi2Reason = 'x = 1과 x = -1에서 함숫값이 1로 같으므로 일대일함수가 아니다.';
+  const prob6BijectiveReason = '(1)과 (4)는 서로 다른 x에 서로 다른 y가 대응하고 치역과 공역이 실수 전체로 같다.';
+  const prob6NonOneToOneReason = '(2)와 (3)은 x = -1과 x = 1일 때 y값이 같으므로 일대일함수가 아니다.';
+  const prob7Graph2Reason = 'x = 1에 무수히 많은 y값이 대응하므로 함수가 아니다.';
+
+  const l2: Lesson2State = {
+    ...base.l2,
+    bogi1IsOneToOne: 'yes',
+    bogi1IsBijective: 'yes',
+    bogiConditionChoice: 'range_eq_codomain',
+    bogi2IsOneToOne: 'no',
+    bogi2Reason,
+    bogiVerified: true,
+    guess: `[보기 탐구] ① f(x)=2x: 일대일함수 O, 일대일대응 O (치역=공역) / ② g(x)=x²: 일대일함수 X (${bogi2Reason})`,
+    prob6_1OneToOne: 'yes',
+    prob6_1Bijective: 'yes',
+    prob6_2OneToOne: 'no',
+    prob6_2Bijective: 'no',
+    prob6_3OneToOne: 'no',
+    prob6_3Bijective: 'no',
+    prob6_4OneToOne: 'yes',
+    prob6_4Bijective: 'yes',
+    prob6BijectiveReason,
+    prob6NonOneToOneReason,
+    prob6Verified: true,
+    decision: 'true',
+    decisionChecked: true,
+    proofText: `[문제 6] 일대일함수 및 일대일대응: (1) y=3x-1, (4) 구간함수 / 일대일대응 이유: ${prob6BijectiveReason} / (2),(3) 아닌 이유: ${prob6NonOneToOneReason}`,
+    ...(full
+      ? {
+          prob7IdentityChoice: '1' as const,
+          prob7ConstantChoice: '3' as const,
+          prob7Graph2Reason,
+          prob7Verified: true,
+          counterReason: `[문제 7] 항등함수: (1)번, 상수함수: (3)번 / (2)번 x=1이 함수가 아닌 이유: ${prob7Graph2Reason}`,
+          think1BijectiveCase: '학생 5명이 서로 다른 영화 5편을 하나씩 고르는 경우',
+          think1ConstantCase: '학생 5명이 모두 같은 영화 한 편을 고르는 경우',
+          think1Verified: true,
+          think2IdentityCase: '회원 4명이 모두 자기 자신에게 투표하는 경우',
+          think2ConstantCase: '회원 4명이 모두 같은 회원 한 명에게 투표하는 경우',
+          think2Verified: true,
+          share: '[활동 1 영화관] 일대일대응: 학생 5명이 서로 다른 영화 5편을 하나씩 고르는 경우 / 상수함수: 학생 5명이 모두 같은 영화 한 편을 고르는 경우',
+          nextQuestion: '[활동 2 동아리 투표] 항등함수: 회원 4명이 모두 자기 자신에게 투표하는 경우 / 상수함수: 회원 4명이 모두 같은 회원 한 명에게 투표하는 경우',
+          reflection: '일대일대응이 되려면 일대일함수이면서 치역과 공역이 같아야 한다는 점을 정리할 수 있었다.',
+        }
+      : {}),
+  };
+
+  const openMeaningReason = '정의역 X의 원소 x에 f를 먼저 적용해 f(x)를 구하고, 그 값을 다시 g에 대입하여 Z의 원소 g(f(x))를 대응시키는 함수이다.';
+  const p1Reason = '(1) f(2)=5이므로 g(5)=24, (2) g(-1)=0이므로 f(0)=1, (3) f(-3)=-5이므로 f(-5)=-9이다.';
+  const l3: Lesson3State = {
+    ...base.l3,
+    openAramPrice: '3000',
+    openJaeyoungPrice: '4000',
+    openHayoungPrice: '2000',
+    openDomainToCodomainChoice: 'X_to_Z',
+    openMeaningReason,
+    openVerified: true,
+    ...(full
+      ? {
+          p1_1_f2: '5',
+          p1_1_ans: '24',
+          p1_2_gm1: '0',
+          p1_2_ans: '1',
+          p1_3_fm3: '-5',
+          p1_3_ans: '-9',
+          p1Reason,
+          p1Verified: true,
+          prob1ProofText: `[생각 열기] 아람:3000, 재영:4000, 하영:2000 / ${openMeaningReason}\n[문제 1] (g∘f)(2)=24, (f∘g)(-1)=1, (f∘f)(-3)=-9 / ${p1Reason}`,
+          reflection1: '(g∘f)(x)는 f를 먼저, (f∘g)(x)는 g를 먼저 적용하므로 순서가 달라 일반적으로 g∘f ≠ f∘g이다.',
+        }
+      : {
+          prob1ProofText: `[생각 열기] 아람:3000, 재영:4000, 하영:2000 / ${openMeaningReason}`,
+        }),
+  };
+
+  return { l1, l2, l3 };
+}
+
 export function createSampleTeacherDataset(): StudentRecord[] {
   const s1 = createInitialStudentState();
   s1.group = '1학년 3반';
@@ -3621,6 +3771,11 @@ export function createSampleTeacherDataset(): StudentRecord[] {
     evaluatedLessonCount: 4,
   };
 
+  // 1~3차시는 Func(함수와 그래프) 수업 답안으로 교체 (4~7차시는 현재 학생 화면 내용 그대로)
+  Object.assign(s1, createFuncSampleLessons('complete'));
+  Object.assign(s2, createFuncSampleLessons('partial'));
+  s1.teacherMemo = '1~3차시 함수 단원에서 대응의 조건을 근거로 들어 판별하고 설명함. (4~7차시 평정 진행 중)';
+  s2.teacherMemo = '1차시 일부와 2차시 [보기]·[문제 6]까지 진행. 나머지 문항 진행 후 추가 평가 예정.';
   return [s1, s2];
 }
 
