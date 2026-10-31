@@ -97,6 +97,8 @@
 
 - **[생각 열기] 합성함수 벤다이어그램 (2026-10-30 추가)**: 세 학생(X) → 음식(Y) → 가격(Z) 대응을 세 집합 벤다이어그램으로 보여 줍니다. 파란 실선 f, 주황 실선 g, 초록 점선 g∘f(Y를 거쳐 한 번에 대응). 위의 [학생 추적] 버튼이나 그림 속 학생을 누르면 그 학생의 경로만 강조됩니다. (`src/components/CompositeVennDiagram.tsx`)
 
+- **5단계 — 도전!! 실생활 합성함수 · 학교 축제 할인 쿠폰의 비밀 (2026-10-31 추가)**: f = 20% 할인, g = 포장비 1,000원 추가일 때 A 시스템 g(f(x))와 B 시스템 f(g(x))를 비교합니다. 예상하기 → 결제 실험기(상품 가격·할인율·포장비 슬라이더, 비율/정액 할인 쿠폰 전환, 계산 순서 함수 기계, 가격별 비교표) → 미션 1(10,000원: A 9,000원, B 8,800원) → 미션 2(합성함수 식, 0.8x·4/5x 등 표기 인정) → 미션 3(A − B = 200으로 x와 무관 → 항상 B 유리) → 미션 4(비율 할인은 0%·0원일 때만 같고, 정액 할인은 항상 같음) → 마무리 질문("왜 순서에 따라 결과가 달라질까?"). 계산·채점: `src/utils/lesson3Coupon.ts`, 화면: `src/components/Lesson3CouponStep.tsx`. 3차시 단계 완료는 5단계 기준(교사 루브릭·평가 항목은 기존 그대로).
+
 ## 4-1. 4차시: 역함수 탐구 (`Lesson4View`, 2026-10-30)
 
 교과서 역함수 단원(`[생각 열기]`, `역함수와 그 성질`, `[보기]`, `[문제 1]`, `[예제 1]`, `[문제 2]`, `[함께하기]`, `[문제 3]`, 그래프 관계, `[문제 4]`, `[과학+ 문제 5]`, `공학 도구`)을 3차시와 같은 형식(교과서 그림 + 인터랙티브 + 단계별 입력·[정답 확인] + 힌트 + 성찰)으로 5단계 활동지로 만들었습니다. 이전 4차시 화면(명제 수업의 귀류법)을 대체합니다.
@@ -207,7 +209,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

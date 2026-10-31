@@ -72,6 +72,10 @@ export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => bool
   { title: '3차시 교환법칙 탐구', done: (x) => Boolean(x.l3?.ex1Verified) },
   { title: '3차시 [문제 2] 합성함수 구하기', done: (x) => Boolean(x.l3?.p2Verified) },
   { title: '3차시 [생각 넓히기] 결합법칙', done: (x) => Boolean(x.l3?.thinkVerified) },
+  {
+    title: '3차시 [도전] 할인 쿠폰의 비밀 (미션 1~4)',
+    done: (x) => Boolean(x.l3?.cp_m1Verified && x.l3?.cp_m2Verified && x.l3?.cp_m3Verified && x.l3?.cp_m4Verified),
+  },
   { title: '4차시 [생각 열기] 역함수의 뜻', done: (x) => Boolean(x.l4?.openVerified) },
   { title: '4차시 [문제 1] 역함수의 함숫값', done: (x) => Boolean(x.l4?.p1Verified) },
   {

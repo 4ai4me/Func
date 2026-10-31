@@ -236,6 +236,28 @@ export interface Lesson3State {
   think_associative?: '' | 'yes' | 'no';
   thinkComparison?: string;
   thinkVerified?: boolean;
+
+  // Step 4: [도전!! 실생활 합성함수] 학교 축제 할인 쿠폰의 비밀 (2026-10-31 추가, lesson3Coupon.ts)
+  cp_predict?: '' | 'A' | 'B' | 'same';
+  cp_m1_A?: string;
+  cp_m1_B?: string;
+  cp_m1_better?: '' | 'A' | 'B' | 'same';
+  cp_m1Verified?: boolean;
+  cp_f?: string;
+  cp_g?: string;
+  cp_A?: string;
+  cp_B?: string;
+  cp_m2Verified?: boolean;
+  cp_m3_choice?: '' | 'B_always' | 'A_always' | 'depends';
+  cp_m3_diff?: string;
+  cp_m3_reason?: string;
+  cp_m3Verified?: boolean;
+  cp_m4_rate?: '' | 'only_zero' | 'some_rate' | 'never';
+  cp_m4_fixed?: '' | 'yes' | 'no';
+  cp_m4_reason?: string;
+  cp_m4Verified?: boolean;
+  /** 마무리 질문: 같은 두 함수인데 왜 순서에 따라 결과가 달라질까? */
+  cp_final?: string;
 }
 
 export interface L4FractionExample {
@@ -1179,7 +1201,7 @@ export const PROOF7_PROB2_STEPS: ProofStepQuestion[] = [
 export const STAGE_TITLES = {
   1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수'],
   2: ['일대일함수와 일대일대응', '문제 6 · 일대일 판별', '문제 7 · 항등·상수함수', '생각 넓히기 · 실생활'],
-  3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙'],
+  3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙', '도전!! 실생활 합성함수'],
   4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
   5: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
   6: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
@@ -1897,8 +1919,12 @@ export function evaluateLevel3Completion(p: Lesson3State): boolean[] {
   const step3Done =
     (Boolean(p.thinkVerified) && (p.reflection1 || '').trim().length >= 10) ||
     (p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15);
+  // 5단계 도전!! 실생활 합성함수 (할인 쿠폰의 비밀)
+  const step4Done =
+    Boolean(p.cp_m1Verified && p.cp_m2Verified && p.cp_m3Verified && p.cp_m4Verified) &&
+    (p.cp_final || '').trim().length >= 10;
 
-  return [step0Done, step1Done, step2Done, step3Done];
+  return [step0Done, step1Done, step2Done, step3Done, step4Done];
 }
 
 /**
@@ -3158,6 +3184,8 @@ function hasFuncLessonData(l1: unknown, l2?: unknown, l3?: unknown, l4?: unknown
       z.ex1Verified ||
       z.p2Verified ||
       z.thinkVerified ||
+      z.cp_m1Verified ||
+      z.cp_m2Verified ||
       (typeof z.openMeaningReason === 'string' && z.openMeaningReason.trim().length > 0)
     ) {
       return true;
@@ -3363,7 +3391,14 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.p1Reason ||
           l.ex1Reason ||
           l.p2Reason ||
-          l.thinkComparison
+          l.thinkComparison ||
+          // 도전!! 할인 쿠폰 (2026-10-31~)
+          l.cp_predict ||
+          l.cp_m1_A ||
+          l.cp_f ||
+          l.cp_m3_choice ||
+          l.cp_m4_rate ||
+          l.cp_final
       )
   );
   result.l4 = pickNewerOrFilled(
@@ -3645,6 +3680,26 @@ export function createFuncSampleLessons(
           p1Verified: true,
           prob1ProofText: `[생각 열기] 아람:3000, 재영:4000, 하영:2000 / ${openMeaningReason}\n[문제 1] (g∘f)(2)=24, (f∘g)(-1)=1, (f∘f)(-3)=-9 / ${p1Reason}`,
           reflection1: '(g∘f)(x)는 f를 먼저, (f∘g)(x)는 g를 먼저 적용하므로 순서가 달라 일반적으로 g∘f ≠ f∘g이다.',
+          // 도전!! 할인 쿠폰 — 정답은 lesson3Coupon.ts의 채점 함수와 일치하는 값만 사용
+          cp_predict: 'A' as const,
+          cp_m1_A: '9000',
+          cp_m1_B: '8,800원',
+          cp_m1_better: 'B' as const,
+          cp_m1Verified: true,
+          cp_f: '0.8x',
+          cp_g: 'x + 1000',
+          cp_A: '0.8x + 1000',
+          cp_B: '0.8(x + 1000)',
+          cp_m2Verified: true,
+          cp_m3_choice: 'B_always' as const,
+          cp_m3_diff: '200',
+          cp_m3_reason: '두 식을 빼면 x가 없어지고 200만 남으므로 가격과 관계없이 B가 200원 싸다.',
+          cp_m3Verified: true,
+          cp_m4_rate: 'only_zero' as const,
+          cp_m4_fixed: 'yes' as const,
+          cp_m4_reason: '빼고 더하는 것은 순서를 바꿔도 x − 2000 + 1000으로 같다.',
+          cp_m4Verified: true,
+          cp_final: '곱하기(할인율)를 먼저 하느냐 나중에 하느냐에 따라 포장비도 할인되는지가 달라지기 때문이다.',
         }
       : {
           prob1ProofText: `[생각 열기] 아람:3000, 재영:4000, 하영:2000 / ${openMeaningReason}`,

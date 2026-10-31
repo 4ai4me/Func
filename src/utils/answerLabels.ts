@@ -518,6 +518,60 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
         ],
       },
       {
+        title: '[도전!! 실생활 합성함수] 학교 축제 할인 쿠폰의 비밀',
+        fields: [
+          {
+            key: 'cp_predict',
+            label: '예상: 어느 시스템이 유리할까?',
+            format: { kind: 'choice', options: { A: 'A 시스템(할인 후 포장비)', B: 'B 시스템(포장비 후 할인)', same: '같다' } },
+          },
+          { key: 'cp_m1_A', label: '미션 1 · 10,000원일 때 A 결제 금액' },
+          { key: 'cp_m1_B', label: '미션 1 · 10,000원일 때 B 결제 금액' },
+          {
+            key: 'cp_m1_better',
+            label: '미션 1 · 유리한 시스템',
+            format: { kind: 'choice', options: { A: 'A', B: 'B', same: '같다' } },
+          },
+          { key: 'cp_m1Verified', label: '미션 1 확인', format: CHECK },
+          { key: 'cp_f', label: '미션 2 · 할인 f(x)' },
+          { key: 'cp_g', label: '미션 2 · 포장비 g(x)' },
+          { key: 'cp_A', label: '미션 2 · A = g(f(x))' },
+          { key: 'cp_B', label: '미션 2 · B = f(g(x))' },
+          { key: 'cp_m2Verified', label: '미션 2 확인', format: CHECK },
+          {
+            key: 'cp_m3_choice',
+            label: '미션 3 · 가격을 바꾸어도 같은 시스템이 유리한가?',
+            format: {
+              kind: 'choice',
+              options: { B_always: '항상 B가 유리', A_always: '항상 A가 유리', depends: '가격에 따라 달라진다' },
+            },
+          },
+          { key: 'cp_m3_diff', label: '미션 3 · A − B (원)' },
+          { key: 'cp_m3_reason', label: '미션 3 · 수학적 설명' },
+          { key: 'cp_m3Verified', label: '미션 3 확인', format: CHECK },
+          {
+            key: 'cp_m4_rate',
+            label: '미션 4 · 비율 할인에서 두 금액이 같아지는 경우',
+            format: {
+              kind: 'choice',
+              options: {
+                only_zero: '할인율 0% 또는 포장비 0원일 때만',
+                some_rate: '알맞은 할인율을 고르면 같아진다',
+                never: '어떤 경우에도 같아지지 않는다',
+              },
+            },
+          },
+          {
+            key: 'cp_m4_fixed',
+            label: '미션 4 · 정액 할인이면 항상 같은가?',
+            format: { kind: 'yesno', yes: '항상 같다', no: '다를 때가 있다' },
+          },
+          { key: 'cp_m4_reason', label: '미션 4 · 정액 할인일 때 같은 이유' },
+          { key: 'cp_m4Verified', label: '미션 4 확인', format: CHECK },
+          { key: 'cp_final', label: '마무리 · 같은 두 함수인데 순서에 따라 결과가 달라지는 이유' },
+        ],
+      },
+      {
         title: '성찰',
         fields: [
           { key: 'reflection1', label: '성찰 1. 계산 순서 차이와 교환법칙이 성립하지 않는 이유' },

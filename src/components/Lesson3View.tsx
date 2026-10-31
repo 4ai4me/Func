@@ -9,6 +9,8 @@ import {
 } from '../utils/mathLogic';
 import { MathText } from './MathText';
 import { CompositeVennDiagram } from './CompositeVennDiagram';
+import { Lesson3CouponStep } from './Lesson3CouponStep';
+import { summarizeCoupon } from '../utils/lesson3Coupon';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -142,6 +144,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
       next.thinkComparison
         ? `[생각 넓히기] ((f∘g)∘h)(x)=${next.think_fgh_left || ''}, (f∘(g∘h))(x)=${next.think_fgh_right || ''} / ${next.thinkComparison}`
         : '',
+      summarizeCoupon(next),
     ]
       .filter(Boolean)
       .join('\n');
@@ -262,6 +265,25 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
           reflection2: '',
           prob1ProofText: '',
           prob2ProofText: '',
+          cp_predict: '',
+          cp_m1_A: '',
+          cp_m1_B: '',
+          cp_m1_better: '',
+          cp_m1Verified: false,
+          cp_f: '',
+          cp_g: '',
+          cp_A: '',
+          cp_B: '',
+          cp_m2Verified: false,
+          cp_m3_choice: '',
+          cp_m3_diff: '',
+          cp_m3_reason: '',
+          cp_m3Verified: false,
+          cp_m4_rate: '',
+          cp_m4_fixed: '',
+          cp_m4_reason: '',
+          cp_m4Verified: false,
+          cp_final: '',
         }));
         setOpenFeedback(null);
         setProb1Feedback(null);
@@ -2039,15 +2061,27 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
 
               <button
                 type="button"
-                onClick={onGoToLesson4}
-                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white hover:bg-slate-800 transition-colors shadow-xs"
+                onClick={() => onStepChange(4)}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white hover:bg-indigo-700 transition-colors shadow-xs"
               >
-                <span>다음 차시: 04차시 역함수 탐구로 이동</span>
+                <span>다음 단계: 도전!! 실생활 합성함수</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* =====================================================================
+          STEP 4: 05 도전!! 실생활 합성함수 · 학교 축제 할인 쿠폰의 비밀
+      ===================================================================== */}
+      {step === 4 && (
+        <Lesson3CouponStep
+          state={state}
+          onUpdate={(updater) => onUpdate((prev) => syncLegacyFields(updater(prev)))}
+          onPrev={() => onStepChange(3)}
+          onGoToLesson4={onGoToLesson4}
+        />
       )}
     </div>
   );

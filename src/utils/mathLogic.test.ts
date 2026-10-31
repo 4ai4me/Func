@@ -268,7 +268,7 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   s.l2.topic = 'a';
   assert.equal(evaluateLevel2Completion(s.l2)[0], true);
 
-  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false]);
+  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false, false]);
   s.l3.parityExamples = [calc3Parity(1), calc3Parity(2), calc3Parity(3)];
   s.l3.contrapositiveChoice = 'contrapositive';
   assert.equal(evaluateLevel3Completion(s.l3)[0], true);
@@ -927,7 +927,7 @@ import {
 
 test('Lesson 3 (합성함수 탐구) validation, completion, and rubric helpers work accurately', () => {
   const s = createInitialStudentState();
-  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false]);
+  assert.deepEqual(evaluateLevel3Completion(s.l3), [false, false, false, false, false]);
 
   // Step 0: [생각 열기] 음식과 가격 대응 및 합성함수의 뜻
   assert.equal(validateL3Open(s.l3).ok, false);

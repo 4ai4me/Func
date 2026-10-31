@@ -366,7 +366,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                         <strong>[생각 열기·문제 1] 합성함수의 뜻과 함숫값:</strong> {student.l3?.prob1ProofText || '(미작성)'}
                       </div>
                       <div className="text-slate-600">
-                        <strong>[교환법칙·문제 2·생각 넓히기]:</strong> {student.l3?.prob2ProofText || '(미작성)'}
+                        <strong>[교환법칙·문제 2·생각 넓히기·도전 할인 쿠폰]:</strong> {student.l3?.prob2ProofText || '(미작성)'}
                       </div>
                     </div>
 

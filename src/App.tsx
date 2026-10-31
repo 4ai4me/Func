@@ -55,6 +55,7 @@ import { Lesson2View } from './components/Lesson2View';
 import { Lesson3View } from './components/Lesson3View';
 import { Lesson4View } from './components/Lesson4View';
 import { summarizeL4 } from './utils/lesson4Logic';
+import { summarizeCoupon } from './utils/lesson3Coupon';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
 import { Lesson7View } from './components/Lesson7View';
@@ -1940,7 +1941,7 @@ export default function App() {
                 '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>3차시 합성함수의 식과 교환·결합법칙 [문제 · 문제 2 · 생각 넓히기]:</strong>{' '}
+              <strong>3차시 합성함수의 식과 교환·결합법칙 [문제 · 문제 2 · 생각 넓히기 · 도전]:</strong>{' '}
               {[
                 printingStudent.l3?.ex1Reason
                   ? `[교환법칙 탐구] (g∘f)(x)=${printingStudent.l3.ex1_gf || '-'}, (f∘g)(x)=${printingStudent.l3.ex1_fg || '-'} / ${printingStudent.l3.ex1Reason}`
@@ -1951,6 +1952,7 @@ export default function App() {
                 printingStudent.l3?.thinkComparison
                   ? `[생각 넓히기] ((f∘g)∘h)(x)=${printingStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${printingStudent.l3.think_fgh_right || '-'} / ${printingStudent.l3.thinkComparison}`
                   : '',
+                printingStudent.l3 ? summarizeCoupon(printingStudent.l3) : '',
               ]
                 .filter(Boolean)
                 .join('\n') ||
