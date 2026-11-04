@@ -22,6 +22,7 @@
 - **교사용 수사 기록실 (`TeacherView`)**:
   - **함수 단원 기준 지표 (2026-10-30)**: 학급 탐구 역량 대시보드·학생 목록·필터·CSV·체크리스트·예시 학생 데이터를 Func 1~4차시 문항 기준으로 바꿨습니다(이전: 명제 수업의 사례 수·참/거짓 판단·탐구 주제 기준, 4차시는 2026-10-30 역함수로 교체). 지표 계산은 `src/utils/funcTeacherMetrics.ts`. 5~7차시는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로 그 화면에 맞춘 지표를 유지합니다.
   - **전체 답안 보기 (2026-10-30)**: 상세 비교 창(인라인·비모달 모두) 아래에 차시별로 학생이 입력한 **모든 문항**을 문항 이름과 함께 표시합니다. 차시마다 `작성 n/m` 현황을 보여 주며, 비어 있는 문항과 기존 요약 칸의 `미작성`은 **빨간 굵은 글씨**로 강조됩니다. 문항 이름은 `src/utils/answerLabels.ts`에서 관리하고, 이름표가 없는 새 필드라도 값이 있으면 `기타 기록`에 표시됩니다. 학생 화면에 문항을 추가하면 `answerLabels.ts`에 이름표를 추가하세요 (`answerLabels.test.ts`가 누락을 검사합니다).
+  - **평가·피드백 [저장] 버튼 (2026-11-04)**: 상세 비교 창(인라인·비모달)의 평가 입력 칸 아래에 [저장] 버튼과 저장 상태(`변경 사항 없음` / `저장되지 않은 변경 있음` / `저장 중…` / `저장됨 (시각)` / `저장 실패`)를 표시합니다. 입력 후 1.5초 자동 저장은 그대로이며, 버튼은 바로 저장할 때 씁니다. 저장이 겹치지 않도록 `serializeRuns`로 한 번에 하나씩 보냅니다 (`src/components/TeacherSaveBar.tsx`, 테스트 `TeacherSaveBar.test.tsx`).
   - **비모달 상세 비교 창 이동 (2026-10-30)**: 창의 어두운 제목 표시줄을 마우스로 끌거나 패드에서 손가락으로 끌어 옮길 수 있습니다(최대화·최소화 상태 제외). 창을 다시 열면 처음 위치(오른쪽 아래)에서 시작하며, 화면 밖으로 완전히 나가지 않습니다. (`src/utils/useDraggableWindow.ts`)
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
     - 교사가 `01차시`~`07차시`를 개별적으로 ON/OFF하거나 원클릭 프리셋(`1차시만 열기`, `1~2차시 열기`, `1~3차시 열기`, `1~4차시 열기`, `전체 열기`)으로 제어할 수 있으며, **`[차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)]`** 버튼 및 실시간 클라우드 동기화 상태 배너(`클라우드 서버 저장 완료` / `서버 상태 확인`)를 제공합니다.
@@ -209,7 +210,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

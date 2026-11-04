@@ -107,6 +107,7 @@ import {
   useStudentAuthPolicy,
 } from '../utils/studentPassword';
 import { FullAnswerPanel } from './FullAnswerPanel';
+import { TeacherSaveBar, TeacherSaveStatus, serializeRuns } from './TeacherSaveBar';
 
 interface TeacherViewProps {
   adminEmail: string;
@@ -154,6 +155,15 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const pendingTeacherSavesRef = useRef<Map<string, StudentRecord>>(new Map());
   const teacherSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedTeacherJsonRef = useRef<Map<string, string>>(new Map());
+  const teacherSaveFailedRef = useRef<Set<string>>(new Set());
+  // 학생 문서 키별 평가 저장 상태 (저장 버튼 옆 표시용)
+  const [teacherSaveStatus, setTeacherSaveStatus] = useState<Record<string, TeacherSaveStatus>>({});
+  const setSaveStatus = useCallback(
+    (regKey: string, next: (prev: TeacherSaveStatus | undefined) => TeacherSaveStatus) => {
+      setTeacherSaveStatus((all) => ({ ...all, [regKey]: next(all[regKey]) }));
+    },
+    []
+  );
   const [approvalFilter, setApprovalFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [notice, setNotice] = useState<{ text: string; type: 'good' | 'warn' | 'info' }>({
     text: '학생 가입 신청 내역과 승인된 학생들의 실시간 탐구 답안이 자동으로 동기화됩니다.',
@@ -264,8 +274,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     return () => unsub();
   }, []);
 
-  // 대기 중인 교사 평가를 서버에 저장
-  const flushTeacherSaves = useCallback(async () => {
+  // 대기 중인 교사 평가를 서버에 저장 (입력 후 자동 저장, [저장] 버튼, 화면 떠날 때 공용)
+  const runTeacherFlush = useCallback(async () => {
     if (teacherSaveTimerRef.current) {
       clearTimeout(teacherSaveTimerRef.current);
       teacherSaveTimerRef.current = null;
@@ -274,27 +284,42 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     for (const [regKey, record] of pending) {
       const json = teacherJson(record);
       if (lastSavedTeacherJsonRef.current.get(regKey) === json) {
+        // 고쳤다가 마지막 저장 내용과 똑같이 되돌린 경우 — 서버에 보낼 필요 없음
         pendingTeacherSavesRef.current.delete(regKey);
+        setSaveStatus(regKey, (prev) => ({ state: 'saved', savedAt: prev?.savedAt ?? Date.now() }));
         continue;
       }
+      setSaveStatus(regKey, (prev) => ({ ...prev, state: 'saving' }));
       try {
         await saveTeacherEvaluation(regKey, record);
         lastSavedTeacherJsonRef.current.set(regKey, json);
         // 저장하는 동안 새 입력이 들어오지 않았을 때만 대기 목록에서 제거
         if (pendingTeacherSavesRef.current.get(regKey) === record) {
           pendingTeacherSavesRef.current.delete(regKey);
+          setSaveStatus(regKey, () => ({ state: 'saved', savedAt: Date.now() }));
+        } else {
+          setSaveStatus(regKey, () => ({ state: 'dirty', savedAt: Date.now() }));
+        }
+        // 앞서 실패 안내를 띄웠던 학생이면, 남아 있는 실패 안내를 저장 완료로 바꾼다
+        if (teacherSaveFailedRef.current.delete(regKey)) {
+          setNotice({ text: '평가 저장 완료: 앞서 실패했던 평가·피드백을 서버에 저장했습니다.', type: 'good' });
         }
       } catch (err) {
         console.error(`Teacher evaluation save failed for ${regKey}:`, err);
+        setSaveStatus(regKey, (prev) => ({ ...prev, state: 'error' }));
+        teacherSaveFailedRef.current.add(regKey);
         setNotice({
-          text: `평가 저장 실패: 네트워크 상태를 확인해 주세요. 입력한 내용은 이 화면에 남아 있으며 다음 입력 때 다시 저장을 시도합니다. (${
+          text: `평가 저장 실패: 네트워크 상태를 확인해 주세요. 입력한 내용은 이 화면에 남아 있으며 [저장] 버튼이나 다음 입력 때 다시 저장을 시도합니다. (${
             err instanceof Error ? err.message : String(err)
           })`,
           type: 'warn',
         });
       }
     }
-  }, []);
+  }, [setSaveStatus]);
+
+  // 저장이 진행 중일 때 또 불리면(버튼 여러 번 누르기 등) 겹쳐 보내지 않고, 끝난 뒤 한 번 더 확인
+  const flushTeacherSaves = React.useMemo(() => serializeRuns(runTeacherFlush), [runTeacherFlush]);
 
   // 화면을 떠나거나 창을 전환할 때 대기 중인 평가를 바로 저장
   useEffect(() => {
@@ -781,6 +806,24 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   const selectedStudent = records.find((v) => studentKey(v) === selectedKey) || null;
 
+  // 화면의 학생 기록 키(학교 학년 반::번호_이름)로 서버 가입 문서를 찾는다
+  const findCloudRegistration = (recordKey: string | null) =>
+    recordKey
+      ? cloudRegistrations.find((r) => {
+          const g = `${r.school} ${r.grade}학년 ${r.classNum}반`.slice(0, 25);
+          const c = `${r.grade}${String(r.classNum).padStart(2, '0')}${String(r.studentNum).padStart(2, '0')}_${r.name}`.slice(0, 25);
+          return `${g}::${c}` === recordKey;
+        })
+      : undefined;
+  const selectedRegKey = findCloudRegistration(selectedKey)?.studentKey ?? null;
+  const selectedSaveBar = (
+    <TeacherSaveBar
+      status={selectedRegKey ? teacherSaveStatus[selectedRegKey] : undefined}
+      onServer={selectedRegKey !== null}
+      onSave={() => void flushTeacherSaves()}
+    />
+  );
+
   const updateSelectedStudent = async (updater: (item: StudentRecord) => StudentRecord) => {
     if (!selectedStudent) return;
     const updatedItem = updater({ ...selectedStudent });
@@ -790,14 +833,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     onUpdateRecords(next);
 
     // Also sync teacher evaluation to Firestore if this student exists in cloudRegistrations
-    const matchCloud = cloudRegistrations.find((r) => {
-      const g = `${r.school} ${r.grade}학년 ${r.classNum}반`.slice(0, 25);
-      const c = `${r.grade}${String(r.classNum).padStart(2, '0')}${String(r.studentNum).padStart(2, '0')}_${r.name}`.slice(0, 25);
-      return `${g}::${c}` === selectedKey;
-    });
+    const matchCloud = findCloudRegistration(selectedKey);
     if (matchCloud) {
       // 평가·메모는 교사 전용 문서에만 저장. 글자를 입력할 때마다 저장하지 않고 1.5초 동안 모아서 저장
       pendingTeacherSavesRef.current.set(matchCloud.studentKey, updatedItem);
+      setSaveStatus(matchCloud.studentKey, (prev) => ({ ...prev, state: 'dirty' }));
       if (teacherSaveTimerRef.current) clearTimeout(teacherSaveTimerRef.current);
       teacherSaveTimerRef.current = setTimeout(() => {
         void flushTeacherSaves();
@@ -3064,6 +3104,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         />
                       </div>
+
+                      {selectedSaveBar}
                     </div>
                   );
                 })()}
@@ -3643,6 +3685,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       />
                     </div>
 
+                    {selectedSaveBar}
+
                     <div className="pt-2 flex items-center justify-between gap-3 flex-wrap">
                       <button
                         type="button"
@@ -3653,7 +3697,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         이 학생 피드백 PDF 인쇄
                       </button>
                       <span className="text-xs text-slate-500">
-                        입력한 평가와 피드백은 학생 답안에 실시간 동기화됩니다.
+                        입력한 평가와 피드백은 잠시 뒤 자동 저장되며, [저장]을 누르면 바로 저장됩니다.
                       </span>
                     </div>
                   </div>
