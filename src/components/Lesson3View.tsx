@@ -6,6 +6,8 @@ import {
   validateL3Ex1,
   validateL3Prob2,
   validateL3Think,
+  L3_MIN_REASON,
+  L3_MIN_REFLECTION,
 } from '../utils/mathLogic';
 import { MathText } from './MathText';
 import { CompositeVennDiagram } from './CompositeVennDiagram';
@@ -25,6 +27,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { HelpSourcePicker } from './HelpSourcePicker';
+import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 
 // ── 교과서 그림 경로 (1·2·4차시와 같은 방식) ──
 // GitHub Pages는 사이트가 /Func/ 아래에 있어 "/assets/…"(맨 앞 기준 주소)로 쓰면 그림을 찾지 못한다.
@@ -768,6 +771,12 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 </div>
               )}
 
+              <div className="flex justify-end">
+
+                <CharCountBadge current={(state.openMeaningReason || '').trim().length} min={L3_MIN_REASON} />
+
+              </div>
+
               <textarea
                 id="l3-open-meaning"
                 rows={2}
@@ -782,7 +791,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                     })
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+                className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.openMeaningReason || '').trim().length, L3_MIN_REASON)}`}
               />
             </div>
 
@@ -1172,6 +1181,12 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 </div>
               )}
 
+              <div className="flex justify-end">
+
+                <CharCountBadge current={(state.p1Reason || '').trim().length} min={L3_MIN_REASON} />
+
+              </div>
+
               <textarea
                 id="l3-p1-reason"
                 rows={2}
@@ -1186,7 +1201,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                     })
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none"
+                className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.p1Reason || '').trim().length, L3_MIN_REASON)}`}
               />
             </div>
 
@@ -1427,6 +1442,9 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
               <label htmlFor="l3-ex1-reason" className="block text-xs sm:text-sm font-bold text-slate-900">
                 4. <MathText text="(g ∘ f)(x)" />와 <MathText text="(f ∘ g)(x)" />의 풀이 과정 및 교환법칙이 성립하지 않는 이유를 적어 보세요.
               </label>
+              <div className="flex justify-end">
+                <CharCountBadge current={(state.ex1Reason || '').trim().length} min={L3_MIN_REASON} />
+              </div>
               <textarea
                 id="l3-ex1-reason"
                 rows={2}
@@ -1441,7 +1459,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                     })
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+                className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.ex1Reason || '').trim().length, L3_MIN_REASON)}`}
               />
             </div>
 
@@ -1602,6 +1620,9 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
               <label htmlFor="l3-p2-reason" className="block text-xs sm:text-sm font-bold text-slate-900">
                 4. [문제 2]의 (1), (2), (3)을 구한 대입 및 정리 과정을 서술해 보세요.
               </label>
+              <div className="flex justify-end">
+                <CharCountBadge current={(state.p2Reason || '').trim().length} min={L3_MIN_REASON} />
+              </div>
               <textarea
                 id="l3-p2-reason"
                 rows={2}
@@ -1616,7 +1637,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                     })
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-teal-600 focus:outline-none"
+                className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.p2Reason || '').trim().length, L3_MIN_REASON)}`}
               />
             </div>
 
@@ -1952,6 +1973,9 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
               <label htmlFor="l3-think-comp" className="block text-xs sm:text-sm font-bold text-slate-900">
                 4. <MathText text="((f ∘ g) ∘ h)(x)" />와 <MathText text="(f ∘ (g ∘ h))(x)" />의 계산 결과를 비교하고 알게 된 성질을 서술해 보세요.
               </label>
+              <div className="flex justify-end">
+                <CharCountBadge current={(state.thinkComparison || '').trim().length} min={L3_MIN_REASON} />
+              </div>
               <textarea
                 id="l3-think-comp"
                 rows={2}
@@ -1966,7 +1990,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                     })
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-orange-600 focus:outline-none"
+                className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.thinkComparison || '').trim().length, L3_MIN_REASON)}`}
               />
             </div>
 
@@ -2043,6 +2067,9 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 >
                   1. <MathText text="(g ∘ f)(x)" />와 <MathText text="(f ∘ g)(x)" />의 계산 순서 차이와 교환법칙이 성립하지 않는 이유를 정리해 보세요.
                 </label>
+                <div className="flex justify-end">
+                  <CharCountBadge current={(state.reflection1 || '').trim().length} min={L3_MIN_REFLECTION} />
+                </div>
                 <textarea
                   id="l3-reflection1"
                   rows={2}
@@ -2054,7 +2081,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                       reflection1: e.target.value,
                     }))
                   }
-                  className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.reflection1 || '').trim().length, L3_MIN_REFLECTION)}`}
                 />
               </div>
 
@@ -2065,6 +2092,9 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 >
                   2. 함수의 합성에서 결합법칙 <MathText text="(f ∘ g) ∘ h = f ∘ (g ∘ h)" />가 성립하는 이유나 오늘 새롭게 깨달은 점을 적어 보세요.
                 </label>
+                <div className="flex justify-end">
+                  <CharCountBadge current={(state.reflection2 || '').trim().length} min={L3_MIN_REFLECTION} />
+                </div>
                 <textarea
                   id="l3-reflection2"
                   rows={2}
@@ -2076,7 +2106,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                       reflection2: e.target.value,
                     }))
                   }
-                  className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
+                  className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.reflection2 || '').trim().length, L3_MIN_REFLECTION)}`}
                 />
               </div>
             </div>

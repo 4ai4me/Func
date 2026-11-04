@@ -634,3 +634,40 @@
 - 확인하지 못한 것: 실제 로그인 학생의 저장·새로고침·다른 기기 복원(저장 방식은 기존 그대로, 단위 테스트로 불러오기·합치기 확인), 실제 패드 터치
 - 남은 위험·후속 작업: 5~7차시 교체 시 같은 `HelpSourcePicker`와 `HELP_SOURCE_FIELD`를 추가하면 됨
 - 다음 세션 인계: 위와 같음
+
+
+---
+
+## [2026-11-05] 서술 칸 글자 수 표시 · 문항 상태(점검/오답/미작성) · 교사 전용 AI 피드백 초안 (Tier 2)
+
+**시작**
+- Tier: 2 (학생·교사 화면 변경, 저장 데이터·보안 규칙 변경 없음, 새 패키지 없음)
+- 목표: (1) 3차시에서 빠진 글자 수 표시 복구, 4차시·앞으로의 차시에도 적용 (2) 교사만 보는 AI 피드백 초안 + 복사 버튼 (3) 학생은 교사가 쓴 피드백만 봄(유지) (4) 교사 화면 '미작성'을 점검·오답·미작성으로 구분
+- 사용자 결정: AI는 선생님 Gemini 키(브라우저에만 보관), 이유 칸만 부족하면 '점검', 스펙 승인 / 추가 지시: AI 피드백은 요청할 때만, 차시별로 구분
+- 회귀 위험: 3·4차시 입력 칸, 채점 최소 글자 수, 교사 상세 비교·전체 답안 보기, 교사 평가 저장
+
+**완료**
+- 원인(1): 2026-10-29 3차시를 합성함수로 바꾸며 `CharCountBadge`가 빠짐. 4차시(`ReasonInput`)는 처음부터 없었음. 확인 중 1차시 문제 1·5 이유 칸 4개에도 없어서 함께 추가
+- 변경 파일:
+  - (1) `Lesson1View.tsx`·`Lesson3View.tsx`·`Lesson3CouponStep.tsx`·`Lesson4View.tsx`(ReasonInput에 `min` 필수), `mathLogic.ts`(`L3_MIN_REASON`·`L3_MIN_REFLECTION`·`L3_COUPON_MIN_FINAL` — 채점이 같은 상수 사용), `lesson3Coupon.ts`·`lesson4Logic.ts`(상수 export), 신규 `CharCountCoverage.test.tsx`, `AGENTS.md`(학생 화면 공통 규칙)
+  - (4) 신규 `src/utils/questionStatus.ts`·`questionStatus.test.tsx`·`src/components/QuestionStatusBadge.tsx`, `src/utils/lesson1Quiz.ts`(1차시 실생활 판별 문항을 화면 밖으로 옮겨 공용), `answerLabels.ts`(`isEmptyAnswer` 이동 — 모든 칸이 빈 표도 '입력 없음'), `FullAnswerPanel.tsx`(확인 줄에 상태, 범례), `TeacherView.tsx`(1~4차시 상세 비교 칸 → 문항별 상태, `SUMMARY_ROW_QUESTIONS`)
+  - (2) 신규 `src/utils/aiFeedback.ts`·`aiFeedback.test.tsx`·`src/components/AiFeedbackPanel.tsx`, `TeacherView.tsx`(두 평가 칸에 패널, 초안은 화면 상태에만)
+  - `README.md`, `ghpages-app.js`
+- 판단해서 정한 것:
+  - 성찰 2(3·4차시)는 완료 조건에 없지만 글자 수 표시가 있어야 해서 성찰 1과 같은 10자로 표시(안내용, 완료 조건은 그대로)
+  - 문항 상태: 이유 칸만 부족하면 '점검'(사용자 결정). 답 칸이 아직 비어 있으면 틀렸다고 단정하지 않고 '점검(작성 중 · 빈 칸 n개)'. 모두 채웠는데 채점 통과 못 하면 '오답' + 채점 안내문
+  - AI: SDK(@google/genai) 대신 REST 직접 호출 — 빌드가 `ghpages-app.js` 한 파일만 복사하므로 나눠 불러오기 불가, 번들 크기도 작게. 키는 주소가 아니라 `x-goog-api-key` 헤더로
+  - AI에 '도움 받은 정도'를 보내지 않음(학생에게 "혼내지 않아요"라고 약속한 선택이 피드백 문장에 나오지 않게)
+  - AI 초안은 저장하지 않음 — 교사 평가 문서(`func_lessons/teacher`)는 보안 규칙상 학생 본인이 읽을 수 있으므로 절대 넣지 않음. 별도 교사 전용 저장소는 보안 규칙 변경(Tier 3)이 필요해 이번에 하지 않음
+  - 기본 모델 `gemini-3.8-flash`(2026-11 Gemini 공식 모델 문서의 최신 Flash), [AI 설정]에서 변경 가능
+  - 키 '이 브라우저에 기억'은 기본 꺼짐(공용 컴퓨터 대비)
+- 확인한 것:
+  - `tsc --noEmit` 통과, 전체 단위 테스트 132/132(신규 24건), `npm run build` 통과(JS 한 파일, +22KB)
+  - `CharCountCoverage.test.tsx`: 1~7차시 모든 단계 서술 칸 수 = 글자 수 표시 수. 고치기 전 3차시 파일로 바꾸면 실패하는 것도 확인
+  - 문항 상태: 1~4차시 점검 항목 38개 모두 규칙 있음, 빈 기록 → 모두 미작성, 예시 학생의 맞는 답에서 확인 표시만 지우면 '점검'(오답 아님), 3차시 생각 열기 점검/오답/작성 중/이유 부족 구분, 1차시 원소 번호 없는 긴 이유 → 오답
+  - 가짜 서버·가짜 Gemini를 붙인 임시 검사 페이지(저장소 밖)에서 실제 `TeacherView`를 Chrome/Playwright로 조작: 상세 비교 칸에 "생각 열기: 점검(답은 맞음 · 이유 서술 부족)", "문제 1: 오답(채점 안내문)" 표시 / 화면을 열기만 해서는 AI 요청 0회 / 키 없거나 답 없는 차시는 버튼 잠김 / 3차시 버튼 두 번 연속 눌러도 요청 1회 / 요청 주소 `v1beta/models/gemini-3.8-flash:generateContent`, 키는 헤더로 / 보낸 글에 이름·학번·학교·도움 선택 없음, 3차시 답만 있음 / 초안 표시, [복사] → 클립보드에 초안 들어감(권한 준 브라우저) / 교사 피드백 [저장] 시 서버로 가는 교사 문서에 AI 초안 없음 / 390px 폭 가로 넘침 없음, 페이지 오류 없음
+- 확인하지 못한 것: 실제 Gemini 호출(작업 환경에서 키·외부 접속 없음 — 응답 형식은 공식 문서 기준, 가짜 응답으로만 확인), 실제 Firebase 데이터, 패드에서 복사
+- 남은 위험·후속 작업:
+  - 실제 Gemini에서 모델 이름 오류(404)가 나면 [AI 설정]에서 모델 이름을 바꾸면 됨. 사용량에 따라 선생님 Google 계정에 요금이 생길 수 있음
+  - AI 초안을 저장해 두고 싶다면 교사 전용 컬렉션 + 보안 규칙 변경(Func·Props 공용 규칙, 콘솔 게시) 필요 — Tier 3
+- 다음 세션 인계: 5~7차시를 바꿀 때 `questionStatus.ts`의 `QUESTION_RULES`에 확인 항목별 채점 함수를 추가하고 `isStatusLesson`·`StatusLessonKey`에 차시를 넣으면 점검/오답/미작성 구분이 적용됨. 서술 칸은 `CharCountCoverage.test.tsx`가 자동 검사

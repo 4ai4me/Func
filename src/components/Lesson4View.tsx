@@ -19,6 +19,8 @@ import {
   validateL4Prob3,
   validateL4Prob4,
   validateL4Tool,
+  MIN_REASON,
+  L4_MIN_REFLECTION,
 } from '../utils/lesson4Logic';
 import { parseLinear, formatLinear, fractionText } from '../utils/linearExpr';
 import { MathText } from './MathText';
@@ -40,6 +42,7 @@ import {
   FlipHorizontal2,
 } from 'lucide-react';
 import { HelpSourcePicker } from './HelpSourcePicker';
+import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 
 /**
  * Func 4차시 · 역함수 탐구 (학생 화면)
@@ -407,6 +410,7 @@ function ReasonInput({
   label,
   value,
   onChange,
+  min,
 }: {
   id: string;
   theme: ThemeKey;
@@ -414,20 +418,26 @@ function ReasonInput({
   label?: React.ReactNode;
   value?: string;
   onChange: (v: string) => void;
+  /** 최소 글자 수 — 글자 수 표시(1·2·3차시와 같은 모양)와 칸 테두리 색에 사용 */
+  min: number;
 }) {
+  const count = (value || '').trim().length;
   return (
     <div className="space-y-1.5">
-      {label && (
-        <label htmlFor={id} className="block text-xs sm:text-sm font-bold text-slate-900">
-          {label}
-        </label>
-      )}
+      <div className={`flex items-center gap-2 flex-wrap ${label ? 'justify-between' : 'justify-end'}`}>
+        {label && (
+          <label htmlFor={id} className="block text-xs sm:text-sm font-bold text-slate-900">
+            {label}
+          </label>
+        )}
+        <CharCountBadge current={count} min={min} />
+      </div>
       <textarea
         id={id}
         rows={2}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${THEME[theme].focus}`}
+        className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${THEME[theme].focus} ${getCharCountBorderClass(count, min)}`}
       />
     </div>
   );
@@ -924,7 +934,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               {hints.openReason && (
                 <HintBox>💡 작성 예시: “Y의 각 화학식에 X의 온실가스가 하나씩, 빠짐없이 대응하므로 Y에서 X로의 함수가 된다.”</HintBox>
               )}
-              <ReasonInput id="l4-open-reason" theme="indigo" value={state.openReason} onChange={(v) => setField('openReason', v)} />
+              <ReasonInput id="l4-open-reason" theme="indigo" value={state.openReason} onChange={(v) => setField('openReason', v)} min={MIN_REASON} />
             </div>
 
             <FeedbackBanner fb={feedback.open} />
@@ -1126,6 +1136,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               label="네 값을 구한 과정을 정리해 보세요. (어떤 성질을 이용했나요?)"
               value={state.p1Reason}
               onChange={(v) => setField('p1Reason', v)}
+              min={MIN_REASON}
             />
             <FeedbackBanner fb={feedback.p1} />
             <VerifyButton theme="emerald" onClick={() => verify('p1', 'p1Verified', validateL4Prob1)}>
@@ -1271,6 +1282,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                   label="(1) 또는 (2)의 역함수를 구한 과정을 단계별로 써 보세요."
                   value={state.p2Reason}
                   onChange={(v) => setField('p2Reason', v)}
+                  min={MIN_REASON}
                 />
               </div>
               <HintToggle open={!!hints.p2} onClick={() => toggleHint('p2')} />
@@ -1520,6 +1532,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               label="값을 구한 과정과 이용한 성질을 써 보세요."
               value={state.p3Reason}
               onChange={(v) => setField('p3Reason', v)}
+              min={MIN_REASON}
             />
             <FeedbackBanner fb={feedback.p3} />
             <VerifyButton theme="violet" onClick={() => verify('p3', 'p3Verified', validateL4Prob3)}>
@@ -1793,6 +1806,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               label="1. 역함수가 존재하기 위한 조건과 그 이유를 정리해 보세요."
               value={state.reflection1}
               onChange={(v) => onUpdate((prev) => ({ ...prev, reflection1: v }))}
+              min={L4_MIN_REFLECTION}
             />
             <ReasonInput
               id="l4-reflection2"
@@ -1800,6 +1814,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               label={<>2. 함수와 역함수의 그래프가 직선 <MathText text="y = x" />에 대하여 대칭인 이유나 오늘 새롭게 알게 된 점을 적어 보세요.</>}
               value={state.reflection2}
               onChange={(v) => onUpdate((prev) => ({ ...prev, reflection2: v }))}
+              min={L4_MIN_REFLECTION}
             />
             <div className="pt-3 border-t border-slate-100">
               <NavRow

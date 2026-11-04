@@ -18,11 +18,14 @@
   - 함수 기호(`f(x)`, `g(x)`, `(g∘f)(x)`, `f⁻¹(x)`, `∘`, `↦`, `→`), 부등호·등호(`≥`, `≤`, `≠`, `±`), 제곱·근호(`²`, `³`, `√(□)`), 논리·집합 기호(`∴`, `∵`, `⇒`, `⇔`, `∈`, `∉`, `⊂`, `∪`, `∩`)를 원클릭 버튼 및 키보드 단축어로 입력할 수 있습니다.
   - 벡터 SVG 근호 갈고리와 윗줄(Vinculum)이 결합된 `<MathText />` 렌더러를 통해 루트 수식을 명확하게 표시합니다.
 - **성찰 단계 「이번 차시 문제를 어떻게 해결했나요?」 (2026-11-04, 1~4차시)**: 성찰 칸 위에 [AI의 도움을 받았어요] [힌트의 도움을 받았어요] [스스로 해결했어요] 중 하나를 고르는 버튼과 "도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요." 안내를 표시합니다. 같은 버튼을 다시 누르면 선택이 풀립니다. 저장 항목은 차시별 `helpSource`(`'ai' | 'hint' | 'self'`)이며 **완료 조건·평가·자동 루브릭에는 쓰지 않습니다**. 교사 [전체 답안 보기]·CSV에 `해결 방법 (도움 받은 정도)`로 표시되고, 고르지 않았으면 회색 `미선택`(작성 개수에서 제외). 예전 기록을 불러올 때 빈 값을 붙이지 않아 불필요한 재저장이 생기지 않습니다 (`src/components/HelpSourcePicker.tsx`, 테스트 `HelpSourcePicker.test.tsx`).
+- **서술 칸 글자 수 표시 (2026-11-05)**: 1~7차시의 모든 서술 칸에 `CharCountBadge`(현재 n자 / 최소 m자)와 테두리 색을 표시합니다. 최소 글자 수는 채점 함수와 같은 상수(`L3_MIN_REASON`·`L3_MIN_REFLECTION`·`L3_COUPON_MIN_FINAL`, `lesson4Logic`의 `MIN_REASON`·`L4_MIN_REFLECTION`)를 씁니다. `CharCountCoverage.test.tsx`가 모든 `Lesson{N}View.tsx`의 각 단계를 그려 빠진 칸을 찾아냅니다(새 차시도 자동 검사).
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
   - **함수 단원 기준 지표 (2026-10-30)**: 학급 탐구 역량 대시보드·학생 목록·필터·CSV·체크리스트·예시 학생 데이터를 Func 1~4차시 문항 기준으로 바꿨습니다(이전: 명제 수업의 사례 수·참/거짓 판단·탐구 주제 기준, 4차시는 2026-10-30 역함수로 교체). 지표 계산은 `src/utils/funcTeacherMetrics.ts`. 5~7차시는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로 그 화면에 맞춘 지표를 유지합니다.
   - **전체 답안 보기 (2026-10-30)**: 상세 비교 창(인라인·비모달 모두) 아래에 차시별로 학생이 입력한 **모든 문항**을 문항 이름과 함께 표시합니다. 차시마다 `작성 n/m` 현황을 보여 주며, 비어 있는 문항과 기존 요약 칸의 `미작성`은 **빨간 굵은 글씨**로 강조됩니다. 문항 이름은 `src/utils/answerLabels.ts`에서 관리하고, 이름표가 없는 새 필드라도 값이 있으면 `기타 기록`에 표시됩니다. 학생 화면에 문항을 추가하면 `answerLabels.ts`에 이름표를 추가하세요 (`answerLabels.test.ts`가 누락을 검사합니다).
+  - **문항 상태: 점검 · 오답 · 미작성 (2026-11-05, 1~4차시)**: [상세 비교] 칸과 [전체 답안 보기]의 확인 줄에서 문항마다 `✓ 확인 완료` / `점검`(입력했지만 점검 안 누름 — 답은 맞고 이유 칸만 비었거나 짧은 경우, 빈 칸이 남은 경우 포함) / `오답`(답 칸을 모두 채웠지만 채점 통과 못 함, 채점 안내문 함께 표시) / `미작성`(입력 없음)을 구분합니다. 학생 화면의 [점검] 버튼과 같은 채점 함수를 씁니다 (`src/utils/questionStatus.ts`, 테스트 `questionStatus.test.tsx`).
+  - **AI 피드백 초안 (2026-11-05, 교사 전용)**: 평가 칸 위의 [N차시 AI 피드백] 버튼을 누를 때만 그 차시 답안으로 Google Gemini에 초안을 요청합니다(자동 실행 없음). 이름·학교·반·번호와 '도움 받은 정도'는 보내지 않습니다. 초안은 서버에 저장하지 않고 교사 화면 메모리에만 있으며, 학생이 읽는 교사 평가 문서에는 들어가지 않습니다. 칸마다 [복사] 버튼이 있습니다. API 키는 [AI 설정]에서 선생님이 직접 넣고 선생님 브라우저에만 보관됩니다(기억하기를 끄면 페이지를 닫을 때 지워짐). 기본 모델 `gemini-3.8-flash`, [AI 설정]에서 변경 가능. 호출은 SDK 없이 Gemini REST(`v1beta/models/{model}:generateContent`, `x-goog-api-key` 헤더) — 빌드가 `ghpages-app.js` 한 파일만 복사하므로 나눠 불러오는 코드를 쓰지 않습니다 (`src/utils/aiFeedback.ts`, `src/components/AiFeedbackPanel.tsx`, 테스트 `aiFeedback.test.tsx`).
   - **평가·피드백 [저장] 버튼 (2026-11-04)**: 상세 비교 창(인라인·비모달)의 평가 입력 칸 아래에 [저장] 버튼과 저장 상태(`변경 사항 없음` / `저장되지 않은 변경 있음` / `저장 중…` / `저장됨 (시각)` / `저장 실패`)를 표시합니다. 입력 후 1.5초 자동 저장은 그대로이며, 버튼은 바로 저장할 때 씁니다. 저장이 겹치지 않도록 `serializeRuns`로 한 번에 하나씩 보냅니다 (`src/components/TeacherSaveBar.tsx`, 테스트 `TeacherSaveBar.test.tsx`).
   - **비모달 상세 비교 창 이동 (2026-10-30)**: 창의 어두운 제목 표시줄을 마우스로 끌거나 패드에서 손가락으로 끌어 옮길 수 있습니다(최대화·최소화 상태 제외). 창을 다시 열면 처음 위치(오른쪽 아래)에서 시작하며, 화면 밖으로 완전히 나가지 않습니다. (`src/utils/useDraggableWindow.ts`)
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
@@ -211,7 +214,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

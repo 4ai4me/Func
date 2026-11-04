@@ -13,6 +13,18 @@ import { HELP_SOURCE_OPTIONS } from './mathLogic';
  *   들어 있는지 검사합니다.
  */
 
+/** 학생이 아무것도 입력하지 않은 값인지 (빈 글자, 빈 목록, 모든 칸이 빈 표·대응 포함) */
+export function isEmptyAnswer(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (Array.isArray(value)) return value.length === 0 || value.every((v) => isEmptyAnswer(v));
+  if (typeof value === 'object') {
+    // 예: 3번 표의 기본값 { f0: '', f1: '', … }은 칸이 있어도 입력한 것이 없음
+    return Object.values(value as Record<string, unknown>).every((v) => isEmptyAnswer(v));
+  }
+  return false;
+}
+
 export type AnswerFormat =
   | { kind: 'text' }
   | { kind: 'yesno'; yes?: string; no?: string }

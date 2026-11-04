@@ -17,7 +17,10 @@ export interface L4Feedback {
 const warn = (message: string): L4Feedback => ({ ok: false, message, type: 'warn' });
 const good = (message: string): L4Feedback => ({ ok: true, message, type: 'good' });
 
-const MIN_REASON = 8;
+/** 4차시 이유 칸 최소 글자 수 — 채점과 학생 화면 글자 수 표시가 함께 쓴다 */
+export const MIN_REASON = 8;
+/** 4차시 성찰 칸 최소 글자 수 (완료 조건: 성찰 1) */
+export const L4_MIN_REFLECTION = 10;
 const hasReason = (v?: string) => (v || '').trim().length >= MIN_REASON;
 
 // ─────────────────────────────────────────────

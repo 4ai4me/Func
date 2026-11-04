@@ -1,4 +1,4 @@
-import type { Lesson3State } from './mathLogic';
+import { L3_MIN_REASON, type Lesson3State } from './mathLogic';
 import { isLinearEqual, isNumberAnswer } from './linearExpr';
 
 /**
@@ -76,7 +76,7 @@ export interface CouponFeedback {
 }
 const warn = (message: string): CouponFeedback => ({ ok: false, message, type: 'warn' });
 const good = (message: string): CouponFeedback => ({ ok: true, message, type: 'good' });
-const hasReason = (v?: string) => (v || '').trim().length >= 8;
+const hasReason = (v?: string) => (v || '').trim().length >= L3_MIN_REASON;
 
 /** 미션 1: 10,000원일 때 A = 9,000원, B = 8,800원, 유리한 쪽 B */
 export function validateCouponM1(p: Lesson3State): CouponFeedback {

@@ -21,6 +21,33 @@ import {
 
 /** 교사 평가 입력을 모아서 저장하는 대기 시간 */
 const TEACHER_SAVE_DELAY_MS = 1500;
+
+/**
+ * 교사 상세 비교 칸 이름 → 그 칸에 해당하는 문항(확인 항목 이름).
+ * 칸이 비어 있거나 끝나지 않은 문항이 있으면 문항마다 점검·오답·미작성을 함께 보여 준다 (src/utils/questionStatus.ts).
+ * 성찰처럼 점검 버튼이 없는 칸은 넣지 않는다(비어 있으면 그대로 '미작성').
+ */
+const SUMMARY_ROW_QUESTIONS: Record<string, string[]> = {
+  // 1차시
+  '대응·정의역·치역 (문제 1·2)': ['countryMapVerified', 'prob1Verified', 'prob2Verified'],
+  '서로 같은 함수 판별 (문제 3)': ['prob3Verified'],
+  '함수의 그래프 (문제 4·5)': ['prob4_1Verified', 'prob4_2Verified', 'prob5Verified'],
+  '실생활 함수 설계 (도전 활동)': ['realLifeQuizVerified'],
+  'AI 얼굴 인식 도전 (탐구 06)': ['aiCheck1', 'aiFixBVerified', 'aiFixCVerified', 'aiReflectionChecked'],
+  '자판기 수리 도전 (탐구 06)': ['vendCheck1', 'vendCheck2', 'vendCheck3'],
+  // 2차시
+  '[보기] 일대일함수와 일대일대응 비교': ['bogiVerified'],
+  '[문제 6] 일대일함수·일대일대응 판별 이유': ['prob6Verified'],
+  '[문제 7] 항등함수·상수함수 그래프 판별': ['prob7Verified'],
+  '[생각 넓히기] 활동 1 (영화관) · 활동 2 (동아리 투표)': ['think1Verified', 'think2Verified'],
+  // 3차시
+  '[생각 열기 · 문제 1] 합성함수의 뜻과 함숫값 구하기': ['openVerified', 'p1Verified'],
+  '[문제 · 문제 2] 합성함수의 식과 교환법칙 불성립 탐구': ['ex1Verified', 'p2Verified', 'cp_m1Verified', 'cp_m2Verified', 'cp_m3Verified', 'cp_m4Verified'],
+  '[생각 넓히기] 세 함수의 합성과 결합법칙': ['thinkVerified'],
+  // 4차시
+  '[생각 열기·문제 1] 역함수의 뜻과 함숫값': ['openVerified', 'p1Verified'],
+  '[역함수 구하기·함께하기·그래프]': ['ex1Verified', 'p2Verified', 'p5Verified', 'togetherVerified', 'p3Verified', 'p4Verified', 'toolVerified'],
+};
 import {
   StudentRecord,
   EVAL_CRITERIA,
@@ -108,6 +135,8 @@ import {
 } from '../utils/studentPassword';
 import { FullAnswerPanel } from './FullAnswerPanel';
 import { TeacherSaveBar, TeacherSaveStatus, serializeRuns } from './TeacherSaveBar';
+import { AnswerWithStatus } from './QuestionStatusBadge';
+import { AiDraftMap, AiFeedbackPanel } from './AiFeedbackPanel';
 
 interface TeacherViewProps {
   adminEmail: string;
@@ -157,6 +186,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const lastSavedTeacherJsonRef = useRef<Map<string, string>>(new Map());
   const teacherSaveFailedRef = useRef<Set<string>>(new Set());
   // 학생 문서 키별 평가 저장 상태 (저장 버튼 옆 표시용)
+  // AI 피드백 초안 (학생·차시별, 화면 메모리에만 — 서버 저장 안 함)
+  const [aiDrafts, setAiDrafts] = useState<AiDraftMap>({});
   const [teacherSaveStatus, setTeacherSaveStatus] = useState<Record<string, TeacherSaveStatus>>({});
   const setSaveStatus = useCallback(
     (regKey: string, next: (prev: TeacherSaveStatus | undefined) => TeacherSaveStatus) => {
@@ -2708,7 +2739,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l1" lessonData={selectedStudent.l1} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -2753,7 +2784,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l2" lessonData={selectedStudent.l2} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -2777,7 +2808,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           .filter(Boolean)
                           .join('\n\n') ||
                           selectedStudent.l3?.prob1ProofText ||
-                          '미작성',
+                          '',
                       ],
                       [
                         '[문제 · 문제 2] 합성함수의 식과 교환법칙 불성립 탐구',
@@ -2792,20 +2823,20 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           .filter(Boolean)
                           .join('\n\n') ||
                           selectedStudent.l3?.prob2ProofText ||
-                          '미작성',
+                          '',
                       ],
                       [
                         '[생각 넓히기] 세 함수의 합성과 결합법칙',
                         selectedStudent.l3?.thinkComparison
                           ? `((f∘g)∘h)(x)=${selectedStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${selectedStudent.l3.think_fgh_right || '-'}\n${selectedStudent.l3.thinkComparison}`
-                          : '미작성',
+                          : '',
                       ],
                       ['3차시 성찰', selectedStudent.l3?.reflection1],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l3" lessonData={selectedStudent.l3} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -2825,7 +2856,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <MathText text={label || ''} />
                         </div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} math />
+                          <AnswerWithStatus lesson="l4" lessonData={selectedStudent.l4} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
                         </div>
                       </div>
                     ))}
@@ -3067,6 +3098,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         })}
                       </div>
 
+                      {/* 교사 전용 AI 피드백 초안 — 차시별 버튼을 누를 때만 생성, 저장하지 않음 */}
+                      <AiFeedbackPanel
+                        idPrefix="inline"
+                        record={selectedStudent}
+                        drafts={aiDrafts}
+                        onDraftChange={(key, next) => setAiDrafts((prev) => ({ ...prev, [key]: next }))}
+                      />
+
                       <div>
                         <label htmlFor="inlineTeacherFeedback" className="block text-sm font-bold text-slate-900 mb-1.5">
                           학생에게 전달할 구체적인 피드백
@@ -3259,7 +3298,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l1" lessonData={selectedStudent.l1} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -3305,7 +3344,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l2" lessonData={selectedStudent.l2} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -3330,7 +3369,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           .filter(Boolean)
                           .join('\n\n') ||
                           selectedStudent.l3?.prob1ProofText ||
-                          '미작성',
+                          '',
                       ],
                       [
                         '[문제 · 문제 2] 합성함수의 식과 교환법칙 불성립 탐구',
@@ -3345,13 +3384,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           .filter(Boolean)
                           .join('\n\n') ||
                           selectedStudent.l3?.prob2ProofText ||
-                          '미작성',
+                          '',
                       ],
                       [
                         '[생각 넓히기] 세 함수의 합성과 결합법칙',
                         selectedStudent.l3?.thinkComparison
                           ? `((f∘g)∘h)(x)=${selectedStudent.l3.think_fgh_left || '-'}, (f∘(g∘h))(x)=${selectedStudent.l3.think_fgh_right || '-'}\n${selectedStudent.l3.thinkComparison}`
-                          : '미작성',
+                          : '',
                       ],
                       ['3차시 성찰 1', selectedStudent.l3?.reflection1],
                       ['3차시 성찰 2', selectedStudent.l3?.reflection2],
@@ -3359,7 +3398,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       <div key={label}>
                         <div className="text-xs font-bold text-slate-700">{label}</div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} />
+                          <AnswerWithStatus lesson="l3" lessonData={selectedStudent.l3} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} />
                         </div>
                       </div>
                     ))}
@@ -3381,7 +3420,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                           <MathText text={label || ''} />
                         </div>
                         <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                          <AnswerText value={val} math />
+                          <AnswerWithStatus lesson="l4" lessonData={selectedStudent.l4} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
                         </div>
                       </div>
                     ))}
@@ -3646,6 +3685,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                         );
                       })}
                     </div>
+
+                    {/* 교사 전용 AI 피드백 초안 — 차시별 버튼을 누를 때만 생성, 저장하지 않음 */}
+                    <AiFeedbackPanel
+                      idPrefix="modeless"
+                      record={selectedStudent}
+                      drafts={aiDrafts}
+                      onDraftChange={(key, next) => setAiDrafts((prev) => ({ ...prev, [key]: next }))}
+                    />
 
                     <div>
                       <label htmlFor="modelessTeacherFeedback" className="block text-sm font-bold text-slate-900 mb-1.5">

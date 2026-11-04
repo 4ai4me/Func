@@ -1947,12 +1947,12 @@ export function evaluateLevel3Completion(p: Lesson3State): boolean[] {
     (Boolean(p.ex1Verified) && Boolean(p.p2Verified)) ||
     (p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40);
   const step3Done =
-    (Boolean(p.thinkVerified) && (p.reflection1 || '').trim().length >= 10) ||
+    (Boolean(p.thinkVerified) && (p.reflection1 || '').trim().length >= L3_MIN_REFLECTION) ||
     (p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15);
   // 5단계 도전!! 실생활 합성함수 (할인 쿠폰의 비밀)
   const step4Done =
     Boolean(p.cp_m1Verified && p.cp_m2Verified && p.cp_m3Verified && p.cp_m4Verified) &&
-    (p.cp_final || '').trim().length >= 10;
+    (p.cp_final || '').trim().length >= L3_COUPON_MIN_FINAL;
 
   return [step0Done, step1Done, step2Done, step3Done, step4Done];
 }
@@ -1967,7 +1967,7 @@ export function evaluateLevel4Completion(p: Lesson4State): boolean[] {
     Boolean(p.p1Verified),
     Boolean(p.ex1Verified && p.p2Verified && p.p5Verified),
     Boolean(p.togetherVerified && p.p3Verified),
-    Boolean(p.p4Verified && p.toolVerified) && (p.reflection1 || '').trim().length >= 10,
+    Boolean(p.p4Verified && p.toolVerified) && (p.reflection1 || '').trim().length >= 10, // = lesson4Logic L4_MIN_REFLECTION
   ];
 }
 
@@ -2636,6 +2636,13 @@ function normalizeMathExpr(raw?: string): string {
     .toLowerCase();
 }
 
+/** 3차시 서술 칸 최소 글자 수 — 채점(validateL3*·쿠폰 미션)과 학생 화면 글자 수 표시가 함께 쓴다 */
+export const L3_MIN_REASON = 8;
+/** 3차시 성찰 칸 최소 글자 수 (완료 조건: 생각 넓히기 확인 + 성찰 1) */
+export const L3_MIN_REFLECTION = 10;
+/** 3차시 도전 쿠폰 마무리 질문 최소 글자 수 (5단계 완료 조건) */
+export const L3_COUPON_MIN_FINAL = 10;
+
 export function validateL3Open(
   p: Lesson3State
 ): { ok: boolean; message: string; type: 'good' | 'warn' } {
@@ -2671,7 +2678,7 @@ export function validateL3Open(
       type: 'warn',
     };
   }
-  if ((p.openMeaningReason || '').trim().length < 8) {
+  if ((p.openMeaningReason || '').trim().length < L3_MIN_REASON) {
     return {
       ok: false,
       message: '두 함수 f: X → Y와 g: Y → Z를 연결한 합성함수 (g ∘ f)(x) = g(f(x))의 의미를 8자 이상으로 서술해 주세요.',
@@ -2732,7 +2739,7 @@ export function validateL3Prob1(
       type: 'warn',
     };
   }
-  if ((p.p1Reason || '').trim().length < 8) {
+  if ((p.p1Reason || '').trim().length < L3_MIN_REASON) {
     return {
       ok: false,
       message: '합성함수의 함숫값을 구할 때 오른쪽(안쪽) 함수부터 차례대로 대입하는 과정을 8자 이상으로 정리해 주세요.',
@@ -2777,7 +2784,7 @@ export function validateL3Ex1(
       type: 'warn',
     };
   }
-  if ((p.ex1Reason || '').trim().length < 8) {
+  if ((p.ex1Reason || '').trim().length < L3_MIN_REASON) {
     return {
       ok: false,
       message: '(g ∘ f)(x)와 (f ∘ g)(x)를 구한 과정과 g ∘ f ≠ f ∘ g(교환법칙 불성립)인 이유를 8자 이상으로 서술해 주세요.',
@@ -2828,7 +2835,7 @@ export function validateL3Prob2(
       type: 'warn',
     };
   }
-  if ((p.p2Reason || '').trim().length < 8) {
+  if ((p.p2Reason || '').trim().length < L3_MIN_REASON) {
     return {
       ok: false,
       message: '[문제 2] (1), (2), (3)의 합성함수 식을 구한 대입 과정을 8자 이상으로 서술해 주세요.',
@@ -2889,7 +2896,7 @@ export function validateL3Think(
       type: 'warn',
     };
   }
-  if ((p.thinkComparison || '').trim().length < 8) {
+  if ((p.thinkComparison || '').trim().length < L3_MIN_REASON) {
     return {
       ok: false,
       message: '((f ∘ g) ∘ h)(x)와 (f ∘ (g ∘ h))(x)를 구한 결과 비교 및 결합법칙 성립에 대한 설명을 8자 이상으로 서술해 주세요.',

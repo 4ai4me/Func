@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Lesson3State } from '../utils/mathLogic';
+import { L3_COUPON_MIN_FINAL, L3_MIN_REASON, type Lesson3State } from '../utils/mathLogic';
 import {
   COUPON_DEFAULT,
   COUPON_RANGE,
@@ -18,6 +18,7 @@ import {
 import { parseLinear, formatLinear } from '../utils/linearExpr';
 import { MathText } from './MathText';
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Lightbulb, RotateCcw, Sparkles, Ticket } from 'lucide-react';
+import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 
 /**
  * 3차시 5단계 · 도전!! 실생활 합성함수 — 학교 축제 할인 쿠폰의 비밀
@@ -552,12 +553,15 @@ export function Lesson3CouponStep({ state, onUpdate, onPrev, onGoToLesson4 }: Le
           <label htmlFor="cp-m3-reason" className="block text-xs sm:text-sm font-bold text-slate-900">
             상품 가격과 관계없이 그렇게 되는 이유를 설명해 보세요.
           </label>
+          <div className="flex justify-end">
+            <CharCountBadge current={(state.cp_m3_reason || '').trim().length} min={L3_MIN_REASON} />
+          </div>
           <textarea
             id="cp-m3-reason"
             rows={2}
             value={state.cp_m3_reason || ''}
             onChange={(e) => setField('cp_m3_reason', e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-rose-500 focus:outline-none"
+            className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.cp_m3_reason || '').trim().length, L3_MIN_REASON)}`}
           />
         </div>
         <Hint open={!!hints.m3} onToggle={() => toggleHint('m3')}>
@@ -601,12 +605,15 @@ export function Lesson3CouponStep({ state, onUpdate, onPrev, onGoToLesson4 }: Le
           <label htmlFor="cp-m4-reason" className="block text-xs sm:text-sm font-bold text-slate-900">
             ③ 정액 할인일 때 순서를 바꾸어도 결과가 같은(또는 다른) 이유를 식으로 설명해 보세요.
           </label>
+          <div className="flex justify-end">
+            <CharCountBadge current={(state.cp_m4_reason || '').trim().length} min={L3_MIN_REASON} />
+          </div>
           <textarea
             id="cp-m4-reason"
             rows={2}
             value={state.cp_m4_reason || ''}
             onChange={(e) => setField('cp_m4_reason', e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-rose-500 focus:outline-none"
+            className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.cp_m4_reason || '').trim().length, L3_MIN_REASON)}`}
           />
         </div>
         <Hint open={!!hints.m4} onToggle={() => toggleHint('m4')}>
@@ -628,12 +635,15 @@ export function Lesson3CouponStep({ state, onUpdate, onPrev, onGoToLesson4 }: Le
         <label htmlFor="cp-final" className="block text-base sm:text-lg font-extrabold text-slate-900">
           “같은 두 함수를 사용했는데, 왜 계산하는 순서에 따라 결과가 달라질까?”
         </label>
+        <div className="flex justify-end">
+          <CharCountBadge current={(state.cp_final || '').trim().length} min={L3_COUPON_MIN_FINAL} />
+        </div>
         <textarea
           id="cp-final"
           rows={3}
           value={state.cp_final || ''}
           onChange={(e) => onUpdate((prev) => ({ ...prev, cp_final: e.target.value }))}
-          className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-indigo-500 focus:outline-none"
+          className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${getCharCountBorderClass((state.cp_final || '').trim().length, L3_COUPON_MIN_FINAL)}`}
         />
         <p className="text-[11px] text-slate-500">
           미션 1~4를 모두 확인하고 이 질문에 10자 이상 답하면 5단계가 완료됩니다. 이 활동은 3단계에서 배운 <strong>합성함수의 교환법칙이 일반적으로 성립하지 않는다</strong>는 성질과 연결됩니다.

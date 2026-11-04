@@ -5,6 +5,11 @@ import { LESSON_KEYS, LessonKey } from '../utils/lessonMerge';
 import { LESSON_ANSWER_CONFIG } from '../utils/answerLabels';
 import type { AnswerField, AnswerFormat } from '../utils/answerLabels';
 import { AnswerText, UnwrittenMark } from './AnswerText';
+import { isEmptyAnswer } from '../utils/answerLabels';
+import { QuestionStatusResult, getQuestionStatus } from '../utils/questionStatus';
+import { QuestionStatusBadge } from './QuestionStatusBadge';
+
+export { isEmptyAnswer };
 
 /**
  * 교사 '상세 비교 · 평가' 화면의 [전체 답안 보기].
@@ -17,13 +22,6 @@ import { AnswerText, UnwrittenMark } from './AnswerText';
 /** 학생 답안이 아닌 화면 진행용 기록 (힌트 열람 횟수 등) — 표시하지 않음 */
 const BOOKKEEPING_PATTERN = /(Hints?|HintLevel|hintLevel)$/;
 
-export function isEmptyAnswer(value: unknown): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value === 'string') return value.trim() === '';
-  if (Array.isArray(value)) return value.length === 0 || value.every((v) => isEmptyAnswer(v));
-  if (typeof value === 'object') return Object.keys(value as object).length === 0;
-  return false;
-}
 
 /** 이름표가 없지만 학생이 입력한 값이 있는 항목 (누락 방지용) */
 export function findUnlabeledFields(lesson: LessonKey, lessonData: unknown): string[] {
@@ -175,12 +173,23 @@ function AnswerValue({ value, format }: { value: unknown; format?: AnswerFormat 
   }
 }
 
-function FieldRow({ field, value }: { field: AnswerField; value: unknown }) {
+function FieldRow({
+  field,
+  value,
+  status,
+}: {
+  field: AnswerField;
+  value: unknown;
+  /** 점검 항목이면 문항 상태(✓ 확인 완료 / 점검 / 오답 / 미작성) */
+  status?: QuestionStatusResult;
+}) {
   return (
     <div className="grid gap-1 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-3 border-b border-slate-100 py-1.5 last:border-b-0">
       <div className="text-[11px] sm:text-xs font-bold text-slate-600">{field.label}</div>
       <div className="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap break-words">
-        {field.optional && isEmptyAnswer(value) ? (
+        {status ? (
+          <QuestionStatusBadge result={status} />
+        ) : field.optional && isEmptyAnswer(value) ? (
           <span className="font-semibold text-slate-400">{field.emptyLabel ?? '선택 안 함'}</span>
         ) : (
           <AnswerValue value={value} format={field.format} />
@@ -236,7 +245,12 @@ function LessonSection({
             <div key={group.title}>
               <div className="mb-1 text-[11px] sm:text-xs font-extrabold text-blue-700">{group.title}</div>
               {group.fields.map((field) => (
-                <FieldRow key={field.key} field={field} value={data[field.key]} />
+                <FieldRow
+                  key={field.key}
+                  field={field}
+                  value={data[field.key]}
+                  status={field.format?.kind === 'check' ? getQuestionStatus(lesson, field.key, data) : undefined}
+                />
               ))}
             </div>
           ))}
@@ -273,7 +287,10 @@ export function FullAnswerPanel({ record, initiallyOpen = false }: { record: Stu
       {open && (
         <div className="mt-3 space-y-2">
           <p className="text-[11px] text-slate-500">
-            차시를 눌러 펼쳐 보세요. 비어 있는 문항은 <UnwrittenMark />으로 표시됩니다.
+            차시를 눌러 펼쳐 보세요. 비어 있는 칸은 <UnwrittenMark />으로 표시됩니다. 1~4차시 문항의 확인 줄은{' '}
+            <QuestionStatusBadge result={{ status: 'unchecked' }} />(입력했지만 점검 안 누름) ·{' '}
+            <QuestionStatusBadge result={{ status: 'wrong' }} />(채점 통과 못 함) ·{' '}
+            <QuestionStatusBadge result={{ status: 'empty' }} />(입력 없음)으로 구분됩니다.
           </p>
           {LESSON_KEYS.map((k) => (
             <LessonSection key={k} lesson={k} record={record} initiallyOpen={initiallyOpen} />

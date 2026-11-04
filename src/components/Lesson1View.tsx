@@ -39,6 +39,7 @@ import {
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
 import { HelpSourcePicker } from './HelpSourcePicker';
+import { REAL_LIFE_QUIZ_ITEMS } from '../utils/lesson1Quiz';
 
 interface Lesson1ViewProps {
   state: Lesson1State;
@@ -69,30 +70,6 @@ const handleTextbookImageError = (
     img.src = `./assets/aistudio/${fileName}`;
   }
 };
-
-const REAL_LIFE_QUIZ_ITEMS = [
-  {
-    id: 'q1',
-    title: '사례 A · 편의점 상품 바코드(X) → 그 상품 1개의 판매 가격(Y)',
-    desc: '편의점에 진열된 각 상품(바코드)마다 포스기에 등록된 판매 가격 1개를 대응시키는 경우',
-    answer: 'yes' as const,
-    explanation: '모든 상품에는 정해진 판매 가격이 오직 하나씩 대응하므로 함수입니다.',
-  },
-  {
-    id: 'q2',
-    title: '사례 B · 혈액형 {A, B, O, AB}(X) → 우리 반 학생 이름(Y)',
-    desc: '각 혈액형에 그 혈액형을 가진 우리 반 학생을 대응시키는 경우 (한 반에 25명)',
-    answer: 'no' as const,
-    explanation: '하나의 혈액형(예: A형)에 여러 명의 학생이 대응하므로 함수가 아닙니다.',
-  },
-  {
-    id: 'q3',
-    title: '사례 C · 우리 반 학생의 학번(X) → 그 학생의 태어난 달(1월~12월)(Y)',
-    desc: '각 학생의 학번에 그 학생이 태어난 달을 대응시키는 경우',
-    answer: 'yes' as const,
-    explanation: '모든 학생은 태어난 달이 반드시 존재하고 오직 하나뿐이므로 함수입니다.',
-  },
-];
 
 const REAL_LIFE_TEMPLATES = [
   {
@@ -1633,9 +1610,12 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </button>
                 </div>
                 <div>
-                  <label htmlFor="prob1_1Reason" className="block text-xs font-bold text-slate-700 mb-1">
+                  <div className="mb-1 flex items-center justify-between gap-2 flex-wrap">
+                    <label htmlFor="prob1_1Reason" className="block text-xs font-bold text-slate-700">
                     함수가 아닌 이유 (원소 번호 포함)
-                  </label>
+                    </label>
+                    <CharCountBadge current={(state.prob1_1Reason || '').trim().length} min={5} />
+                  </div>
                   <textarea
                     id="prob1_1Reason"
                     rows={3}
@@ -1644,7 +1624,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onUpdate((prev) => ({ ...prev, prob1_1Reason: e.target.value, prob1Verified: false }))
                     }
                     placeholder=""
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:ring-1 ${getCharCountBorderClass((state.prob1_1Reason || '').trim().length, 5)}`}
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
                     <button
@@ -1802,9 +1782,12 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </button>
                 </div>
                 <div>
-                  <label htmlFor="prob1_3Reason" className="block text-xs font-bold text-slate-700 mb-1">
+                  <div className="mb-1 flex items-center justify-between gap-2 flex-wrap">
+                    <label htmlFor="prob1_3Reason" className="block text-xs font-bold text-slate-700">
                     함수가 아닌 이유 (원소 번호 포함)
-                  </label>
+                    </label>
+                    <CharCountBadge current={(state.prob1_3Reason || '').trim().length} min={5} />
+                  </div>
                   <textarea
                     id="prob1_3Reason"
                     rows={3}
@@ -1813,7 +1796,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onUpdate((prev) => ({ ...prev, prob1_3Reason: e.target.value, prob1Verified: false }))
                     }
                     placeholder=""
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:ring-1 ${getCharCountBorderClass((state.prob1_3Reason || '').trim().length, 5)}`}
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
                     <button
@@ -2842,9 +2825,12 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label htmlFor="prob5_2Reason" className="block text-xs font-bold text-slate-700 mb-1">
+                  <div className="mb-1 flex items-center justify-between gap-2 flex-wrap">
+                    <label htmlFor="prob5_2Reason" className="block text-xs font-bold text-slate-700">
                     ② (2)번이 함수의 그래프가 아닌 이유 (문장으로 서술)
-                  </label>
+                    </label>
+                    <CharCountBadge current={(state.prob5_2Reason || '').trim().length} min={6} />
+                  </div>
                   <textarea
                     id="prob5_2Reason"
                     rows={3}
@@ -2853,7 +2839,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onUpdate((prev) => ({ ...prev, prob5_2Reason: e.target.value, prob5Verified: false }))
                     }
                     placeholder=""
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:ring-1 ${getCharCountBorderClass((state.prob5_2Reason || '').trim().length, 6)}`}
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
                     <button
@@ -2872,9 +2858,12 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="prob5_3Reason" className="block text-xs font-bold text-slate-700 mb-1">
+                  <div className="mb-1 flex items-center justify-between gap-2 flex-wrap">
+                    <label htmlFor="prob5_3Reason" className="block text-xs font-bold text-slate-700">
                     ③ (3)번이 함수의 그래프가 아닌 이유 (문장으로 서술)
-                  </label>
+                    </label>
+                    <CharCountBadge current={(state.prob5_3Reason || '').trim().length} min={6} />
+                  </div>
                   <textarea
                     id="prob5_3Reason"
                     rows={3}
@@ -2883,7 +2872,7 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                       onUpdate((prev) => ({ ...prev, prob5_3Reason: e.target.value, prob5Verified: false }))
                     }
                     placeholder=""
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:ring-1 ${getCharCountBorderClass((state.prob5_3Reason || '').trim().length, 6)}`}
                   />
                   <div className="mt-1.5 flex flex-col gap-1">
                     <button
