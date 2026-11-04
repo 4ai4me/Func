@@ -39,6 +39,7 @@ import {
   Repeat,
   FlipHorizontal2,
 } from 'lucide-react';
+import { HelpSourcePicker } from './HelpSourcePicker';
 
 /**
  * Func 4차시 · 역함수 탐구 (학생 화면)
@@ -629,6 +630,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           toolVerified: false,
           reflection1: '',
           reflection2: '',
+          helpSource: '',
           // 예전 귀류법 항목(fractionExamples·prob1ProofText 등)은 이 화면에서 쓰지 않으므로 건드리지 않음
         }));
         setFeedback({});
@@ -1780,6 +1782,11 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
                 </div>
               </HintBox>
             )}
+            <HelpSourcePicker
+              idPrefix="l4"
+              value={state.helpSource}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, helpSource: v }))}
+            />
             <ReasonInput
               id="l4-reflection1"
               theme="indigo"

@@ -180,7 +180,11 @@ function FieldRow({ field, value }: { field: AnswerField; value: unknown }) {
     <div className="grid gap-1 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-3 border-b border-slate-100 py-1.5 last:border-b-0">
       <div className="text-[11px] sm:text-xs font-bold text-slate-600">{field.label}</div>
       <div className="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap break-words">
-        <AnswerValue value={value} format={field.format} />
+        {field.optional && isEmptyAnswer(value) ? (
+          <span className="font-semibold text-slate-400">{field.emptyLabel ?? '선택 안 함'}</span>
+        ) : (
+          <AnswerValue value={value} format={field.format} />
+        )}
       </div>
     </div>
   );
@@ -203,7 +207,7 @@ function LessonSection({
   // 작성 현황: 체크 항목을 제외한 답안 항목 중 입력된 것의 수
   const answerFields = config.groups
     .flatMap((g) => g.fields)
-    .filter((f) => f.format?.kind !== 'check' && f.format?.kind !== 'checks');
+    .filter((f) => f.format?.kind !== 'check' && f.format?.kind !== 'checks' && !f.optional);
   const filled = answerFields.filter((f) => !isEmptyAnswer(data[f.key])).length;
 
   return (

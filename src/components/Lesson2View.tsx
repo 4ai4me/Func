@@ -24,6 +24,7 @@ import {
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
 import { MappingVennDiagram } from './MappingVennDiagram';
+import { HelpSourcePicker } from './HelpSourcePicker';
 
 interface Lesson2ViewProps {
   state: Lesson2State;
@@ -2396,6 +2397,11 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
 
           {/* 2차시 배움 성찰 */}
           <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 sm:p-6 space-y-3">
+            <HelpSourcePicker
+              idPrefix="l2"
+              value={state.helpSource}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, helpSource: v }))}
+            />
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <label htmlFor="l2reflection" className="text-sm sm:text-base font-extrabold text-slate-900">
                 2차시 배움 성찰 · 여러 가지 함수 정리하기 (선택·심화)

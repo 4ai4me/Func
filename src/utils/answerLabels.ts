@@ -1,4 +1,5 @@
 import type { LessonKey } from './lessonMerge';
+import { HELP_SOURCE_OPTIONS } from './mathLogic';
 
 /**
  * 교사 [전체 답안 보기]에 표시할 문항 이름표 (Func — 함수와 그래프)
@@ -29,6 +30,9 @@ export interface AnswerField {
   key: string;
   label: string;
   format?: AnswerFormat;
+  /** 선택 응답: 비어 있어도 빨간 '미작성' 대신 emptyLabel(회색)로 보이고, '작성 n/m' 개수에서 빠진다 */
+  optional?: boolean;
+  emptyLabel?: string;
 }
 
 export interface LessonAnswerGroup {
@@ -47,6 +51,14 @@ const CHECKS: AnswerFormat = { kind: 'checks' };
 const CHOICES: AnswerFormat = { kind: 'choices' };
 const FUNC_YN: AnswerFormat = { kind: 'yesno', yes: '함수이다 (O)', no: '함수가 아니다 (X)' };
 const ONE_TO_ONE_YN: AnswerFormat = { kind: 'yesno', yes: '예 (O)', no: '아니오 (X)' };
+/** 성찰 단계 '이번 차시를 어떻게 해결했나요?' (1~4차시, 선택 응답 — 완료·평가와 무관) */
+const HELP_SOURCE_FIELD: AnswerField = {
+  key: 'helpSource',
+  label: '해결 방법 (도움 받은 정도)',
+  format: { kind: 'choice', options: Object.fromEntries(HELP_SOURCE_OPTIONS.map((o) => [o.value, o.short])) },
+  optional: true,
+  emptyLabel: '미선택',
+};
 
 /** 4~7차시 (Func·Props 공통 문항) — Func는 4차시를 아래 LESSON_ANSWER_CONFIG.l4(역함수)로 바꿔 씀 */
 export const COMMON_L4_TO_L7: Record<'l4' | 'l5' | 'l6' | 'l7', LessonAnswerConfig> = {
@@ -363,7 +375,7 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
       ...CHALLENGE_GROUPS,
       {
         title: '성찰',
-        fields: [{ key: 'reflection', label: '1차시 성찰 · 새롭게 알게 된 점' }],
+        fields: [HELP_SOURCE_FIELD, { key: 'reflection', label: '1차시 성찰 · 새롭게 알게 된 점' }],
       },
     ],
     // claim·limits·proofText·bridge: 위 문항들을 이어 붙여 자동으로 만들어지는 요약 (원본 문항이 각각 표시됨)
@@ -436,7 +448,7 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
       },
       {
         title: '성찰',
-        fields: [{ key: 'reflection', label: '2차시 배움 성찰 · 여러 가지 함수 정리하기' }],
+        fields: [HELP_SOURCE_FIELD, { key: 'reflection', label: '2차시 배움 성찰 · 여러 가지 함수 정리하기' }],
       },
     ],
     // guess·decision·proofText·counterReason·share·nextQuestion: 위 문항들을 이어 붙인 자동 요약
@@ -574,6 +586,7 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
       {
         title: '성찰',
         fields: [
+          HELP_SOURCE_FIELD,
           { key: 'reflection1', label: '성찰 1. 계산 순서 차이와 교환법칙이 성립하지 않는 이유' },
           { key: 'reflection2', label: '성찰 2. 결합법칙이 성립하는 이유 / 새롭게 깨달은 점' },
         ],
@@ -691,6 +704,7 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
       {
         title: '성찰',
         fields: [
+          HELP_SOURCE_FIELD,
           { key: 'reflection1', label: '성찰 1. 역함수가 존재하기 위한 조건과 이유' },
           { key: 'reflection2', label: '성찰 2. 그래프가 y = x에 대하여 대칭인 이유 / 새롭게 알게 된 점' },
         ],

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { MathText } from './MathText';
+import { HelpSourcePicker } from './HelpSourcePicker';
 
 interface Lesson1ViewProps {
   state: Lesson1State;
@@ -3313,6 +3314,12 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                 )}`}
               />
             </div>
+
+            <HelpSourcePicker
+              idPrefix="l1"
+              value={state.helpSource}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, helpSource: v }))}
+            />
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">

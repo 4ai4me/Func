@@ -17,6 +17,7 @@
 - **스마트 수식 입력 도우미 (`MathSymbolInputBar` & `MathText`)**:
   - 함수 기호(`f(x)`, `g(x)`, `(g∘f)(x)`, `f⁻¹(x)`, `∘`, `↦`, `→`), 부등호·등호(`≥`, `≤`, `≠`, `±`), 제곱·근호(`²`, `³`, `√(□)`), 논리·집합 기호(`∴`, `∵`, `⇒`, `⇔`, `∈`, `∉`, `⊂`, `∪`, `∩`)를 원클릭 버튼 및 키보드 단축어로 입력할 수 있습니다.
   - 벡터 SVG 근호 갈고리와 윗줄(Vinculum)이 결합된 `<MathText />` 렌더러를 통해 루트 수식을 명확하게 표시합니다.
+- **성찰 단계 「이번 차시 문제를 어떻게 해결했나요?」 (2026-11-04, 1~4차시)**: 성찰 칸 위에 [AI의 도움을 받았어요] [힌트의 도움을 받았어요] [스스로 해결했어요] 중 하나를 고르는 버튼과 "도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요." 안내를 표시합니다. 같은 버튼을 다시 누르면 선택이 풀립니다. 저장 항목은 차시별 `helpSource`(`'ai' | 'hint' | 'self'`)이며 **완료 조건·평가·자동 루브릭에는 쓰지 않습니다**. 교사 [전체 답안 보기]·CSV에 `해결 방법 (도움 받은 정도)`로 표시되고, 고르지 않았으면 회색 `미선택`(작성 개수에서 제외). 예전 기록을 불러올 때 빈 값을 붙이지 않아 불필요한 재저장이 생기지 않습니다 (`src/components/HelpSourcePicker.tsx`, 테스트 `HelpSourcePicker.test.tsx`).
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
@@ -210,7 +211,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

@@ -35,7 +35,31 @@ export interface L1Prob3Table {
   g1: string;
 }
 
+/**
+ * 성찰 단계 '이번 차시를 어떻게 해결했나요?' 선택 (2026-11-04~, 1~4차시).
+ * 완료 조건·평가 점수에는 쓰지 않는다 — 학생에게 "도움을 받아도 혼내지 않아요"라고 약속했기 때문.
+ */
+export type HelpSource = '' | 'ai' | 'hint' | 'self';
+export const HELP_SOURCE_OPTIONS: { value: Exclude<HelpSource, ''>; label: string; short: string }[] = [
+  { value: 'ai', label: 'AI의 도움을 받았어요', short: 'AI 도움' },
+  { value: 'hint', label: '힌트의 도움을 받았어요', short: '힌트 도움' },
+  { value: 'self', label: '스스로 해결했어요', short: '스스로 해결' },
+];
+/** 저장된 값이 정해진 세 가지가 아니면 '미선택'('')으로 본다 */
+export function sanitizeHelpSource(v: unknown): HelpSource {
+  return v === 'ai' || v === 'hint' || v === 'self' ? v : '';
+}
+/**
+ * 불러오기용: 예전 기록처럼 값이 아예 없으면 undefined를 그대로 둔다.
+ * 빈 값('')을 새로 붙이면 차시 JSON이 달라져, 모든 학생의 차시 문서를 다시 저장하게 되기 때문.
+ */
+function cleanHelpSource(v: unknown): HelpSource | undefined {
+  return v === undefined ? undefined : sanitizeHelpSource(v);
+}
+
 export interface Lesson1State {
+  /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
+  helpSource?: HelpSource;
   examples: L1Example[];
   claim: string;
   scope: '' | 'some' | 'all';
@@ -109,6 +133,8 @@ export interface Lesson1State {
 }
 
 export interface Lesson2State {
+  /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
+  helpSource?: HelpSource;
   topic: '' | 'a' | 'b' | 'c' | 'd';
   customStatement: string;
   customScope: string;
@@ -178,6 +204,8 @@ export interface L3Mod3Example {
 }
 
 export interface Lesson3State {
+  /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
+  helpSource?: HelpSource;
   parityExamples: L3ParityExample[];
   contrapositiveChoice: '' | 'converse' | 'inverse' | 'contrapositive';
   step1HintLevel: number;
@@ -271,6 +299,8 @@ export interface L4FractionExample {
 }
 
 export interface Lesson4State {
+  /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
+  helpSource?: HelpSource;
   fractionExamples: L4FractionExample[];
   contradictionConceptChecked: boolean;
   step1HintLevel: number;
@@ -3074,11 +3104,13 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       realLifeRule: stripLegacyTpl(l1.realLifeRule),
       realLifeWhyFunc: stripLegacyTpl(l1.realLifeWhyFunc),
       realLifeNonFuncExample: stripLegacyTpl(l1.realLifeNonFuncExample),
+      helpSource: cleanHelpSource(l1.helpSource),
     },
     l2: {
       ...base.l2,
       ...(l2 as Partial<Lesson2State>),
       counter: l2.counter !== undefined && l2.counter !== null ? String(l2.counter) : '',
+      helpSource: cleanHelpSource(l2.helpSource),
     },
     l3: {
       ...base.l3,
@@ -3091,6 +3123,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL3.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL3.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL3.prob2Hints, 4),
+      helpSource: cleanHelpSource(rawL3.helpSource),
     },
     l4: {
       ...base.l4,
@@ -3103,6 +3136,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Verified: sanitizeBooleansArray(rawL4.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL4.prob2Hints, 4),
       openReverseMap: sanitizeStringMap(rawL4.openReverseMap),
+      helpSource: cleanHelpSource(rawL4.helpSource),
     },
     l5: {
       ...base.l5,

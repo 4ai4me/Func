@@ -24,6 +24,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+import { HelpSourcePicker } from './HelpSourcePicker';
 
 // ── 교과서 그림 경로 (1·2·4차시와 같은 방식) ──
 // GitHub Pages는 사이트가 /Func/ 아래에 있어 "/assets/…"(맨 앞 기준 주소)로 쓰면 그림을 찾지 못한다.
@@ -282,6 +283,7 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
           thinkVerified: false,
           reflection1: '',
           reflection2: '',
+          helpSource: '',
           prob1ProofText: '',
           prob2ProofText: '',
           cp_predict: '',
@@ -2026,6 +2028,12 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
                 </div>
               </div>
             )}
+
+            <HelpSourcePicker
+              idPrefix="l3"
+              value={state.helpSource}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, helpSource: v }))}
+            />
 
             <div className="space-y-3">
               <div>
