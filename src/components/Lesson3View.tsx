@@ -25,6 +25,25 @@ import {
   EyeOff,
 } from 'lucide-react';
 
+// ── 교과서 그림 경로 (1·2·4차시와 같은 방식) ──
+// GitHub Pages는 사이트가 /Func/ 아래에 있어 "/assets/…"(맨 앞 기준 주소)로 쓰면 그림을 찾지 못한다.
+const textbookSrc = (fileName: string): string => {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+    return `./public/assets/aistudio/${fileName}`;
+  }
+  return `/assets/aistudio/${fileName}`;
+};
+const onTextbookError = (e: React.SyntheticEvent<HTMLImageElement, Event>, fileName: string) => {
+  const img = e.currentTarget;
+  if (!img.dataset.fallbackStep) {
+    img.dataset.fallbackStep = '1';
+    img.src = `./public/assets/aistudio/${fileName}`;
+  } else if (img.dataset.fallbackStep === '1') {
+    img.dataset.fallbackStep = '2';
+    img.src = `./assets/aistudio/${fileName}`;
+  }
+};
+
 interface Lesson3ViewProps {
   state: Lesson3State;
   step: number;
@@ -336,7 +355,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex justify-center">
               <img
-                src="/assets/aistudio/image_1b8ffdc0.png"
+                src={textbookSrc('image_1b8ffdc0.png')}
+                onError={(e) => onTextbookError(e, 'image_1b8ffdc0.png')}
                 alt="합성함수 생각 열기 - 세 학생이 주문한 음식과 각 음식의 가격을 대응으로 나타낸 그림"
                 className="max-h-[320px] w-auto object-contain rounded-lg"
               />
@@ -827,7 +847,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex justify-center">
               <img
-                src="/assets/aistudio/image_1bb293de.png"
+                src={textbookSrc('image_1bb293de.png')}
+                onError={(e) => onTextbookError(e, 'image_1bb293de.png')}
                 alt="문제 1 - 두 함수 f(x)=2x+1과 g(x)=x²-1에 대하여 (1) (g∘f)(2), (2) (f∘g)(-1), (3) (f∘f)(-3)을 구하시오."
                 className="max-h-[180px] w-auto object-contain rounded-lg"
               />
@@ -1281,7 +1302,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
             {showEx1TextbookImg && (
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col items-center gap-2">
                 <img
-                  src="/assets/aistudio/image_1c8dd915.png"
+                  src={textbookSrc('image_1c8dd915.png')}
+                  onError={(e) => onTextbookError(e, 'image_1c8dd915.png')}
                   alt="두 함수 f(x)=-x+2와 g(x)=4x+1에 대하여 (1) (g∘f)(x), (2) (f∘g)(x) 구하기 및 교환법칙 설명"
                   className="max-h-[280px] w-auto object-contain rounded-lg"
                 />
@@ -1471,7 +1493,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex justify-center">
               <img
-                src="/assets/aistudio/image_70b33df1.png"
+                src={textbookSrc('image_70b33df1.png')}
+                onError={(e) => onTextbookError(e, 'image_70b33df1.png')}
                 alt="문제 2 - 두 함수 f(x)=x-4와 g(x)=-x²에 대하여 (1) (g∘f)(x), (2) (f∘g)(x), (3) (g∘g)(x)를 구하시오."
                 className="max-h-[180px] w-auto object-contain rounded-lg"
               />
@@ -1666,7 +1689,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex justify-center">
               <img
-                src="/assets/aistudio/image_f792abdb.png"
+                src={textbookSrc('image_f792abdb.png')}
+                onError={(e) => onTextbookError(e, 'image_f792abdb.png')}
                 alt="생각 넓히기 - 세 함수 f(x)=2x-1, g(x)=3x+2, h(x)=x²+1에 대하여 ((f∘g)∘h)(x)와 (f∘(g∘h))(x)를 구하고 비교하기"
                 className="max-h-[260px] w-auto object-contain rounded-lg"
               />
