@@ -43,7 +43,7 @@ test('isNumberAnswer: 단위가 붙어도 숫자만 비교한다', () => {
 const blank = () => M.createInitialStudentState().l4;
 const sample = () => M.createFuncSampleLessons('complete').l4;
 
-test('예시 학생(complete)의 4차시 답안은 모든 채점 함수를 통과하고 5단계가 모두 완료된다', () => {
+test('예시 학생(complete)의 역함수 답안은 모든 채점 함수를 통과하고 4·5차시 단계가 모두 완료된다', () => {
   const s = sample();
   for (const fn of [
     L4.validateL4Open,
@@ -59,10 +59,13 @@ test('예시 학생(complete)의 4차시 답안은 모든 채점 함수를 통�
     const r = fn(s);
     assert.equal(r.ok, true, `${fn.name}: ${r.message}`);
   }
-  assert.deepEqual(M.evaluateLevel4Completion(s), [true, true, true, true, true]);
-  assert.deepEqual(M.evaluateRubricL4(s), [true, true, true, true, true]);
+  assert.deepEqual(M.evaluateLevel4Completion(s), [true, true, true, true]);
+  assert.deepEqual(M.evaluateRubricL4(s), [true, true, true, true]);
+  assert.deepEqual(M.evaluateLevel5Completion(s), [true, true]);
+  assert.deepEqual(M.evaluateRubricL5(s), [true, true]);
   // partial: 생각 열기만
-  assert.deepEqual(M.evaluateLevel4Completion(M.createFuncSampleLessons('partial').l4), [true, false, false, false, false]);
+  assert.deepEqual(M.evaluateLevel4Completion(M.createFuncSampleLessons('partial').l4), [true, false, false, false]);
+  assert.deepEqual(M.evaluateLevel5Completion(M.createFuncSampleLessons('partial').l4), [false, false]);
 });
 
 test('빈 답안은 모든 채점 함수에서 통과하지 못한다', () => {
@@ -127,7 +130,8 @@ test('4차시 완료 판정은 예전 귀류법 기록으로는 완료되지 않
   s.prob2ProofText = '가'.repeat(50);
   s.reflection1 = '가'.repeat(30);
   s.reflection2 = '가'.repeat(30);
-  assert.deepEqual(M.evaluateLevel4Completion(s), [false, false, false, false, false]);
+  assert.deepEqual(M.evaluateLevel4Completion(s), [false, false, false, false]);
+  assert.deepEqual(M.evaluateLevel5Completion(s), [false, false]);
 });
 
 test('저장·불러오기: 새 4차시 항목이 보존되고, 예전 귀류법 항목도 지워지지 않는다', () => {
@@ -162,8 +166,12 @@ test('교사용 요약: 입력이 없으면 빈 문자열, 있으면 문항별 �
   const sum = L4.summarizeL4(sample());
   assert.match(sum.part1, /\[생각 열기\]/);
   assert.match(sum.part1, /f\(3\)=7/);
-  assert.match(sum.part2, /95℉ = 35℃/);
+  // 4차시 묶음: 역함수 구하기·문제 5 / 5차시 묶음: 함께하기·문제 4·공학 도구
+  assert.match(sum.part1, /95℉ = 35℃/);
+  assert.doesNotMatch(sum.part1, /함께하기/);
+  assert.match(sum.part2, /\[함께하기\]/);
   assert.match(sum.part2, /일치 a=-1/);
+  assert.doesNotMatch(sum.part2, /역함수 구하기|95℉/);
 });
 
 test('formatLinear: 읽은 식을 분수로 보여 준다', async () => {

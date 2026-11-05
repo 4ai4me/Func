@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { StudentRecord } from '../utils/mathLogic';
-import { LESSON_KEYS, LessonKey } from '../utils/lessonMerge';
-import { LESSON_ANSWER_CONFIG } from '../utils/answerLabels';
+import { ANSWER_LESSON_KEYS, LESSON_ANSWER_CONFIG, answerStorageKey, type AnswerLessonKey } from '../utils/answerLabels';
 import type { AnswerField, AnswerFormat } from '../utils/answerLabels';
 import { AnswerText, UnwrittenMark } from './AnswerText';
 import { isEmptyAnswer } from '../utils/answerLabels';
@@ -24,7 +23,7 @@ const BOOKKEEPING_PATTERN = /(Hints?|HintLevel|hintLevel)$/;
 
 
 /** 이름표가 없지만 학생이 입력한 값이 있는 항목 (누락 방지용) */
-export function findUnlabeledFields(lesson: LessonKey, lessonData: unknown): string[] {
+export function findUnlabeledFields(lesson: AnswerLessonKey, lessonData: unknown): string[] {
   const config = LESSON_ANSWER_CONFIG[lesson];
   if (!lessonData || typeof lessonData !== 'object') return [];
   const labeled = new Set<string>(config.groups.flatMap((g) => g.fields.map((f) => f.key)));
@@ -204,13 +203,14 @@ function LessonSection({
   record,
   initiallyOpen = false,
 }: {
-  lesson: LessonKey;
+  lesson: AnswerLessonKey;
   record: StudentRecord;
   initiallyOpen?: boolean;
 }) {
   const [open, setOpen] = useState(initiallyOpen);
   const config = LESSON_ANSWER_CONFIG[lesson];
-  const data = (record[lesson] ?? {}) as unknown as Record<string, unknown>;
+  // 4·5차시는 같은 저장 칸(l4) — answerStorageKey로 꺼냄
+  const data = (record[answerStorageKey(lesson)] ?? {}) as unknown as Record<string, unknown>;
   const unlabeled = findUnlabeledFields(lesson, data);
 
   // 작성 현황: 체크 항목을 제외한 답안 항목 중 입력된 것의 수
@@ -287,12 +287,12 @@ export function FullAnswerPanel({ record, initiallyOpen = false }: { record: Stu
       {open && (
         <div className="mt-3 space-y-2">
           <p className="text-[11px] text-slate-500">
-            차시를 눌러 펼쳐 보세요. 비어 있는 칸은 <UnwrittenMark />으로 표시됩니다. 1~4차시 문항의 확인 줄은{' '}
+            차시를 눌러 펼쳐 보세요. 비어 있는 칸은 <UnwrittenMark />으로 표시됩니다. 1~5차시 문항의 확인 줄은{' '}
             <QuestionStatusBadge result={{ status: 'unchecked' }} />(입력했지만 점검 안 누름) ·{' '}
             <QuestionStatusBadge result={{ status: 'wrong' }} />(채점 통과 못 함) ·{' '}
             <QuestionStatusBadge result={{ status: 'empty' }} />(입력 없음)으로 구분됩니다.
           </p>
-          {LESSON_KEYS.map((k) => (
+          {ANSWER_LESSON_KEYS.map((k) => (
             <LessonSection key={k} lesson={k} record={record} initiallyOpen={initiallyOpen} />
           ))}
         </div>

@@ -714,3 +714,49 @@
 - 확인하지 못한 것: 실제 패드 터치, 배포된 GitHub Pages 화면
 - 남은 위험·후속 작업: 없음
 - 다음 세션 인계: 그래프를 더 넣으려면 `L4_GRAPH_SETS`에 항목을 추가하고 `graphReveal('키', state.확인플래그, linearPanels('키'))`를 [정답 확인] 아래에 넣으면 됨
+
+
+---
+
+## [2026-11-05] 역함수 차시 둘로 나누기(4·5차시) · 기존 5~7차시를 6~8차시로 (Tier 3)
+
+**시작**
+- Tier: 3 (차시 수 7→8, 차시 잠금 저장 위치·보안 규칙, 교사 점수 칸 배열 변경)
+- 목표: 4차시 = 생각 열기·문제 1·역함수 구하기(+성찰), 5차시 = 함께하기·문제 3·그래프·문제 4·공학 도구·성찰, 기존 5~7차시 화면은 6~8차시로
+- 사용자 결정(스펙 승인):
+  - 기록 안 옮기기 — 4·5차시는 지금 4차시 저장 칸(l4)을 함께 쓰고, 6~8차시는 지금 l5~l7 칸을 그대로 씀(표시 번호와 저장 칸 분리)
+  - 차시 잠금은 Func 전용 칸으로 분리(Props와 공용이던 `app_settings/lesson_access` 대신 새 칸), 처음엔 지금 값을 이어받음
+  - 4차시 끝에 성찰 단계 추가(성찰 2칸 + 도움 받은 정도, 성찰 1이 완료 조건)
+  - 새 5차시 처음 잠금 상태 = 4차시와 같게
+- 완료 기준: 4차시를 하던 학생의 함께하기·그래프 답이 5차시에 그대로 / 기존 5~7차시 기록이 6~8차시에 그대로 / 4·5차시 따로 열고 잠금 / 이미 매긴 점수가 다른 차시로 밀리지 않음 / 이전 버전으로 되돌려도 데이터 유지
+- 회귀 위험: 학생 저장·불러오기, 차시 잠금(학생 접근), 교사 대시보드·CSV·평가 점수·AI 피드백·인쇄, Props(공용 규칙)
+- 롤백: 데이터 이동이 없으므로 사이트를 이전 커밋으로 되돌리면 됨. 규칙은 추가만 하므로 되돌릴 필요 없음
+
+**완료**
+- 변경 파일:
+  - 데이터 계약·로직: `mathLogic.ts`(`LESSON_STORAGE_KEY`, 8차시 `LessonTabNumber`·`STAGE_TITLES`·`EVAL_CRITERIA`·잠금 설정, `evaluateLevel4/5Completion`·`evaluateRubricL4/5` 새로 나눔, 기존 5~7 함수 이름은 6~8로, `Lesson4State`에 `l4Reflection1·2`·`l4HelpSource` 추가, `migrateEvalScoresForLessonSplit`, `lessonAccessFromLegacy`, `FUNC_LESSON_ACCESS_DOC`, 프리셋 `upTo5`, 예시 데이터), `lesson4Logic.ts`(`summarizeL4` 묶음을 4·5차시 기준으로), `answerLabels.ts`(`ANSWER_LESSON_KEYS`·`l4b`·`answerStorageKey`, 4·5차시 이름표 분리, 6~8차시 제목), `questionStatus.ts`(`l4b` 규칙), `aiFeedback.ts`(차시 묶음별 답안, `l4HelpSource`도 보내지 않음), `funcTeacherMetrics.ts`(1~5차시)
+  - 학생 화면: `Lesson4View.tsx`(part 1·2, 4차시 성찰 단계 신규, 차시별 초기화), 신규 `Lesson5View.tsx`, `Lesson5/6/7View.tsx` → `Lesson6/7/8View.tsx`(이름·문구만), `App.tsx`(8개 탭·진행 표시·제목·인쇄, 차시 잠금을 Func 전용 문서로 + 공용 문서 이어받기), `MathSymbolInputBar.tsx`
+  - 교사 화면: `TeacherView.tsx`(KPI·완료 분포·문항 현황·목록 열/필터·CSV·상세 비교 두 곳·잠금 프리셋), `FullAnswerPanel.tsx`, `AiFeedbackPanel.tsx`, `StudentEvaluationModal.tsx`
+  - 규칙: `firestore.rules`(`func_lesson_access` 추가만 — 기존 규칙 변경 없음)
+  - 테스트: 신규 `LessonSplit.test.tsx`, 수정 `mathLogic.test.ts`·`lesson4Logic.test.ts`·`funcTeacherMetrics.test.ts`·`aiFeedback.test.tsx`·`HelpSourcePicker.test.tsx`·`InverseGraphReveal.test.tsx`·`CharCountCoverage.test.tsx`(파일 번호 → 저장 칸 매핑)
+  - 문서: `README.md`(4-0절 신설, Firestore 표), `AGENTS.md`(차시 번호와 저장 칸 규칙)
+- 판단해서 정한 것:
+  - 5차시 성찰 질문은 바꾸지 않음(이미 쓴 답이 다른 질문 아래 보이지 않도록). 4차시 성찰은 새 질문 2개(역함수 구하는 방법 / 새로 알게 된 점)
+  - 5차시는 2단계(함께하기 · 그래프) — 내용을 더 쪼개지 않음
+  - 기존 7칸 점수는 5번째 자리에 빈칸 삽입(예전 5~7차시 점수 → 6~8차시). 7차시 기준 '평가 당시 차시 수' 표시는 지움
+  - 브라우저 잠금 보관 키를 새 이름(`func_lesson_access_v2`)으로 — 예전 7칸 값을 8차시 번호로 잘못 읽지 않도록
+  - 4·5차시 추천 기호는 기존 4차시 것을 같이 씀(기존 내용 그대로)
+- 확인한 것:
+  - `tsc --noEmit` 통과, 전체 단위 테스트 151/151, `npm run build` 통과
+  - 가짜 Firebase(메모리)를 붙인 실제 앱 검사 페이지(저장소 밖)에서 Chrome으로 조작:
+    - 학생(공용 잠금만 있음, 1~4 열림·5~7 잠김): 탭 8개, 4·5차시 열림·6~8차시 잠김(5차시는 4차시 값 이어받음) / 나누기 전 기록 → 4차시 3/4, 5차시 2/2, 5차시 화면에 문제 3 이유·성찰 답 그대로 / 4차시 성찰 입력·[지금 저장] → l4 문서에 l4Reflection1·l4HelpSource 추가, 함께하기·5차시 성찰 유지, l5(6차시) 기록 유지 / 1200px·390px
+    - Func 전용 문서가 있으면(5 잠금·8 열림) 학생 탭이 그대로 따름
+    - 교사: 들어오면 공용 값으로 전용 문서 생성(OOOOOXXX), 공용 문서는 그대로 / 잠금 카드 8개, 5차시 잠그면 전용 문서만 바뀜 / 목록 4·5차시 열(3/4 진행 중 · 2/2 완료) / 상세 비교 4·5차시 칸 / AI 버튼 8개 / 점수 칸 8개에 3,3,2,3,(빈칸),1,2,3 / CSV 평정 8열 같은 값, 4·5·8차시 열 / 페이지 오류 없음
+    - 규칙 게시 전 상황(전용 문서 쓰기 거부): 교사 화면은 이어받은 값 표시, 저장 실패 상태 표시, 공용 문서는 건드리지 않음
+- 확인하지 못한 것: 실제 Firebase 보안 규칙 동작(작업 환경에서 에뮬레이터를 받을 수 없음 — 기존 `lesson_access` 규칙과 같은 형태로 작성, 콘솔 게시 시 문법 검사됨), 실제 학생·교사 데이터, 패드 터치
+- 이미 있던 문제(이번에 고치지 않음): 390px 폭에서 상단 머리줄(지금 저장·로그아웃 버튼)이 24px 넘침 — 바꾸기 전 버전도 같음 / 4차시 추천 기호가 예전 귀류법 기호(√2 등)
+- 남은 위험·후속 작업:
+  - 배포 전에 Firebase 콘솔에 규칙 게시 필요(Props 저장소 `firestore.rules`도 같게 맞춰야 함)
+  - 배포 직후 다른 기기에 열려 있던 예전 화면(7차시)이 공용 잠금 문서를 고칠 수 있으나, Func 새 화면은 전용 문서가 생긴 뒤에는 공용 문서를 읽지 않음
+  - 6~8차시를 유리·무리함수로 바꿀 때는 `Lesson6View`~`Lesson8View`를 고치고 저장 칸 l5~l7을 그대로 씀
+- 되돌리기: 사이트를 이전 커밋으로 되돌리면 됨(학생 기록 이동 없음). 단, 되돌린 뒤 4차시 성찰 답(`l4Reflection*`)은 화면에 안 보이지만 문서에는 남아 있고, 교사 점수가 8칸으로 저장된 학생은 예전 화면에서 5번째 칸이 5차시로 보임

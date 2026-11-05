@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Check, ClipboardCopy, KeyRound, Loader2, RefreshCw, Settings2 } from 'lucide-react';
-import { LESSON_ANSWER_CONFIG } from '../utils/answerLabels';
+import { ANSWER_LESSON_KEYS, LESSON_ANSWER_CONFIG, type AnswerLessonKey } from '../utils/answerLabels';
 import { DEFAULT_GEMINI_MODEL, AiFeedbackDraft, lessonHasAnswers, requestLessonFeedback } from '../utils/aiFeedback';
-import { LESSON_KEYS, type LessonKey } from '../utils/lessonMerge';
 import { StudentRecord, studentKey } from '../utils/mathLogic';
 
 /**
@@ -17,7 +16,7 @@ export interface AiDraftState {
   at?: number;
 }
 export type AiDraftMap = Record<string, AiDraftState>;
-export const aiDraftKey = (record: StudentRecord, lesson: LessonKey) => `${studentKey(record)}::${lesson}`;
+export const aiDraftKey = (record: StudentRecord, lesson: AnswerLessonKey) => `${studentKey(record)}::${lesson}`;
 
 // ── 선생님 브라우저에만 보관하는 설정 (서버·저장소에 없음) ──
 const KEY_STORAGE = 'func.teacher.geminiApiKey';
@@ -137,7 +136,7 @@ export function AiFeedbackPanel({
   const [showSettings, setShowSettings] = useState(() => !settings.apiKey);
   const [keyInput, setKeyInput] = useState('');
 
-  const run = async (lesson: LessonKey) => {
+  const run = async (lesson: AnswerLessonKey) => {
     const key = aiDraftKey(record, lesson);
     if (inFlight.has(key)) return; // 중복 요청 방지
     if (!settings.apiKey) setShowSettings(true); // 키가 없으면 설정 칸을 열어 안내 (요청은 보내지 않음)
@@ -154,7 +153,7 @@ export function AiFeedbackPanel({
     }
   };
 
-  const requested = LESSON_KEYS.filter((l) => drafts[aiDraftKey(record, l)]);
+  const requested = ANSWER_LESSON_KEYS.filter((l) => drafts[aiDraftKey(record, l)]);
 
   return (
     <div className="rounded-xl border-2 border-dashed border-violet-300 bg-violet-50/50 p-3.5 space-y-3">
@@ -234,7 +233,7 @@ export function AiFeedbackPanel({
       )}
 
       <div className="flex flex-wrap gap-1.5">
-        {LESSON_KEYS.map((lesson) => {
+        {ANSWER_LESSON_KEYS.map((lesson) => {
           const has = lessonHasAnswers(record, lesson);
           const st = drafts[aiDraftKey(record, lesson)];
           const short = LESSON_ANSWER_CONFIG[lesson].title.split('·')[0].trim();

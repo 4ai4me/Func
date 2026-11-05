@@ -4,20 +4,20 @@ import {
   evaluateRubricL2,
   evaluateRubricL3,
   evaluateRubricL4,
+  evaluateRubricL5,
 } from './mathLogic';
-import { LESSON_ANSWER_CONFIG } from './answerLabels';
+import { LESSON_ANSWER_CONFIG, answerStorageKey, type AnswerLessonKey } from './answerLabels';
 import type { AnswerFormat } from './answerLabels';
-import type { LessonKey } from './lessonMerge';
 
 /**
- * 교사 화면의 Func(함수와 그래프) 1~4차시 지표 — 순수 로직 (단위 테스트 대상)
+ * 교사 화면의 Func(함수와 그래프) 1~5차시 지표 — 순수 로직 (단위 테스트 대상)
  * ------------------------------------------------------------------
  * 교사 화면이 명제 수업(Props) 틀에서 만들어져 1~3차시 지표가 명제 항목(사례 수, 참·거짓 판단,
  * 탐구 주제 등)을 세고 있었습니다. Func 학생 화면은 그 항목을 입력하지 않으므로 항상 0이나
  * 엉뚱한 값이 나왔습니다. 여기서는 Func 학생 화면이 실제로 기록하는 값(문항 확인 표시와 답안)만
  * 사용합니다.
- * 4차시는 역함수 수업으로 교체됨(2026-10-30). 5~7차시는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로
- * 기존 지표를 그대로 둡니다.
+ * 4차시는 역함수 수업으로 교체됨(2026-10-30), 2026-11-05 역함수를 4·5차시로 나눔(같은 저장 칸 l4).
+ * 6~8차시(저장 칸 l5~l7)는 현재 학생 화면이 명제 수업 내용(절대부등식)이므로 기존 지표를 그대로 둡니다.
  */
 
 export type LessonProgress = 'done' | 'progress' | 'none';
@@ -36,17 +36,19 @@ export const LESSON_PROGRESS_LABEL: Record<LessonProgress, string> = {
 };
 
 /** 함수 단원으로 운영 중인 차시 */
-export const FUNC_LESSONS = [1, 2, 3, 4] as const;
+export const FUNC_LESSONS = [1, 2, 3, 4, 5] as const;
 export type FuncLesson = (typeof FUNC_LESSONS)[number];
 
 export function funcLessonProgress(x: StudentRecord, lesson: FuncLesson): LessonProgress {
   if (lesson === 1) return lessonProgress(evaluateRubricL1(x.l1));
   if (lesson === 2) return lessonProgress(evaluateRubricL2(x.l2));
   if (lesson === 3) return lessonProgress(x.l3 ? evaluateRubricL3(x.l3) : [false]);
-  return lessonProgress(x.l4 ? evaluateRubricL4(x.l4) : [false]);
+  if (lesson === 4) return lessonProgress(x.l4 ? evaluateRubricL4(x.l4) : [false]);
+  // 5차시는 4차시와 같은 저장 칸(l4)
+  return lessonProgress(x.l4 ? evaluateRubricL5(x.l4) : [false]);
 }
 
-/** 1~4차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
+/** 1~5차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
 export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => boolean }[] = [
   { title: '1차시 [생각 열기] 나라–화폐 대응', done: (x) => Boolean(x.l1.countryMapVerified) },
   { title: '1차시 [문제 1] 함수 판별·정의역·공역·치역', done: (x) => Boolean(x.l1.prob1Verified) },
@@ -82,11 +84,12 @@ export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => bool
     title: '4차시 역함수 구하기 (예제·문제 2·문제 5)',
     done: (x) => Boolean(x.l4?.ex1Verified && x.l4?.p2Verified && x.l4?.p5Verified),
   },
-  { title: '4차시 [함께하기·문제 3] (g∘f)⁻¹', done: (x) => Boolean(x.l4?.togetherVerified && x.l4?.p3Verified) },
-  { title: '4차시 [문제 4·공학 도구] 그래프 대칭', done: (x) => Boolean(x.l4?.p4Verified && x.l4?.toolVerified) },
+  { title: '4차시 성찰', done: (x) => (x.l4?.l4Reflection1 || '').trim().length >= 10 },
+  { title: '5차시 [함께하기·문제 3] (g∘f)⁻¹', done: (x) => Boolean(x.l4?.togetherVerified && x.l4?.p3Verified) },
+  { title: '5차시 [문제 4·공학 도구] 그래프 대칭', done: (x) => Boolean(x.l4?.p4Verified && x.l4?.toolVerified) },
 ];
 
-/** 1~4차시 중 완료한 차시 수(0~4)별 학생 수 — 배열의 i번째 = i개 차시 완료 */
+/** 1~5차시 중 완료한 차시 수(0~5)별 학생 수 — 배열의 i번째 = i개 차시 완료 */
 export function completedLessonDistribution(records: StudentRecord[]): number[] {
   const dist = new Array<number>(FUNC_LESSONS.length + 1).fill(0);
   for (const x of records) {
@@ -135,7 +138,7 @@ export interface CsvColumn {
 }
 
 /** 지정한 차시의 모든 답안 문항을 CSV 열로 (머리글은 '차시 제목 · 문항 이름') */
-export function lessonAnswerCsvColumns(lessons: LessonKey[]): CsvColumn[] {
+export function lessonAnswerCsvColumns(lessons: AnswerLessonKey[]): CsvColumn[] {
   const cols: CsvColumn[] = [];
   for (const lesson of lessons) {
     const config = LESSON_ANSWER_CONFIG[lesson];
@@ -145,7 +148,7 @@ export function lessonAnswerCsvColumns(lessons: LessonKey[]): CsvColumn[] {
         cols.push({
           header: `${short} ${group.title} ${field.label}`.replace(/\s+/g, ' ').trim(),
           value: (x) =>
-            answerToCsvText(((x[lesson] ?? {}) as unknown as Record<string, unknown>)[field.key], field.format),
+            answerToCsvText(((x[answerStorageKey(lesson)] ?? {}) as unknown as Record<string, unknown>)[field.key], field.format),
         });
       }
     }

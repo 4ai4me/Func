@@ -3,7 +3,7 @@ import { Bot, Dumbbell, Lightbulb } from 'lucide-react';
 import { HELP_SOURCE_OPTIONS, HelpSource } from '../utils/mathLogic';
 
 /**
- * 성찰 단계: 이번 차시를 어떻게 해결했는지 하나 고르기 (1~4차시 공용).
+ * 성찰 단계: 이번 차시를 어떻게 해결했는지 하나 고르기 (1~5차시 공용, 4차시는 l4HelpSource).
  * 같은 버튼을 다시 누르면 선택이 풀린다(잘못 누른 것을 되돌릴 수 있게).
  * 완료 조건·평가에는 쓰지 않는다.
  */

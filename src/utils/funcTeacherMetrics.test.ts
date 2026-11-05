@@ -49,12 +49,16 @@ test('예시 학생 2명: 완료 학생은 1·2차시 완료, 진행 학생은 �
   assert.equal(funcLessonProgress(s1, 2), 'done');
   assert.equal(funcLessonProgress(s2, 2), 'progress');
   const dist = completedLessonDistribution([s1, s2]);
-  assert.equal(dist.length, 5, '0~4개 차시 완료');
+  assert.equal(dist.length, 6, '0~5개 차시 완료');
   assert.equal(dist.reduce((a, b) => a + b, 0), 2, '분포 합계 = 학생 수');
-  // 4차시(역함수): 완료 학생은 완료, 진행 학생은 생각 열기만 → 진행 중
+  // 4차시(역함수 1부): 완료 학생은 완료, 진행 학생은 생각 열기만 → 진행 중
   assert.equal(funcLessonProgress(s1, 4), 'done');
   assert.equal(funcLessonProgress(s2, 4), 'progress');
-  assert.ok(FUNC_ITEM_CHECKS.filter((c) => c.title.startsWith('4차시')).every((c) => c.done(s1)));
+  // 5차시(역함수 2부, 같은 저장 칸 l4): 완료 학생은 완료, 진행 학생은 시작 전
+  assert.equal(funcLessonProgress(s1, 5), 'done');
+  assert.equal(funcLessonProgress(s2, 5), 'none');
+  assert.ok(FUNC_ITEM_CHECKS.filter((c) => /^[45]차시/.test(c.title)).every((c) => c.done(s1)));
+  assert.ok(FUNC_ITEM_CHECKS.some((c) => c.title.startsWith('5차시')));
 });
 
 test('CSV 4차시 열은 역함수 문항 이름을 쓰고, 귀류법 항목이 없다', () => {

@@ -35,6 +35,11 @@ import {
   evaluateLevel5Completion,
   evaluateLevel6Completion,
   evaluateLevel7Completion,
+  evaluateLevel8Completion,
+  isLessonTabNumber,
+  lessonAccessFromLegacy,
+  FUNC_LESSON_ACCESS_DOC,
+  LEGACY_LESSON_ACCESS_DOC,
   evaluateStudentLessonRenderGate,
   extractFuncWorksheetFromJson,
   getFirstEnabledLesson,
@@ -59,6 +64,7 @@ import { summarizeCoupon } from './utils/lesson3Coupon';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
 import { Lesson7View } from './components/Lesson7View';
+import { Lesson8View } from './components/Lesson8View';
 import { TeacherView } from './components/TeacherView';
 import { AuthGateView, FirestoreStudentRegistrationDoc } from './components/AuthGateView';
 import { StudentEvaluationModal } from './components/StudentEvaluationModal';
@@ -196,7 +202,7 @@ export default function App() {
     try {
       const params = new URLSearchParams(window.location.search);
       const l = Number(params.get('lesson'));
-      if (l === 1 || l === 2 || l === 3 || l === 4 || l === 5 || l === 6 || l === 7) {
+      if (isLessonTabNumber(l)) {
         initialLesson = l;
       }
       const rawAccess = localStorage.getItem(STORAGE_KEY_LESSON_ACCESS);
@@ -220,6 +226,7 @@ export default function App() {
     5: number;
     6: number;
     7: number;
+    8: number;
   }>(() => {
     let initialStep = 0;
     try {
@@ -237,6 +244,7 @@ export default function App() {
       5: initialStep,
       6: initialStep,
       7: initialStep,
+      8: initialStep,
     };
   });
   const [selectedTeacherKey, setSelectedTeacherKey] = useState<string>('');
@@ -595,7 +603,8 @@ export default function App() {
           normalized,
           firebaseUser?.email || ADMIN_TEACHER_EMAIL
         );
-        const targetRef = doc(db, 'app_settings', 'lesson_access');
+        // Func 전용 잠금 문서에만 저장 (Props와 함께 쓰던 lesson_access는 건드리지 않음)
+        const targetRef = doc(db, 'app_settings', FUNC_LESSON_ACCESS_DOC);
         await setDoc(targetRef, {
           ...fields,
           updatedAt: serverTimestamp(),
@@ -625,7 +634,7 @@ export default function App() {
         }
         return true;
       } catch (err) {
-        console.error('Failed to sync lesson_access to Firestore:', err);
+        console.error(`Failed to sync ${FUNC_LESSON_ACCESS_DOC} to Firestore:`, err);
         setLessonAccessSyncStatus('error');
         if (reasonLabel) {
           showToast(
@@ -640,17 +649,31 @@ export default function App() {
   );
 
   const refreshLessonAccessFromServer = useCallback(async () => {
-    const targetRef = doc(db, 'app_settings', 'lesson_access');
-    try {
-      let snap;
+    const targetRef = doc(db, 'app_settings', FUNC_LESSON_ACCESS_DOC);
+    const readDoc = async (ref: typeof targetRef) => {
       try {
-        snap = await getDocFromServer(targetRef);
+        return await getDocFromServer(ref);
       } catch {
-        snap = await getDoc(targetRef);
+        return await getDoc(ref);
       }
+    };
+    try {
+      const snap = await readDoc(targetRef);
 
       if (snap.exists()) {
         applyServerLessonAccessSnapshot(snap.data());
+        return;
+      }
+
+      // Func 전용 문서가 아직 없으면 Func·Props 공용(예전 7칸) 값을 8차시 체계로 이어받음 (2026-11-05)
+      const legacySnap = await readDoc(doc(db, 'app_settings', LEGACY_LESSON_ACCESS_DOC));
+      if (legacySnap.exists()) {
+        const carried = lessonAccessFromLegacy(legacySnap.data());
+        applyServerLessonAccessSnapshot(carried);
+        // 교사가 들어오면 이어받은 값으로 Func 전용 문서를 만들어 둠 (실패해도 화면 값은 그대로, 상태 표시만 '확인 필요')
+        if (sessionMode === 'teacher') {
+          await persistLessonAccessToCloud(carried);
+        }
         return;
       }
 
@@ -688,10 +711,10 @@ export default function App() {
     refreshLessonAccessFromServer();
 
     const unsubFirestore = onSnapshot(
-      doc(db, 'app_settings', 'lesson_access'),
+      doc(db, 'app_settings', FUNC_LESSON_ACCESS_DOC),
       (docSnap) => {
         if (!docSnap.exists()) {
-          setIsLessonAccessServerChecked(true);
+          // 아직 Func 전용 문서가 없음 — refreshLessonAccessFromServer가 공용 문서 값을 이어받아 적용함
           return;
         }
         applyServerLessonAccessSnapshot(docSnap.data());
@@ -724,7 +747,7 @@ export default function App() {
       try {
         const params = new URLSearchParams(window.location.search);
         const l = Number(params.get('lesson'));
-        if (l === 1 || l === 2 || l === 3 || l === 4 || l === 5 || l === 6 || l === 7) {
+        if (isLessonTabNumber(l)) {
           if (isLessonEnabled(lessonAccessRef.current, l)) {
             setActiveLessonTab(l);
           } else {
@@ -1008,9 +1031,11 @@ export default function App() {
   const done2 = evaluateLevel2Completion(student.l2);
   const done3 = evaluateLevel3Completion(student.l3);
   const done4 = evaluateLevel4Completion(student.l4);
-  const done5 = evaluateLevel5Completion(student.l5);
-  const done6 = evaluateLevel6Completion(student.l6);
-  const done7 = evaluateLevel7Completion(student.l7);
+  // 4·5차시는 같은 저장 칸(l4), 6·7·8차시는 l5·l6·l7 (mathLogic LESSON_STORAGE_KEY)
+  const done5 = evaluateLevel5Completion(student.l4);
+  const done6 = evaluateLevel6Completion(student.l5);
+  const done7 = evaluateLevel7Completion(student.l6);
+  const done8 = evaluateLevel8Completion(student.l7);
   const doneMap = {
     1: done1,
     2: done2,
@@ -1019,6 +1044,7 @@ export default function App() {
     5: done5,
     6: done6,
     7: done7,
+    8: done8,
   } as const;
   const studentRenderGate = evaluateStudentLessonRenderGate(
     lessonAccess,
@@ -1111,7 +1137,7 @@ export default function App() {
               {/* Hero Copy */}
               <div>
                 <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 flex-wrap">
-                  <span>01 — 07차시 통합 탐구 프로젝트</span>
+                  <span>01 — 08차시 통합 탐구 프로젝트</span>
                   <span aria-hidden="true" className="text-slate-600">/</span>
                   <span className="text-slate-300">함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 역함수 · 유리함수 · 무리함수</span>
                 </div>
@@ -1126,7 +1152,7 @@ export default function App() {
                   수학 탐정단의 함수 개념 추리 및 그래프 탐구 프로젝트
                 </p>
                 <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
-                  정의역에서 공역으로의 대응 단서를 수집하고, 일대일대응·항등함수·상수함수(1·2차시)부터 합성함수(3차시), 역함수(4차시), 그리고 유리함수와 무리함수의 그래프 탐구(5·6·7차시)까지 단계별 힌트와 함께 완성해 보세요.
+                  정의역에서 공역으로의 대응 단서를 수집하고, 일대일대응·항등함수·상수함수(1·2차시)부터 합성함수(3차시), 역함수(4·5차시), 그리고 유리함수와 무리함수의 그래프 탐구(6·7·8차시)까지 단계별 힌트와 함께 완성해 보세요.
                 </p>
               </div>
 
@@ -1135,7 +1161,7 @@ export default function App() {
                 <div className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xs">
                   <div className="flex items-center justify-between text-xs text-slate-400 pb-3 border-b border-white/10">
                     <span className="font-semibold text-slate-200">핵심 함수 탐구 기법</span>
-                    <span className="mono text-sky-300">01 — 07차시</span>
+                    <span className="mono text-sky-300">01 — 08차시</span>
                   </div>
                   <div className="py-3 space-y-2 mono text-xs">
                     <div className="flex items-center justify-between gap-3 text-slate-300 whitespace-nowrap">
@@ -1153,20 +1179,20 @@ export default function App() {
                   </div>
                   <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400 whitespace-nowrap">
                     <span>대응 관찰 → 합성·역함수 → 유리·무리함수</span>
-                    <span className="mono text-slate-300">01 ~ 07</span>
+                    <span className="mono text-slate-300">01 ~ 08</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* In Student Mode: Show Lesson 1~7 Tabs on Left, Progress & Print Feature on Right */}
+            {/* In Student Mode: Show Lesson 1~8 Tabs on Left, Progress & Print Feature on Right */}
             {sessionMode === 'student' && (
               <div
                 role="tablist"
                 aria-label="학생 차시 선택 및 수사 진행 현황"
                 className="no-print mt-7 pt-5 border-t border-white/10 flex flex-col gap-4"
               >
-                {/* Top Row: Lesson 1 ~ 7 Tabs */}
+                {/* Top Row: Lesson 1 ~ 8 Tabs */}
                 <div className="flex flex-wrap items-center gap-2">
                   {LESSON_TAB_METADATA.map(({ num: tabNum, badge, fullTitle: label }) => {
                     const isUnlocked = isLessonEnabled(lessonAccess, tabNum);
@@ -1222,7 +1248,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/5 · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/5 · 7차시 {done7.filter(Boolean).length}/5 · 8차시 {done8.filter(Boolean).length}/5
                     </span>
                   </div>
 
@@ -1443,10 +1469,11 @@ export default function App() {
                       {displayLessonTab === 1 && '01차시 · 함수의 뜻과 그래프 (대응 관계와 정의역·공역·치역)'}
                       {displayLessonTab === 2 && '02차시 · 여러 가지 함수 (일대일함수·일대일대응·항등함수·상수함수)'}
                       {displayLessonTab === 3 && '03차시 · 합성함수 탐구 ((g ∘ f)(x) = g(f(x))의 성질과 추론)'}
-                      {displayLessonTab === 4 && '04차시 · 역함수 탐구 (역함수의 존재 조건과 y = f⁻¹(x)의 그래프)'}
-                      {displayLessonTab === 5 && '05차시 · 유리함수1 (유리식과 유리함수 y = k/x의 그래프)'}
-                      {displayLessonTab === 6 && '06차시 · 유리함수2 (유리함수 y = k/(x−p)+q의 점근선과 대칭성)'}
-                      {displayLessonTab === 7 && '07차시 · 무리함수 탐구 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
+                      {displayLessonTab === 4 && '04차시 · 역함수의 뜻과 구하기 (역함수의 존재 조건과 역함수 구하는 방법)'}
+                      {displayLessonTab === 5 && '05차시 · 역함수의 성질과 그래프 ((g∘f)⁻¹ = f⁻¹∘g⁻¹과 y = f⁻¹(x)의 그래프)'}
+                      {displayLessonTab === 6 && '06차시 · 유리함수1 (유리식과 유리함수 y = k/x의 그래프)'}
+                      {displayLessonTab === 7 && '07차시 · 유리함수2 (유리함수 y = k/(x−p)+q의 점근선과 대칭성)'}
+                      {displayLessonTab === 8 && '08차시 · 무리함수 탐구 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
                     </span>
                     <span className="font-semibold mono text-slate-600">
                       권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / {STAGE_TITLES[displayLessonTab].length}
@@ -1457,19 +1484,21 @@ export default function App() {
                     {displayLessonTab === 1 && '대응일까, 함수일까? — 함수의 뜻과 그래프 탐구'}
                     {displayLessonTab === 2 && '일대일대응의 조건을 찾아라! — 여러 가지 함수 탐구'}
                     {displayLessonTab === 3 && '두 함수를 연결하라! — 합성함수 (g ∘ f)(x) 탐구'}
-                    {displayLessonTab === 4 && '대응을 되돌려라! — 역함수 y = f⁻¹(x)와 y = x 대칭 탐구'}
-                    {displayLessonTab === 5 && '점근선의 비밀을 찾아라! — 유리함수 y = k/x의 그래프'}
-                    {displayLessonTab === 6 && '평행이동과 대칭의 중심 — 유리함수 y = (ax+b)/(cx+d) 탐구'}
-                    {displayLessonTab === 7 && '출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구'}
+                    {displayLessonTab === 4 && '대응을 되돌려라! — 역함수 y = f⁻¹(x)의 뜻과 구하기'}
+                    {displayLessonTab === 5 && '거꾸로, 그리고 대칭으로! — 역함수의 성질과 y = x 대칭'}
+                    {displayLessonTab === 6 && '점근선의 비밀을 찾아라! — 유리함수 y = k/x의 그래프'}
+                    {displayLessonTab === 7 && '평행이동과 대칭의 중심 — 유리함수 y = (ax+b)/(cx+d) 탐구'}
+                    {displayLessonTab === 8 && '출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구'}
                   </h2>
                   <p className="mt-1 text-xs sm:text-sm text-slate-600">
                     {displayLessonTab === 1 && '두 집합 X, Y 사이의 대응 관계에서 함수가 되기 위한 조건과 서로 같은 함수를 탐구해 보세요.'}
                     {displayLessonTab === 2 && '일대일함수와 일대일대응의 차이, 항등함수와 상수함수의 그래프 특징을 비교해 보세요.'}
                     {displayLessonTab === 3 && '합성함수가 정의되기 위한 조건과 교환법칙(g∘f ≠ f∘g)·결합법칙 성립 여부를 확인해 보세요.'}
-                    {displayLessonTab === 4 && '역함수가 존재하기 위한 필요충분조건(일대일대응)과 원래 함수와 역함수 그래프의 관계를 탐구해 보세요.'}
-                    {displayLessonTab === 5 && '유리식의 정의역과 유리함수 y = k/x (k ≠ 0)의 부호에 따른 그래프 개형을 분석해 보세요.'}
-                    {displayLessonTab === 6 && '유리함수 그래프의 평행이동, 두 점근선의 교점 (p, q), 그리고 직선 y = ±(x−p)+q에 대한 대칭성을 탐구해 보세요.'}
-                    {displayLessonTab === 7 && (
+                    {displayLessonTab === 4 && '역함수가 존재하기 위한 필요충분조건(일대일대응)과 역함수의 함숫값, 역함수를 구하는 방법을 탐구해 보세요.'}
+                    {displayLessonTab === 5 && '(g∘f)⁻¹ = f⁻¹∘g⁻¹에서 순서가 바뀌는 이유와 원래 함수와 역함수 그래프의 관계를 탐구해 보세요.'}
+                    {displayLessonTab === 6 && '유리식의 정의역과 유리함수 y = k/x (k ≠ 0)의 부호에 따른 그래프 개형을 분석해 보세요.'}
+                    {displayLessonTab === 7 && '유리함수 그래프의 평행이동, 두 점근선의 교점 (p, q), 그리고 직선 y = ±(x−p)+q에 대한 대칭성을 탐구해 보세요.'}
+                    {displayLessonTab === 8 && (
                       <MathText text="무리함수 y = √(a(x−p))+q의 정의역·치역과 역함수(이차함수의 일부)와의 관계를 탐구해 보세요." />
                     )}
                   </p>
@@ -1492,6 +1521,8 @@ export default function App() {
                       ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
                       : STAGE_TITLES[displayLessonTab].length === 4
                       ? 'grid-cols-2 sm:grid-cols-4'
+                      : STAGE_TITLES[displayLessonTab].length === 2
+                      ? 'grid-cols-2'
                       : 'grid-cols-5'
                   } gap-2 sm:gap-3`}
                 >
@@ -1699,9 +1730,10 @@ export default function App() {
                       />
                     )}
 
+                    {/* 5차시는 4차시와 같은 저장 칸(l4), 6·7·8차시는 l5·l6·l7 — mathLogic LESSON_STORAGE_KEY */}
                     {activeLessonTab === 5 && isLessonEnabled(lessonAccess, 5) && (
                       <Lesson5View
-                        state={student.l5}
+                        state={student.l4}
                         step={steps[5]}
                         onStepChange={(next) => {
                           setSteps((prev) => ({ ...prev, 5: next }));
@@ -1713,7 +1745,7 @@ export default function App() {
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
-                              l5: updater(prev.l5),
+                              l4: updater(prev.l4),
                             };
                           })
                         }
@@ -1724,7 +1756,7 @@ export default function App() {
 
                     {activeLessonTab === 6 && isLessonEnabled(lessonAccess, 6) && (
                       <Lesson6View
-                        state={student.l6}
+                        state={student.l5}
                         step={steps[6]}
                         onStepChange={(next) => {
                           setSteps((prev) => ({ ...prev, 6: next }));
@@ -1736,7 +1768,7 @@ export default function App() {
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
-                              l6: updater(prev.l6),
+                              l5: updater(prev.l5),
                             };
                           })
                         }
@@ -1747,7 +1779,7 @@ export default function App() {
 
                     {activeLessonTab === 7 && isLessonEnabled(lessonAccess, 7) && (
                       <Lesson7View
-                        state={student.l7}
+                        state={student.l6}
                         step={steps[7]}
                         onStepChange={(next) => {
                           setSteps((prev) => ({ ...prev, 7: next }));
@@ -1756,6 +1788,29 @@ export default function App() {
                         onUpdate={(updater) =>
                           setStudent((prev) => {
                             if (!isLessonEnabled(lessonAccessRef.current, 7)) return prev;
+                            return {
+                              ...prev,
+                              updatedAt: new Date().toISOString(),
+                              l6: updater(prev.l6),
+                            };
+                          })
+                        }
+                        onGoToLesson8={() => handleSelectStudentLesson(8, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
+
+                    {activeLessonTab === 8 && isLessonEnabled(lessonAccess, 8) && (
+                      <Lesson8View
+                        state={student.l7}
+                        step={steps[8]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 8: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => {
+                            if (!isLessonEnabled(lessonAccessRef.current, 8)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1892,7 +1947,7 @@ export default function App() {
               <strong>평가 상태:</strong> {getTeacherEvaluationProgress(printingStudent).statusLabel} ({getTeacherEvaluationProgress(printingStudent).percent}%)
             </div>
 
-            <h3 className="text-lg font-bold pt-2">1. 탐구 활동 요약 (1 ~ 7차시)</h3>
+            <h3 className="text-lg font-bold pt-2">1. 탐구 활동 요약 (1 ~ 8차시)</h3>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
               <strong>1차시 대응·정의역·치역 [문제 1·2]:</strong> {printingStudent.l1.claim || '미작성'}
             </div>
@@ -1960,80 +2015,80 @@ export default function App() {
                 '미작성'}
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="4차시 역함수 [생각 열기·문제 1]:" /></strong>{' '}
+              <strong><MathText text="4차시 역함수의 뜻과 구하기 [생각 열기·문제 1·역함수 구하기]:" /></strong>{' '}
               <MathText text={summarizeL4(printingStudent.l4).part1 || '미작성'} />
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="4차시 역함수 [역함수 구하기·함께하기·그래프]:" /></strong>{' '}
+              <strong><MathText text="5차시 역함수의 성질과 그래프 [함께하기·문제 3·그래프]:" /></strong>{' '}
               <MathText text={summarizeL4(printingStudent.l4).part2 || '미작성'} />
             </div>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>5차시 절대부등식1 [문제 1·a²+b²≥ab]:</strong>{' '}
+              <strong>6차시 절대부등식1 [문제 1·a²+b²≥ab]:</strong>{' '}
               <MathText text={printingStudent.l5?.prob1ProofText || '미작성'} />
             </div>
             {printingStudent.l5?.equalityReason && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>5차시 [등호 성립 조건 이유]:</strong> {printingStudent.l5.equalityReason}
+                <strong>6차시 [등호 성립 조건 이유]:</strong> {printingStudent.l5.equalityReason}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>5차시 절대부등식1 [문제 2·(a+b)²≥4ab 외]:</strong>{' '}
+              <strong>6차시 절대부등식1 [문제 2·(a+b)²≥4ab 외]:</strong>{' '}
               <MathText text={printingStudent.l5?.prob2ProofText || '미작성'} />
             </div>
             {printingStudent.l5?.reflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>5차시 성찰 1:</strong> {printingStudent.l5.reflection1}
+                <strong>6차시 성찰 1:</strong> {printingStudent.l5.reflection1}
               </div>
             )}
             {printingStudent.l5?.reflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>5차시 성찰 2:</strong> {printingStudent.l5.reflection2}
+                <strong>6차시 성찰 2:</strong> {printingStudent.l5.reflection2}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>6차시 절대부등식2 [문제 1·산술·기하평균]:</strong>{' '}
+              <strong>7차시 절대부등식2 [문제 1·산술·기하평균]:</strong>{' '}
               <MathText text={printingStudent.l6?.prob1ProofText || '미작성'} />
             </div>
             {printingStudent.l6?.harmonicReason && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>6차시 [조화평균 유도 이유]:</strong> {printingStudent.l6.harmonicReason}
+                <strong>7차시 [조화평균 유도 이유]:</strong> {printingStudent.l6.harmonicReason}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>6차시 절대부등식2 [문제 2·역수·조화평균]:</strong>{' '}
+              <strong>7차시 절대부등식2 [문제 2·역수·조화평균]:</strong>{' '}
               <MathText text={printingStudent.l6?.prob2ProofText || '미작성'} />
             </div>
             {printingStudent.l6?.reflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>6차시 성찰 1:</strong> {printingStudent.l6.reflection1}
+                <strong>7차시 성찰 1:</strong> {printingStudent.l6.reflection1}
               </div>
             )}
             {printingStudent.l6?.reflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>6차시 성찰 2:</strong> {printingStudent.l6.reflection2}
+                <strong>7차시 성찰 2:</strong> {printingStudent.l6.reflection2}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="7차시 절대부등식3 [문제 1·|a+b|≤|a|+|b|]:" /></strong>{' '}
+              <strong><MathText text="8차시 절대부등식3 [문제 1·|a+b|≤|a|+|b|]:" /></strong>{' '}
               <MathText text={printingStudent.l7?.prob1ProofText || '미작성'} />
             </div>
             {printingStudent.l7?.absDiffReason && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 [절댓값의 차 부호 판별 이유]:</strong> {printingStudent.l7.absDiffReason}
+                <strong>8차시 [절댓값의 차 부호 판별 이유]:</strong> {printingStudent.l7.absDiffReason}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="7차시 절대부등식3 [문제 2·절댓값 차 부등식]:" /></strong>{' '}
+              <strong><MathText text="8차시 절대부등식3 [문제 2·절댓값 차 부등식]:" /></strong>{' '}
               <MathText text={printingStudent.l7?.prob2ProofText || '미작성'} />
             </div>
             {printingStudent.l7?.reflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 성찰 1:</strong> {printingStudent.l7.reflection1}
+                <strong>8차시 성찰 1:</strong> {printingStudent.l7.reflection1}
               </div>
             )}
             {printingStudent.l7?.reflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 성찰 2:</strong> {printingStudent.l7.reflection2}
+                <strong>8차시 성찰 2:</strong> {printingStudent.l7.reflection2}
               </div>
             )}
 

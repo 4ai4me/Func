@@ -4,6 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InverseGraphReveal, linearInversePanel } from './InverseGraphReveal';
 import { Lesson4View } from './Lesson4View';
+import { Lesson5View } from './Lesson5View';
 import { createInitialStudentState, type Lesson4State } from '../utils/mathLogic';
 import { L4_GRAPH_SETS, inverseLinear, validateL4Ex1, validateL4Prob2, validateL4Prob5, validateL4Together, validateL4Prob3 } from '../utils/lesson4Logic';
 import { formatLinear } from '../utils/linearExpr';
@@ -86,20 +87,25 @@ test('함께하기는 f, g, g∘f 세 좌표평면, 문제 5는 넓은 범위·1
   assert.ok(p5.includes('>50<') && p5.includes('>-50<'));
 });
 
-// ── 4차시 화면에 붙었는지 ──
-test('4차시 화면: 각 단계에 그래프 버튼이 있고, 정답 확인 여부에 따라 잠김/켜짐', () => {
+// ── 4·5차시 화면에 붙었는지 (2026-11-05 역함수를 두 차시로 나눔) ──
+test('4·5차시 화면: 각 단계에 그래프 버튼이 있고, 정답 확인 여부에 따라 잠김/켜짐', () => {
   const base = createInitialStudentState().l4;
-  const render = (state: Lesson4State, step: number) =>
-    renderToStaticMarkup(
-      <Lesson4View state={state} step={step} onStepChange={() => {}} onUpdate={() => {}} onRequestConfirm={() => {}} />
-    );
+  const render = (state: Lesson4State, step: number, part: 1 | 2) => {
+    const props = { state, step, onStepChange: () => {}, onUpdate: () => {}, onRequestConfirm: () => {} };
+    return renderToStaticMarkup(part === 1 ? <Lesson4View {...props} /> : <Lesson5View {...props} />);
+  };
   const countToggles = (html: string) => (html.match(/data-graph-toggle/g) || []).length;
   const countDisabled = (html: string) => (html.match(/<button[^>]*disabled=""[^>]*data-graph-toggle/g) || []).length;
-  // 단계별 버튼 수: 1단계(문제 1) 1개, 2단계(예제 1·문제 2·문제 5) 3개, 3단계(함께하기·문제 3) 2개
-  for (const [step, n] of [[1, 1], [2, 3], [3, 2]] as const) {
-    const locked = render(base, step);
-    assert.equal(countToggles(locked), n, `step ${step}`);
-    assert.equal(countDisabled(locked), n, `step ${step} locked`);
+  // 4차시: 문제 1(1개), 역함수 구하기(예제 1·문제 2·문제 5, 3개) / 5차시: 함께하기(함께하기·문제 3, 2개)
+  const cases = [
+    [1, 1, 1],
+    [1, 2, 3],
+    [2, 0, 2],
+  ] as const;
+  for (const [part, step, n] of cases) {
+    const locked = render(base, step, part);
+    assert.equal(countToggles(locked), n, `part ${part} step ${step}`);
+    assert.equal(countDisabled(locked), n, `part ${part} step ${step} locked`);
   }
   const verified: Lesson4State = {
     ...base,
@@ -110,8 +116,9 @@ test('4차시 화면: 각 단계에 그래프 버튼이 있고, 정답 확인 �
     togetherVerified: true,
     p3Verified: true,
   };
-  for (const step of [1, 2, 3]) assert.equal(countDisabled(render(verified, step)), 0, `step ${step} unlocked`);
-  // 0단계·4단계(문제 4·공학 도구는 원래 그래프가 있음)에는 새 버튼 없음
-  assert.equal(countToggles(render(verified, 0)), 0);
-  assert.equal(countToggles(render(verified, 4)), 0);
+  for (const [part, step] of cases) assert.equal(countDisabled(render(verified, step, part)), 0, `part ${part} step ${step} unlocked`);
+  // 4차시 생각 열기·성찰, 5차시 그래프 단계(문제 4·공학 도구는 원래 그래프가 있음)에는 새 버튼 없음
+  assert.equal(countToggles(render(verified, 0, 1)), 0);
+  assert.equal(countToggles(render(verified, 3, 1)), 0);
+  assert.equal(countToggles(render(verified, 1, 2)), 0);
 });

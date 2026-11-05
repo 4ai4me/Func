@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { createInitialStudentState } from '../utils/mathLogic';
+import { createInitialStudentState, LESSON_STORAGE_KEY, isLessonTabNumber } from '../utils/mathLogic';
 
 /**
  * 규칙: 학생이 서술하는 모든 칸(textarea)에는 글자 수 표시(CharCountBadge)가 있어야 한다.
@@ -35,7 +35,9 @@ for (const { file, lesson } of lessonFiles) {
     const mod = (await import(`./${file.replace('.tsx', '')}`)) as Record<string, unknown>;
     const View = mod[`Lesson${lesson}View`] as React.ComponentType<Record<string, unknown>>;
     assert.ok(View, `Lesson${lesson}View를 내보내야 합니다`);
-    const state = (createInitialStudentState() as unknown as Record<string, unknown>)[`l${lesson}`] ?? {};
+    // 표시 차시 → 저장 칸 (4·5차시는 l4, 6·7·8차시는 l5·l6·l7)
+    const slot = isLessonTabNumber(lesson) ? LESSON_STORAGE_KEY[lesson] : `l${lesson}`;
+    const state = (createInitialStudentState() as unknown as Record<string, unknown>)[slot] ?? {};
 
     let totalTextareas = 0;
     for (let step = 0; step <= MAX_STEP; step++) {

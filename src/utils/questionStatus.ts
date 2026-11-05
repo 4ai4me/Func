@@ -1,5 +1,5 @@
 /**
- * 교사 화면: 1~4차시 문항(점검 버튼이 있는 문제)마다 학생이 어디까지 했는지 구분한다.
+ * 교사 화면: 1~5차시 문항(점검 버튼이 있는 문제)마다 학생이 어디까지 했는지 구분한다.
  *
  *   done      ✓ 확인 완료 — 학생이 점검을 눌러 통과함
  *   unchecked 점검        — 입력은 했지만 점검을 누르지 않음
@@ -10,8 +10,7 @@
  * 채점은 학생 화면의 [점검] 버튼과 같은 함수(validate…)를 그대로 쓴다.
  * 문항에 속한 입력 칸은 answerLabels.ts의 순서(같은 묶음 안에서 앞 확인 항목 다음부터 이 확인 항목 전까지)로 정한다.
  */
-import { LESSON_ANSWER_CONFIG, isEmptyAnswer } from './answerLabels';
-import type { LessonKey } from './lessonMerge';
+import { LESSON_ANSWER_CONFIG, isEmptyAnswer, type AnswerLessonKey } from './answerLabels';
 import {
   L3_MIN_REASON,
   validateL1CountryMap,
@@ -55,7 +54,8 @@ import {
 } from './lesson4Logic';
 
 export type QuestionStatus = 'done' | 'unchecked' | 'wrong' | 'empty';
-export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4';
+/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시, 저장 칸 l4) */
+export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b';
 
 export interface QuestionStatusResult {
   status: QuestionStatus;
@@ -128,6 +128,8 @@ export const QUESTION_RULES: Record<StatusLessonKey, Record<string, QuestionRule
     ex1Verified: { validate: as<Lesson4State>(validateL4Ex1) },
     p2Verified: { validate: as<Lesson4State>(validateL4Prob2), reasons: { p2Reason: L4_MIN_REASON } },
     p5Verified: { validate: as<Lesson4State>(validateL4Prob5) },
+  },
+  l4b: {
     togetherVerified: { validate: as<Lesson4State>(validateL4Together) },
     p3Verified: { validate: as<Lesson4State>(validateL4Prob3), reasons: { p3Reason: L4_MIN_REASON } },
     p4Verified: { validate: as<Lesson4State>(validateL4Prob4) },
@@ -173,12 +175,12 @@ function findQuestion(lesson: StatusLessonKey, verifiedKey: string): QuestionInf
 }
 
 export function isStatusLesson(lesson: string): lesson is StatusLessonKey {
-  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4';
+  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b';
 }
 
 /** 한 문항의 상태. 규칙이 없는 확인 항목이면 undefined (예전처럼 확인/미확인으로 표시) */
 export function getQuestionStatus(
-  lesson: LessonKey,
+  lesson: AnswerLessonKey,
   verifiedKey: string,
   lessonData: unknown
 ): QuestionStatusResult | undefined {

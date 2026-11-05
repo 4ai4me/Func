@@ -292,7 +292,10 @@ export type L4GraphKey = keyof typeof L4_GRAPH_SETS | 'p1';
 // ─────────────────────────────────────────────
 const v = (s?: string) => (s && s.trim() ? s.trim() : '-');
 
-/** 4차시 답안을 교사 화면용 두 묶음(1~2단계 / 3~5단계)으로 요약 (입력이 없으면 빈 문자열) */
+/**
+ * 역함수 답안(저장 칸 l4)을 교사 화면용 두 묶음으로 요약 (입력이 없으면 빈 문자열)
+ * part1 = 4차시(생각 열기·문제 1·역함수 구하기·문제 5), part2 = 5차시(함께하기·문제 3·문제 4·공학 도구)
+ */
 export function summarizeL4(p: Lesson4State | undefined | null): { part1: string; part2: string } {
   if (!p) return { part1: '', part2: '' };
   const map = p.openReverseMap || {};
@@ -305,12 +308,12 @@ export function summarizeL4(p: Lesson4State | undefined | null): { part1: string
     p.p1_f3 || p.p1Reason
       ? `[문제 1] f(3)=${v(p.p1_f3)}, f⁻¹(7)=${v(p.p1_1)}, (f⁻¹∘f)(4)=${v(p.p1_2)}, (f∘f⁻¹)(3)=${v(p.p1_3)}, (f⁻¹)⁻¹(2)=${v(p.p1_4)} / ${v(p.p1Reason)}`
       : '',
-  ];
-  const p2Lines = [
     p.ex1_ans || p.p2_1 || p.p2Reason
       ? `[역함수 구하기] 예제 y=3x+4 → ${v(p.ex1_ans)} / 문제 2 (1) ${v(p.p2_1)} (2) ${v(p.p2_2)} / ${v(p.p2Reason)}`
       : '',
     p.p5_inv || p.p5_celsius ? `[문제 5] 역함수 ${v(p.p5_inv)}, 95℉ = ${v(p.p5_celsius)}℃` : '',
+  ];
+  const p2Lines = [
     p.tg_gf || p.p3_ans
       ? `[함께하기] (g∘f)⁻¹(x)=${v(p.tg_gfInv)}, (f⁻¹∘g⁻¹)(x)=${v(p.tg_result)} / [문제 3] ${v(p.p3_ans)} / ${v(p.p3Reason)}`
       : '',

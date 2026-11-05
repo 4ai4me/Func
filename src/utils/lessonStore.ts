@@ -35,7 +35,7 @@ export * from './lessonMerge';
  *   student_registrations/{studentKey}                  가입 정보·승인 상태 (+ 예전 worksheetJson, 더 이상 갱신 안 함)
  *   student_registrations/{studentKey}/{COLLECTION}/l1  1차시 내용 (학생 본인만 쓰기)
  *   ...                                                  ...
- *   student_registrations/{studentKey}/{COLLECTION}/l7  7차시 내용
+ *   student_registrations/{studentKey}/{COLLECTION}/l7  8차시 내용 (표시 차시와 저장 칸: mathLogic LESSON_STORAGE_KEY — 4·5차시는 l4)
  *   student_registrations/{studentKey}/{COLLECTION}/teacher  교사 평가·메모 (교사만 쓰기, 학생은 읽기만)
  *
  * 아직 차시 문서가 없는 차시는 예전 worksheetJson 내용을 그대로 사용하므로

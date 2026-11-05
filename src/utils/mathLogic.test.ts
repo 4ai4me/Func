@@ -41,6 +41,8 @@ import {
   evaluateLevel5Completion,
   evaluateLevel6Completion,
   evaluateLevel7Completion,
+  evaluateLevel8Completion,
+  migrateEvalScoresForLessonSplit,
   hasTeacherEvaluation,
   getTeacherEvalAverage,
   getTeacherEvaluationProgress,
@@ -273,28 +275,44 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   s.l3.contrapositiveChoice = 'contrapositive';
   assert.equal(evaluateLevel3Completion(s.l3)[0], true);
 
-  assert.deepEqual(evaluateLevel4Completion(s.l4), [false, false, false, false, false]);
+  assert.deepEqual(evaluateLevel4Completion(s.l4), [false, false, false, false]);
   // 4차시는 역함수 수업으로 교체됨: 예전 귀류법 기록만으로는 완료되지 않고, 역함수 [정답 확인] 통과로 완료
   s.l4.fractionExamples = [calc4Coprime(1, 1), calc4Coprime(2, 3), calc4Coprime(5, 7)];
   s.l4.contradictionConceptChecked = true;
   assert.equal(evaluateLevel4Completion(s.l4)[0], false);
   s.l4.openVerified = true;
   assert.equal(evaluateLevel4Completion(s.l4)[0], true);
+  // 4차시 성찰(새 항목) / 5차시는 같은 저장 칸 l4의 함께하기·그래프·성찰
+  assert.equal(evaluateLevel4Completion(s.l4)[3], false);
+  s.l4.l4Reflection1 = '역함수는 x에 대해 풀고 바꾼다';
+  assert.equal(evaluateLevel4Completion(s.l4)[3], true);
+  assert.deepEqual(evaluateLevel5Completion(s.l4), [false, false]);
+  s.l4.togetherVerified = true;
+  s.l4.p3Verified = true;
+  assert.deepEqual(evaluateLevel5Completion(s.l4), [true, false]);
+  s.l4.p4Verified = true;
+  s.l4.toolVerified = true;
+  assert.deepEqual(evaluateLevel5Completion(s.l4), [true, false], '5차시 성찰 1이 없으면 마지막 단계 미완료');
+  s.l4.reflection1 = '두 그래프는 y = x 대칭이다';
+  assert.deepEqual(evaluateLevel5Completion(s.l4), [true, true]);
+  // 5차시 항목은 4차시 완료에 영향 없음, 4차시 성찰은 5차시 완료에 영향 없음
+  assert.deepEqual(evaluateLevel4Completion(s.l4), [true, false, false, true]);
 
-  assert.deepEqual(evaluateLevel5Completion(s.l5), [false, false, false, false, false]);
+  // 6·7·8차시 = 예전 5·6·7차시 (저장 칸 l5·l6·l7 그대로)
+  assert.deepEqual(evaluateLevel6Completion(s.l5), [false, false, false, false, false]);
   s.l5.examples = [calc5Inequality(0, 0), calc5Inequality(1, 2), calc5Inequality(-1, 1)];
   s.l5.squareConceptChoice = 'nonnegative';
-  assert.equal(evaluateLevel5Completion(s.l5)[0], true);
+  assert.equal(evaluateLevel6Completion(s.l5)[0], true);
 
-  assert.deepEqual(evaluateLevel6Completion(s.l6), [false, false, false, false, false]);
+  assert.deepEqual(evaluateLevel7Completion(s.l6), [false, false, false, false, false]);
   s.l6.examples = [calc6Means(4, 4), calc6Means(1, 9), calc6Means(2, 8)];
   s.l6.amgmConceptChoice = 'positive';
-  assert.equal(evaluateLevel6Completion(s.l6)[0], true);
+  assert.equal(evaluateLevel7Completion(s.l6)[0], true);
 
-  assert.deepEqual(evaluateLevel7Completion(s.l7), [false, false, false, false, false]);
+  assert.deepEqual(evaluateLevel8Completion(s.l7), [false, false, false, false, false]);
   s.l7.examples = [calc7Abs(2, 3), calc7Abs(2, -3), calc7Abs(-2, -3)];
   s.l7.absSquareConceptChoice = 'square_diff';
-  assert.equal(evaluateLevel7Completion(s.l7)[0], true);
+  assert.equal(evaluateLevel8Completion(s.l7)[0], true);
 });
 
 test('hasTeacherEvaluation and getTeacherEvalAverage evaluate teacher scoring accurately', () => {
@@ -325,43 +343,43 @@ test('hasTeacherEvaluation and getTeacherEvalAverage evaluate teacher scoring ac
   assert.equal(CLASSROOM_BRAND_NAME, '이하연 수학 교실');
 });
 
-test('getTeacherEvaluationProgress and getClassEvaluationSummary calculate per-student and class progress accurately across 7 lessons', () => {
-  assert.equal(EVAL_CRITERIA.length, 7);
+test('getTeacherEvaluationProgress and getClassEvaluationSummary calculate per-student and class progress accurately across 8 lessons', () => {
+  assert.equal(EVAL_CRITERIA.length, 8);
 
   const sNone = createInitialStudentState();
   const pNone = getTeacherEvaluationProgress(sNone);
   assert.equal(pNone.status, 'none');
   assert.equal(pNone.percent, 0);
   assert.equal(pNone.completedCount, 0);
-  assert.equal(pNone.totalCount, 8); // 7 rubric items + 1 feedback
+  assert.equal(pNone.totalCount, 9); // 8 rubric items + 1 feedback
   assert.equal(pNone.statusLabel, '미평가');
   assert.equal(pNone.isReopenedByLessonExpansion, false);
 
   const sPartial = createInitialStudentState();
   sPartial.evaluation = {
-    scores: [3, 2, null, null, null, null, null],
+    scores: [3, 2, null, null, null, null, null, null],
     feedback: '규칙 발견이 뛰어납니다.',
     nextStep: '',
   };
   const pPartial = getTeacherEvaluationProgress(sPartial);
   assert.equal(pPartial.status, 'partial');
-  assert.equal(pPartial.completedCount, 3); // 2 scores + 1 feedback = 3/8 = 38%
-  assert.equal(pPartial.totalCount, 8);
-  assert.equal(pPartial.percent, 38);
+  assert.equal(pPartial.completedCount, 3); // 2 scores + 1 feedback = 3/9 = 33%
+  assert.equal(pPartial.totalCount, 9);
+  assert.equal(pPartial.percent, 33);
   assert.equal(pPartial.statusLabel, '평가 진행 중');
   assert.equal(pPartial.isReopenedByLessonExpansion, false);
 
   const sComplete = createInitialStudentState();
   sComplete.evaluation = {
-    scores: [3, 3, 2, 3, 3, 3, 3],
-    feedback: '1~7차시 모든 증명을 성실히 완수했습니다.',
+    scores: [3, 3, 2, 3, 3, 3, 3, 3],
+    feedback: '1~8차시 모든 탐구를 성실히 완수했습니다.',
     nextStep: '심화 문제를 탐구해 보세요.',
-    evaluatedLessonCount: 7,
+    evaluatedLessonCount: 8,
   };
   const pComplete = getTeacherEvaluationProgress(sComplete);
   assert.equal(pComplete.status, 'complete');
-  assert.equal(pComplete.completedCount, 8);
-  assert.equal(pComplete.totalCount, 8);
+  assert.equal(pComplete.completedCount, 9);
+  assert.equal(pComplete.totalCount, 9);
   assert.equal(pComplete.percent, 100);
   assert.equal(pComplete.statusLabel, '평가 완료');
   assert.equal(pComplete.isReopenedByLessonExpansion, false);
@@ -373,7 +391,7 @@ test('getTeacherEvaluationProgress and getClassEvaluationSummary calculate per-s
   assert.equal(summary.noneCount, 1);
   assert.equal(summary.evaluatedAnyCount, 2);
   assert.equal(summary.completionRatePercent, 33); // 1/3 -> 33%
-  assert.equal(summary.averageProgressPercent, 46); // (0 + 38 + 100) / 3 = 46%
+  assert.equal(summary.averageProgressPercent, 44); // (0 + 33 + 100) / 3 = 44%
 });
 
 test('when lessons are added, previously completed evaluations revoke complete status and transition to partial (in-progress) while preserving existing scores', () => {
@@ -394,28 +412,28 @@ test('when lessons are added, previously completed evaluations revoke complete s
   assert.equal(progAt4Lessons.status, 'complete');
   assert.equal(progAt4Lessons.percent, 100);
 
-  // Now lessons 5, 6, 7 are added (current 7-lesson curriculum):
+  // Now the current 8-lesson curriculum:
   const hydrated = cleanStudentState(legacyCompletedRaw);
   const ev = ensureTeacherEval(hydrated);
-  // Existing 4 scores and feedback must be preserved intact, and new 3 items padded with null
-  assert.deepEqual(ev.scores, [3, 3, 2, 3, null, null, null]);
+  // Existing 4 scores and feedback must be preserved intact, and new 4 items padded with null
+  assert.deepEqual(ev.scores, [3, 3, 2, 3, null, null, null, null]);
   assert.equal(ev.feedback, '1~4차시 명제 증명을 완벽히 수행했습니다.');
   assert.equal(ev.evaluatedLessonCount, 4);
 
-  const progAt7Lessons = getTeacherEvaluationProgress(hydrated);
-  assert.equal(progAt7Lessons.status, 'partial');
-  assert.equal(progAt7Lessons.statusLabel, '평가 진행 중');
-  assert.equal(progAt7Lessons.completedCount, 5); // 4 existing scores + 1 feedback
-  assert.equal(progAt7Lessons.totalCount, 8); // 7 rubric items + 1 feedback
-  assert.equal(progAt7Lessons.ungradedRubricCount, 3); // 5, 6, 7차시 미평정
-  assert.equal(progAt7Lessons.percent, 63); // 5/8 = 62.5% -> 63%
-  assert.equal(progAt7Lessons.isReopenedByLessonExpansion, true);
+  const progAt8Lessons = getTeacherEvaluationProgress(hydrated);
+  assert.equal(progAt8Lessons.status, 'partial');
+  assert.equal(progAt8Lessons.statusLabel, '평가 진행 중');
+  assert.equal(progAt8Lessons.completedCount, 5); // 4 existing scores + 1 feedback
+  assert.equal(progAt8Lessons.totalCount, 9); // 8 rubric items + 1 feedback
+  assert.equal(progAt8Lessons.ungradedRubricCount, 4); // 5~8차시 미평정
+  assert.equal(progAt8Lessons.percent, 56); // 5/9 = 55.6% -> 56%
+  assert.equal(progAt8Lessons.isReopenedByLessonExpansion, true);
 
-  // Case 2: Once the teacher evaluates the newly added 5~7차시 items, it becomes 'complete' (100%)
+  // Case 2: Once the teacher evaluates the newly added 5~8차시 items, it becomes 'complete' (100%)
   hydrated.evaluation = {
     ...ev,
-    scores: [3, 3, 2, 3, 3, 2, 3],
-    evaluatedLessonCount: 7,
+    scores: [3, 3, 2, 3, 3, 3, 2, 3],
+    evaluatedLessonCount: 8,
   };
   const progAfterGradingNewLessons = getTeacherEvaluationProgress(hydrated);
   assert.equal(progAfterGradingNewLessons.status, 'complete');
@@ -423,24 +441,52 @@ test('when lessons are added, previously completed evaluations revoke complete s
   assert.equal(progAfterGradingNewLessons.percent, 100);
   assert.equal(progAfterGradingNewLessons.isReopenedByLessonExpansion, false);
 
-  // Case 3: If an 8th lesson is added in the future, the 7-lesson completed evaluation automatically transitions back to 'partial'
-  const progWhen8thLessonAdded = getTeacherEvaluationProgress(hydrated, 8);
-  assert.equal(progWhen8thLessonAdded.status, 'partial');
-  assert.equal(progWhen8thLessonAdded.statusLabel, '평가 진행 중');
-  assert.equal(progWhen8thLessonAdded.completedCount, 8);
-  assert.equal(progWhen8thLessonAdded.totalCount, 9);
-  assert.equal(progWhen8thLessonAdded.ungradedRubricCount, 1);
-  assert.equal(progWhen8thLessonAdded.percent, 89);
-  assert.equal(progWhen8thLessonAdded.isReopenedByLessonExpansion, true);
+  // Case 3: If a 9th lesson is added in the future, the 8-lesson completed evaluation automatically transitions back to 'partial'
+  const progWhen9thLessonAdded = getTeacherEvaluationProgress(hydrated, 9);
+  assert.equal(progWhen9thLessonAdded.status, 'partial');
+  assert.equal(progWhen9thLessonAdded.completedCount, 9);
+  assert.equal(progWhen9thLessonAdded.totalCount, 10);
+  assert.equal(progWhen9thLessonAdded.ungradedRubricCount, 1);
+  assert.equal(progWhen9thLessonAdded.percent, 90);
+  assert.equal(progWhen9thLessonAdded.isReopenedByLessonExpansion, true);
 
-  // Case 4: Sample dataset records (which had 4 lessons scored prior to 5~7차시 expansion) are in 'partial' state
+  // Case 4: Sample dataset records (4 lessons scored) are in 'partial' state
   const samples = createSampleTeacherDataset();
   for (const sample of samples) {
     const p = getTeacherEvaluationProgress(sample);
     assert.equal(p.status, 'partial');
     assert.equal(p.isReopenedByLessonExpansion, true);
-    assert.equal(p.ungradedRubricCount, 3);
+    assert.equal(p.ungradedRubricCount, 4);
   }
+});
+
+test('역함수 나누기(2026-11-05): 7칸 점수는 새 5차시 자리에 빈칸이 끼어 예전 5~7차시 점수가 6~8차시로 간다', () => {
+  // 7차시 시절에 모두 평가를 마친 학생
+  const raw = {
+    ...createInitialStudentState(),
+    group: '1학년 3반',
+    code: '10301',
+    evaluation: { scores: [3, 3, 2, 3, 1, 2, 3], feedback: '잘했어요', nextStep: '', evaluatedLessonCount: 7 },
+  };
+  // 저장된 원본을 직접 읽어도(정리 전) 같은 결과
+  const before = getTeacherEvaluationProgress(raw);
+  assert.equal(before.status, 'partial');
+  assert.equal(before.ungradedRubricCount, 1, '새 5차시만 미평정');
+  assert.equal(before.scoredRubricCount, 7, '예전 점수는 모두 그대로 셈');
+
+  const cleaned = cleanStudentState(JSON.parse(JSON.stringify(raw)));
+  const ev = ensureTeacherEval(cleaned);
+  assert.deepEqual(ev.scores, [3, 3, 2, 3, null, 1, 2, 3]);
+  assert.equal(ev.evaluatedLessonCount, undefined, '7차시 시절 표시는 지움');
+  assert.equal(raw.evaluation.scores.length, 7, '원본 배열은 바꾸지 않음');
+  // 한 번 더 정리해도 다시 끼우지 않음 (8칸이면 그대로)
+  const again = ensureTeacherEval(cleanStudentState(JSON.parse(JSON.stringify(cleaned))));
+  assert.deepEqual(again.scores, [3, 3, 2, 3, null, 1, 2, 3]);
+  // 새 5차시를 평가하면 완료
+  cleaned.evaluation = { ...ev, scores: [3, 3, 2, 3, 2, 1, 2, 3] };
+  assert.equal(getTeacherEvaluationProgress(cleaned).status, 'complete');
+  // 4칸(아주 예전) 기록은 끼우지 않고 뒤에 채움
+  assert.deepEqual(migrateEvalScoresForLessonSplit([3, 3, 2, 3]), [3, 3, 2, 3]);
 });
 
 test('calc6GeometrySimulation computes semicircle length and square/rectangle area properties accurately', () => {
@@ -1002,6 +1048,8 @@ import {
   hasAnyLockedLesson,
   buildLessonAccessFirestoreFields,
   evaluateStudentLessonRenderGate,
+  lessonAccessFromLegacy,
+  LESSON_STORAGE_KEY,
 } from './mathLogic.ts';
 
 test('Lesson access ON/OFF control helpers normalize, preset, and enforce student lesson locks', () => {
@@ -1017,6 +1065,7 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
   assert.equal(isLessonEnabled(only1, 2), false);
   assert.equal(isLessonEnabled(only1, 3), false);
   assert.equal(isLessonEnabled(only1, 7), false);
+  assert.equal(isLessonEnabled(only1, 8), false);
   assert.equal(only1.updatedBy, 'liha1634@gmail.com');
   assert.equal(hasAnyLockedLesson(only1), true);
 
@@ -1047,7 +1096,7 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
     redirectLesson: 1,
   });
 
-  // Firestore payload builder strictly outputs l1..l7 booleans and authorized updatedBy
+  // Firestore payload builder strictly outputs l1..l8 booleans and authorized updatedBy (Func 전용 문서)
   const payload = buildLessonAccessFirestoreFields(only1, 'unknown@example.com');
   assert.deepEqual(payload, {
     l1: true,
@@ -1057,10 +1106,11 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
     l5: false,
     l6: false,
     l7: false,
+    l8: false,
     updatedBy: 'liha1634@gmail.com',
   });
 
-  // 3. Firestore format normalization (l1..l7 keys)
+  // 3. Firestore format normalization (l1..l8 keys)
   const fromFirestore = normalizeLessonAccess({
     l1: false,
     l2: true,
@@ -1069,8 +1119,10 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
     l5: false,
     l6: false,
     l7: false,
+    l8: true,
     updatedBy: 'planitia4ai@gmail.com',
   });
+  assert.equal(fromFirestore[8], true);
   assert.equal(fromFirestore[1], false);
   assert.equal(fromFirestore[2], true);
   assert.equal(fromFirestore[3], true);
@@ -1091,3 +1143,27 @@ test('Lesson access ON/OFF control helpers normalize, preset, and enforce studen
 });
 
 
+
+test('차시 잠금 이어받기 (2026-11-05): 공용 7칸 → Func 8칸, 새 5차시는 4차시와 같게', () => {
+  // 지금 상황 예: 1~4차시 열림, 5~7차시 잠금
+  const carried = lessonAccessFromLegacy({ l1: true, l2: true, l3: true, l4: true, l5: false, l6: false, l7: false, updatedBy: 'liha1634@gmail.com' });
+  assert.deepEqual(
+    [1, 2, 3, 4, 5, 6, 7, 8].map((n) => carried[n as 1]),
+    [true, true, true, true, true, false, false, false],
+    '5차시는 4차시 값, 6~8차시는 예전 5~7차시 값'
+  );
+  assert.equal(carried.updatedBy, 'liha1634@gmail.com');
+  // 예전 6차시만 열려 있었다면 새 7차시가 열림
+  const c2 = lessonAccessFromLegacy({ l1: true, l2: false, l3: false, l4: false, l5: false, l6: true, l7: false });
+  assert.equal(c2[7], true);
+  assert.equal(c2[5], false);
+  // 이어받은 값을 저장하면 l1~l8 여덟 칸
+  assert.deepEqual(Object.keys(buildLessonAccessFirestoreFields(carried)).sort(), ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'updatedBy']);
+  // 1~5차시 열기 프리셋
+  const upTo5 = createLessonAccessPreset('upTo5');
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7, 8].map((n) => upTo5[n as 1]), [true, true, true, true, true, false, false, false]);
+});
+
+test('표시 차시 → 저장 칸: 4·5차시는 l4, 6·7·8차시는 예전 l5·l6·l7', () => {
+  assert.deepEqual(LESSON_STORAGE_KEY, { 1: 'l1', 2: 'l2', 3: 'l3', 4: 'l4', 5: 'l4', 6: 'l5', 7: 'l6', 8: 'l7' });
+});

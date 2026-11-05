@@ -36,7 +36,7 @@ export interface L1Prob3Table {
 }
 
 /**
- * 성찰 단계 '이번 차시를 어떻게 해결했나요?' 선택 (2026-11-04~, 1~4차시).
+ * 성찰 단계 '이번 차시를 어떻게 해결했나요?' 선택 (2026-11-04~, 1~5차시 — 4차시는 l4HelpSource, 5차시는 l4.helpSource).
  * 완료 조건·평가 점수에는 쓰지 않는다 — 학생에게 "도움을 받아도 혼내지 않아요"라고 약속했기 때문.
  */
 export type HelpSource = '' | 'ai' | 'hint' | 'self';
@@ -320,7 +320,14 @@ export interface Lesson4State {
 
   // --- Func 4차시: 역함수 탐구 (2026-10-30 추가) ---
   // 위의 항목(fractionExamples ~ prob2ProofText)은 예전 귀류법 화면의 항목 — 지우지 않고 보존만 함.
-  // reflection1·2는 4차시 성찰로 계속 사용.
+  // reflection1·2·helpSource는 성찰로 계속 사용 — 2026-11-05 역함수를 두 차시로 나눈 뒤에는 5차시(역함수 2부) 성찰.
+  // 4차시와 5차시는 이 저장 칸(l4) 하나를 함께 씁니다(기존 기록을 옮기지 않기 위해). 표시 차시 → 저장 칸: LESSON_STORAGE_KEY
+
+  /** 4차시(역함수 1부: 생각 열기·문제 1·역함수 구하기) 성찰 (2026-11-05 추가, 완료 조건: 성찰 1) */
+  l4Reflection1?: string;
+  l4Reflection2?: string;
+  /** 4차시 성찰 단계 '도움 받은 정도' */
+  l4HelpSource?: HelpSource;
 
   // 1단계 생각 열기 · 역함수의 뜻 (온실가스 대응 뒤집기)
   /** 뒤집은 대응 Y → X (키: N2O·CH4·CO2, 값: 온실가스 이름) */
@@ -1232,30 +1239,33 @@ export const STAGE_TITLES = {
   1: ['대응과 함수', '정의역과 치역', '서로 같은 함수', '함수의 그래프', '실생활 함수 모델링', '도전!! 실생활 함수'],
   2: ['일대일함수와 일대일대응', '문제 6 · 일대일 판별', '문제 7 · 항등·상수함수', '생각 넓히기 · 실생활'],
   3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙', '도전!! 실생활 합성함수'],
-  4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
-  5: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
-  6: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
-  7: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
+  4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '성찰'],
+  5: ['함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
+  6: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
+  7: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
+  8: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
 } as const;
 
-export const TOTAL_LESSONS = 7;
+export const TOTAL_LESSONS = 8;
 export const LEGACY_EVAL_CRITERIA_COUNT = 4;
 
 export const EVAL_CRITERIA = [
   '함수의 뜻과 그래프 (1차시)',
   '여러 가지 함수 (2차시)',
   '합성함수 탐구 (3차시)',
-  '역함수 탐구 (4차시)',
-  '유리함수1 탐구 (5차시)',
-  '유리함수2 탐구 (6차시)',
-  '무리함수 탐구 (7차시)',
+  '역함수의 뜻과 구하기 (4차시)',
+  '역함수의 성질과 그래프 (5차시)',
+  '유리함수1 탐구 (6차시)',
+  '유리함수2 탐구 (7차시)',
+  '무리함수 탐구 (8차시)',
 ] as const;
 
 export const EVAL_DESCRIPTIONS = [
   '대응 관계에서 함수를 판별하고 정의역·공역·치역, 서로 같은 함수, 함수의 그래프 및 실생활 함수를 탐구하는 능력',
   '일대일함수·일대일대응·항등함수·상수함수의 조건을 구분하고 정당화하는 능력',
   '합성함수의 정의 조건과 성질(교환·결합법칙)을 추론하고 설명하는 능력',
-  '역함수의 존재 조건(일대일대응)과 그래프의 대칭성을 탐구하는 능력',
+  '역함수의 존재 조건(일대일대응)을 이해하고 역함수의 함숫값과 식을 구하는 능력',
+  '(g∘f)⁻¹ = f⁻¹∘g⁻¹ 성질을 추론하고 함수와 역함수 그래프의 y = x 대칭성을 탐구하는 능력',
   '유리식과 유리함수 y=k/x의 정의역·치역 및 그래프 개형을 분석하는 능력',
   '유리함수 y=k/(x-p)+q의 점근선과 대칭성을 유도하고 정당화하는 능력',
   '무리함수 y=√(a(x-p))+q의 정의역·치역과 그래프를 탐구하는 능력',
@@ -1341,17 +1351,23 @@ export function getTeacherEvaluationProgress(
     };
   }
   const ev = student.evaluation;
-  const rawScores = Array.isArray(ev?.scores) ? ev!.scores : [];
+  const storedScores = Array.isArray(ev?.scores) ? ev!.scores : [];
+  // 7칸(역함수 나누기 전) 점수는 5번째 자리에 빈칸을 끼워 읽음 — ensureTeacherEval을 거치지 않은 기록도 같게 (2026-11-05)
+  const rawScores = migrateEvalScoresForLessonSplit(storedScores, totalRubricCount);
+  const evaluatedLessonCount =
+    rawScores !== storedScores && ev?.evaluatedLessonCount === PRE_SPLIT_EVAL_CRITERIA_COUNT
+      ? undefined
+      : ev?.evaluatedLessonCount;
 
   // If evaluatedLessonCount was explicitly recorded under an older curriculum with fewer lessons
   // than currentLessonCount, only scores up to evaluatedLessonCount (or explicitly scored items) count,
   // and any newly added lesson slots beyond that are ungraded until scored.
   const effectiveRubricLimit =
-    typeof ev?.evaluatedLessonCount === 'number' &&
-    ev.evaluatedLessonCount > 0 &&
-    ev.evaluatedLessonCount < totalRubricCount &&
-    rawScores.slice(ev.evaluatedLessonCount, totalRubricCount).every((v) => v === null || v === undefined)
-      ? ev.evaluatedLessonCount
+    typeof evaluatedLessonCount === 'number' &&
+    evaluatedLessonCount > 0 &&
+    evaluatedLessonCount < totalRubricCount &&
+    rawScores.slice(evaluatedLessonCount, totalRubricCount).every((v) => v === null || v === undefined)
+      ? evaluatedLessonCount
       : totalRubricCount;
 
   const isScoreValid = (v: unknown): v is number =>
@@ -1369,10 +1385,10 @@ export function getTeacherEvaluationProgress(
   // Check if this record had completed all previous evaluation items (e.g., first 4 lessons + feedback,
   // or first evaluatedLessonCount lessons + feedback) before new lessons were added.
   const prevBaselineCount =
-    typeof ev?.evaluatedLessonCount === 'number' &&
-    ev.evaluatedLessonCount >= LEGACY_EVAL_CRITERIA_COUNT &&
-    ev.evaluatedLessonCount < totalRubricCount
-      ? ev.evaluatedLessonCount
+    typeof evaluatedLessonCount === 'number' &&
+    evaluatedLessonCount >= LEGACY_EVAL_CRITERIA_COUNT &&
+    evaluatedLessonCount < totalRubricCount
+      ? evaluatedLessonCount
       : LEGACY_EVAL_CRITERIA_COUNT;
 
   const hadCompletedPreviousCurriculum =
@@ -1966,12 +1982,22 @@ export function evaluateLevel4Completion(p: Lesson4State): boolean[] {
     Boolean(p.openVerified),
     Boolean(p.p1Verified),
     Boolean(p.ex1Verified && p.p2Verified && p.p5Verified),
+    (p.l4Reflection1 || '').trim().length >= 10, // = lesson4Logic L4_MIN_REFLECTION
+  ];
+}
+
+/**
+ * 5차시(역함수 2부: 함께하기·문제 3·그래프·문제 4·공학 도구·성찰) 단계 완료.
+ * 저장 칸은 4차시와 같은 l4 (2026-11-05 나누기 전 4차시 4·5단계와 같은 조건).
+ */
+export function evaluateLevel5Completion(p: Lesson4State): boolean[] {
+  return [
     Boolean(p.togetherVerified && p.p3Verified),
     Boolean(p.p4Verified && p.toolVerified) && (p.reflection1 || '').trim().length >= 10, // = lesson4Logic L4_MIN_REFLECTION
   ];
 }
 
-export function evaluateLevel5Completion(p: Lesson5State): boolean[] {
+export function evaluateLevel6Completion(p: Lesson5State): boolean[] {
   return [
     p.examples.length >= 3 && p.squareConceptChoice === 'nonnegative',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -1981,7 +2007,7 @@ export function evaluateLevel5Completion(p: Lesson5State): boolean[] {
   ];
 }
 
-export function evaluateLevel6Completion(p: Lesson6State): boolean[] {
+export function evaluateLevel7Completion(p: Lesson6State): boolean[] {
   return [
     p.examples.length >= 3 && p.amgmConceptChoice === 'positive',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -1991,7 +2017,7 @@ export function evaluateLevel6Completion(p: Lesson6State): boolean[] {
   ];
 }
 
-export function evaluateLevel7Completion(p: Lesson7State): boolean[] {
+export function evaluateLevel8Completion(p: Lesson7State): boolean[] {
   return [
     p.examples.length >= 3 && p.absSquareConceptChoice === 'square_diff',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -2921,12 +2947,17 @@ export function evaluateRubricL3(p: Lesson3State): boolean[] {
   ];
 }
 
-/** 4차시(역함수) 루브릭 5항목 = 학생 화면 5단계 */
+/** 4차시(역함수 1부) 루브릭 = 학생 화면 4단계 */
 export function evaluateRubricL4(p: Lesson4State): boolean[] {
   return evaluateLevel4Completion(p);
 }
 
-export function evaluateRubricL5(p: Lesson5State): boolean[] {
+/** 5차시(역함수 2부) 루브릭 = 학생 화면 2단계 */
+export function evaluateRubricL5(p: Lesson4State): boolean[] {
+  return evaluateLevel5Completion(p);
+}
+
+export function evaluateRubricL6(p: Lesson5State): boolean[] {
   return [
     p.examples.length >= 3 && p.squareConceptChoice === 'nonnegative',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -2936,7 +2967,7 @@ export function evaluateRubricL5(p: Lesson5State): boolean[] {
   ];
 }
 
-export function evaluateRubricL6(p: Lesson6State): boolean[] {
+export function evaluateRubricL7(p: Lesson6State): boolean[] {
   return [
     p.examples.length >= 3 && p.amgmConceptChoice === 'positive',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -2946,7 +2977,7 @@ export function evaluateRubricL6(p: Lesson6State): boolean[] {
   ];
 }
 
-export function evaluateRubricL7(p: Lesson7State): boolean[] {
+export function evaluateRubricL8(p: Lesson7State): boolean[] {
   return [
     p.examples.length >= 3 && p.absSquareConceptChoice === 'square_diff',
     p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
@@ -3144,6 +3175,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Hints: sanitizeNumbersArray(rawL4.prob2Hints, 4),
       openReverseMap: sanitizeStringMap(rawL4.openReverseMap),
       helpSource: cleanHelpSource(rawL4.helpSource),
+      l4HelpSource: cleanHelpSource(rawL4.l4HelpSource),
     },
     l5: {
       ...base.l5,
@@ -3521,6 +3553,26 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
   return result;
 }
 
+/** 역함수를 4·5차시로 나누기 전(2026-11-05)의 평가 칸 수 */
+export const PRE_SPLIT_EVAL_CRITERIA_COUNT = 7;
+/** 나눈 뒤 새로 생긴 5차시 평가 칸의 위치 (0부터) */
+export const SPLIT_INSERT_INDEX = 4;
+
+/**
+ * 교사 점수 배열 이어받기: 7칸(1~7차시)이던 배열이면 5번째 자리(새 5차시)에 빈칸을 끼워
+ * 예전 5·6·7차시 점수가 6·7·8차시 칸으로 가게 합니다. 이미 8칸이면 그대로 둡니다.
+ * 원본 배열은 바꾸지 않습니다.
+ */
+export function migrateEvalScoresForLessonSplit(
+  scores: (number | null)[],
+  targetCriteriaCount: number = EVAL_CRITERIA.length
+): (number | null)[] {
+  if (targetCriteriaCount === PRE_SPLIT_EVAL_CRITERIA_COUNT + 1 && scores.length === PRE_SPLIT_EVAL_CRITERIA_COUNT) {
+    return [...scores.slice(0, SPLIT_INSERT_INDEX), null, ...scores.slice(SPLIT_INSERT_INDEX)];
+  }
+  return scores;
+}
+
 export function ensureTeacherEval(
   x: StudentRecord,
   targetCriteriaCount: number = EVAL_CRITERIA.length
@@ -3532,6 +3584,17 @@ export function ensureTeacherEval(
       nextStep: '',
       evaluatedLessonCount: targetCriteriaCount,
     };
+  }
+  if (Array.isArray(x.evaluation.scores)) {
+    x.evaluation.scores = migrateEvalScoresForLessonSplit(x.evaluation.scores, targetCriteriaCount);
+    if (
+      x.evaluation.scores.length === targetCriteriaCount &&
+      typeof x.evaluation.evaluatedLessonCount === 'number' &&
+      x.evaluation.evaluatedLessonCount === PRE_SPLIT_EVAL_CRITERIA_COUNT
+    ) {
+      // 7차시 시절의 '평가 당시 차시 수' 표시는 5번째 칸이 끼어들면서 의미가 없어짐 — 지우면 8칸 전체로 진행률을 계산
+      delete x.evaluation.evaluatedLessonCount;
+    }
   }
   if (!Array.isArray(x.evaluation.scores)) {
     x.evaluation.scores = Array(targetCriteriaCount).fill(null);
@@ -3795,6 +3858,9 @@ export function createFuncSampleLessons(
           toolVerified: true,
           reflection1: '역함수는 일대일대응일 때만 존재하고 그래프는 y=x에 대하여 대칭이다.',
           reflection2: '(g∘f)⁻¹는 f⁻¹∘g⁻¹로 순서가 바뀌는 것이 신기했다.',
+          // 4차시 성찰 (2026-11-05 역함수를 4·5차시로 나누며 추가)
+          l4Reflection1: 'y = f(x)를 x에 대하여 풀고 x와 y를 서로 바꾸면 역함수를 구할 수 있다.',
+          l4Reflection2: '화씨를 섭씨로 되돌리는 함수가 역함수라는 것이 신기했다.',
         }
       : {}),
   };
@@ -3950,10 +4016,10 @@ export function createSampleTeacherDataset(): StudentRecord[] {
     reflection1: '절댓값 기호가 있어 직접 빼기 어려울 때 양변이 0 이상임을 확인하고 제곱의 차를 이용하면 절댓값 기호가 제곱으로 풀려 쉽게 증명할 수 있었다.',
     reflection2: '|a+b| ≤ |a|+|b|는 ab ≥ 0일 때 등호가 성립하고, |a-b| ≤ |a|+|b|는 ab ≤ 0일 때 등호가 성립한다는 부호의 차이를 명확히 이해했다.',
   };
-  s1.teacherMemo = '1~7차시 모든 증명 기법(직접증명, 반례, 대우법, 귀류법, 절대부등식 1·2·3)을 완벽하게 연결하여 서술함. (5~7차시 추가 항목 평정 진행 중)';
+  s1.teacherMemo = '1~8차시 모든 증명 기법(직접증명, 반례, 대우법, 귀류법, 절대부등식 1·2·3)을 완벽하게 연결하여 서술함. (5~7차시 추가 항목 평정 진행 중)';
   s1.evaluation = {
-    scores: [3, 3, 3, 3, null, null, null],
-    feedback: '관찰에서 추측, 반례 검증, 대우법·귀류법까지 논리적 연결이 매우 탄탄합니다. 새로 추가된 5~7차시 절대부등식 평정이 진행 중입니다.',
+    scores: [3, 3, 3, 3, null, null, null, null],
+    feedback: '관찰에서 추측, 반례 검증, 대우법·귀류법까지 논리적 연결이 매우 탄탄합니다. 새로 추가된 6~8차시 절대부등식 평정이 진행 중입니다.',
     nextStep: '코시-슈바르츠 부등식 (a²+b²)(x²+y²) ≥ (ax+by)²도 완전제곱식을 이용해 직접 증명해 보세요.',
     evaluatedLessonCount: 4,
   };
@@ -4024,18 +4090,18 @@ export function createSampleTeacherDataset(): StudentRecord[] {
     reflection1: '대우를 이용하면 결론을 부정한 조건에서 식을 시작할 수 있어서 편리했다.',
     reflection2: '3의 배수가 아닌 수는 나머지가 1과 2인 두 경우로 나누어 빠짐없이 조사해야 했다.',
   };
-  s2.teacherMemo = '1~4차시 평가 완료 후 5~7차시 절대부등식 차시가 추가되어 추가 평가 진행 중.';
+  s2.teacherMemo = '1~4차시 평가 완료 후 5~8차시가 추가되어 추가 평가 진행 중.';
   s2.evaluation = {
-    scores: [3, 2, 3, 3, null, null, null],
+    scores: [3, 2, 3, 3, null, null, null, null],
     feedback: '대우를 이용한 두 가지 증명을 경우 나누기까지 정확하게 수행했습니다.',
-    nextStep: '4차시 역함수 탐구와 5~7차시 활동을 이어서 완성해 보세요.',
+    nextStep: '4·5차시 역함수 탐구와 6~8차시 활동을 이어서 완성해 보세요.',
     evaluatedLessonCount: 4,
   };
 
-  // 1~4차시는 Func(함수와 그래프) 수업 답안으로 교체 (5~7차시는 현재 학생 화면 내용 그대로)
+  // 1~5차시는 Func(함수와 그래프) 수업 답안으로 교체 (4·5차시는 같은 저장 칸 l4, 6~8차시는 현재 학생 화면 내용 그대로)
   Object.assign(s1, createFuncSampleLessons('complete'));
   Object.assign(s2, createFuncSampleLessons('partial'));
-  s1.teacherMemo = '1~4차시 함수 단원에서 대응의 조건을 근거로 들어 판별하고 설명함. (5~7차시 평정 진행 중)';
+  s1.teacherMemo = '1~5차시 함수 단원에서 대응의 조건을 근거로 들어 판별하고 설명함. (5~8차시 평정 진행 중)';
   s2.teacherMemo = '1차시 일부와 2차시 [보기]·[문제 6]까지 진행. 나머지 문항 진행 후 추가 평가 예정.';
   return [s1, s2];
 }
@@ -4063,7 +4129,21 @@ export interface MathSymbolCategory {
   items: MathSymbolItem[];
 }
 
-export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, MathSymbolItem[]> = {
+/** 4·5차시(역함수, 2026-11-05 두 차시로 나눔) 공용 추천 기호 */
+const LESSON4_5_SYMBOLS: MathSymbolItem[] = [
+    { label: '√2', token: '√2', desc: '루트 2', isTemplate: true },
+    { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
+    { label: '1+√2', token: '1+√2', desc: '1 더하기 루트 2', isTemplate: true },
+    { label: 'n/m', token: 'n/m', desc: '기약분수 표현', isTemplate: true },
+    { label: 'n² = 2m²', token: 'n² = 2m²', desc: '양변 제곱 정리식', isTemplate: true },
+    { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
+    { label: '∈', token: ' ∈ ', desc: '원소이다' },
+    { label: '∉', token: ' ∉ ', desc: '원소가 아니다' },
+    { label: '≠', token: ' ≠ ', desc: '같지 않다', shorthand: '!=' },
+    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
+  ];
+
+export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, MathSymbolItem[]> = {
   1: [
     { label: 'f(x)', token: 'f(x)', desc: '함수 f(x)', isTemplate: true },
     { label: 'g(x)', token: 'g(x)', desc: '함수 g(x)', isTemplate: true },
@@ -4100,19 +4180,9 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, MathS
     { label: '⁴', token: '⁴', desc: '네제곱', shorthand: '^4' },
     { label: '≠', token: ' ≠ ', desc: '같지 않다', shorthand: '!=' },
   ],
-  4: [
-    { label: '√2', token: '√2', desc: '루트 2', isTemplate: true },
-    { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
-    { label: '1+√2', token: '1+√2', desc: '1 더하기 루트 2', isTemplate: true },
-    { label: 'n/m', token: 'n/m', desc: '기약분수 표현', isTemplate: true },
-    { label: 'n² = 2m²', token: 'n² = 2m²', desc: '양변 제곱 정리식', isTemplate: true },
-    { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
-    { label: '∈', token: ' ∈ ', desc: '원소이다' },
-    { label: '∉', token: ' ∉ ', desc: '원소가 아니다' },
-    { label: '≠', token: ' ≠ ', desc: '같지 않다', shorthand: '!=' },
-    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
-  ],
-  5: [
+  4: LESSON4_5_SYMBOLS,
+  5: LESSON4_5_SYMBOLS,
+  6: [
     { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
     { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
     { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
@@ -4124,7 +4194,7 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, MathS
     { label: 'a = b = 0', token: 'a = b = 0', desc: '등호 성립 조건', isTemplate: true },
     { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
-  6: [
+  7: [
     { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
     { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
     { label: '√(ab)', token: '√(ab)', desc: '기하평균 √(ab)', isTemplate: true },
@@ -4136,7 +4206,7 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, MathS
     { label: 'a = b', token: 'a = b', desc: '등호 성립 조건', isTemplate: true },
     { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
-  7: [
+  8: [
     { label: '|□|', token: '|□|', desc: '절댓값 기호 감싸기', isTemplate: true },
     { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
     { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
@@ -4540,9 +4610,30 @@ export function tokenizeMathRadicals(text: string): MathTextToken[] {
   return tokens;
 }
 
-export type LessonTabNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type LessonTabNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
-export const ALL_LESSON_NUMBERS: LessonTabNumber[] = [1, 2, 3, 4, 5, 6, 7];
+export const ALL_LESSON_NUMBERS: LessonTabNumber[] = [1, 2, 3, 4, 5, 6, 7, 8];
+
+export function isLessonTabNumber(n: unknown): n is LessonTabNumber {
+  return typeof n === 'number' && (ALL_LESSON_NUMBERS as number[]).includes(n);
+}
+
+/**
+ * 표시 차시 → 학생 기록 저장 칸 (2026-11-05 역함수를 두 차시로 나눔)
+ * - 4·5차시는 같은 칸 l4를 함께 씀 (4차시를 하던 학생의 함께하기·그래프 답이 5차시에 그대로 보이도록)
+ * - 6·7·8차시는 예전 5·6·7차시 칸(l5·l6·l7)을 그대로 씀 (기록을 옮기지 않음)
+ * 저장 칸 이름(l1~l7)과 형식(Lesson5State 등)은 Firestore 문서 이름이라 바꾸지 않습니다.
+ */
+export const LESSON_STORAGE_KEY = {
+  1: 'l1',
+  2: 'l2',
+  3: 'l3',
+  4: 'l4',
+  5: 'l4',
+  6: 'l5',
+  7: 'l6',
+  8: 'l7',
+} as const satisfies Record<LessonTabNumber, 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7'>;
 
 export const LESSON_TAB_METADATA: {
   num: LessonTabNumber;
@@ -4553,10 +4644,11 @@ export const LESSON_TAB_METADATA: {
   { num: 1, badge: '01', shortTitle: '함수의 뜻과 그래프', fullTitle: '함수의 뜻과 그래프 (1차시)' },
   { num: 2, badge: '02', shortTitle: '여러 가지 함수', fullTitle: '여러 가지 함수 (2차시)' },
   { num: 3, badge: '03', shortTitle: '합성함수 탐구', fullTitle: '합성함수 탐구 (3차시)' },
-  { num: 4, badge: '04', shortTitle: '역함수 탐구', fullTitle: '역함수 탐구 (4차시)' },
-  { num: 5, badge: '05', shortTitle: '유리함수1', fullTitle: '유리함수1 (5차시)' },
-  { num: 6, badge: '06', shortTitle: '유리함수2', fullTitle: '유리함수2 (6차시)' },
-  { num: 7, badge: '07', shortTitle: '무리함수 탐구', fullTitle: '무리함수 탐구 (7차시)' },
+  { num: 4, badge: '04', shortTitle: '역함수 탐구1', fullTitle: '역함수의 뜻과 구하기 (4차시)' },
+  { num: 5, badge: '05', shortTitle: '역함수 탐구2', fullTitle: '역함수의 성질과 그래프 (5차시)' },
+  { num: 6, badge: '06', shortTitle: '유리함수1', fullTitle: '유리함수1 (6차시)' },
+  { num: 7, badge: '07', shortTitle: '유리함수2', fullTitle: '유리함수2 (7차시)' },
+  { num: 8, badge: '08', shortTitle: '무리함수 탐구', fullTitle: '무리함수 탐구 (8차시)' },
 ];
 
 export interface LessonAccessConfig {
@@ -4567,11 +4659,23 @@ export interface LessonAccessConfig {
   5: boolean;
   6: boolean;
   7: boolean;
+  8: boolean;
   updatedAt?: string;
   updatedBy?: string;
 }
 
-export const STORAGE_KEY_LESSON_ACCESS = 'math_detective_lesson_access_v1';
+/**
+ * 이 브라우저에 기억해 두는 차시 잠금 (8차시 체계). 7차시 체계였던 예전 값(…_v1)은 차시 번호 뜻이 달라 읽지 않습니다.
+ */
+export const STORAGE_KEY_LESSON_ACCESS = 'func_lesson_access_v2';
+
+/**
+ * 차시 잠금 서버 문서 (app_settings/…)
+ * - FUNC: Func 전용 8칸 (2026-11-05~). Props와 섞이지 않음
+ * - LEGACY: Func·Props가 함께 쓰던 7칸. Func 전용 문서가 아직 없을 때만 읽어서 이어받음(쓰지 않음)
+ */
+export const FUNC_LESSON_ACCESS_DOC = 'func_lesson_access';
+export const LEGACY_LESSON_ACCESS_DOC = 'lesson_access';
 
 export const DEFAULT_LESSON_ACCESS: LessonAccessConfig = {
   1: true,
@@ -4581,6 +4685,7 @@ export const DEFAULT_LESSON_ACCESS: LessonAccessConfig = {
   5: true,
   6: true,
   7: true,
+  8: true,
 };
 
 export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
@@ -4601,6 +4706,7 @@ export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
     5: pickBool(5),
     6: pickBool(6),
     7: pickBool(7),
+    8: pickBool(8),
   };
   if (typeof obj.updatedBy === 'string' && obj.updatedBy.trim()) {
     result.updatedBy = obj.updatedBy.trim();
@@ -4617,6 +4723,27 @@ export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
       // ignore
     }
   }
+  return result;
+}
+
+/**
+ * 공용 7칸 잠금(예전 1~7차시)을 8차시 체계로 옮깁니다.
+ * 1~4차시는 그대로, 새 5차시는 4차시와 같게(사용자 결정), 6·7·8차시는 예전 5·6·7차시 값.
+ */
+export function lessonAccessFromLegacy(raw: unknown): LessonAccessConfig {
+  const old = normalizeLessonAccess(raw);
+  const result: LessonAccessConfig = {
+    1: old[1],
+    2: old[2],
+    3: old[3],
+    4: old[4],
+    5: old[4],
+    6: old[5],
+    7: old[6],
+    8: old[7],
+  };
+  if (old.updatedBy) result.updatedBy = old.updatedBy;
+  if (old.updatedAt) result.updatedAt = old.updatedAt;
   return result;
 }
 
@@ -4649,6 +4776,7 @@ export type LessonAccessPreset =
   | 'upTo2'
   | 'upTo3'
   | 'upTo4'
+  | 'upTo5'
   | 'allOpen'
   | 'allLocked';
 
@@ -4659,12 +4787,13 @@ export function createLessonAccessPreset(
   const now = new Date().toISOString();
   const base: LessonAccessConfig = {
     1: preset !== 'allLocked',
-    2: preset === 'upTo2' || preset === 'upTo3' || preset === 'upTo4' || preset === 'allOpen',
-    3: preset === 'upTo3' || preset === 'upTo4' || preset === 'allOpen',
-    4: preset === 'upTo4' || preset === 'allOpen',
-    5: preset === 'allOpen',
+    2: preset === 'upTo2' || preset === 'upTo3' || preset === 'upTo4' || preset === 'upTo5' || preset === 'allOpen',
+    3: preset === 'upTo3' || preset === 'upTo4' || preset === 'upTo5' || preset === 'allOpen',
+    4: preset === 'upTo4' || preset === 'upTo5' || preset === 'allOpen',
+    5: preset === 'upTo5' || preset === 'allOpen',
     6: preset === 'allOpen',
     7: preset === 'allOpen',
+    8: preset === 'allOpen',
     updatedAt: now,
   };
   if (updatedBy) {
@@ -4688,6 +4817,7 @@ export function buildLessonAccessFirestoreFields(
   l5: boolean;
   l6: boolean;
   l7: boolean;
+  l8: boolean;
   updatedBy: string;
 } {
   const normalized = normalizeLessonAccess(config);
@@ -4704,6 +4834,7 @@ export function buildLessonAccessFirestoreFields(
     l5: Boolean(normalized[5]),
     l6: Boolean(normalized[6]),
     l7: Boolean(normalized[7]),
+    l8: Boolean(normalized[8]),
     updatedBy: safeUpdatedBy,
   };
 }

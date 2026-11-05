@@ -116,7 +116,8 @@ test('화면을 열기만 해서는 AI를 부르지 않는다 (버튼을 눌러�
     assert.ok(html.includes('선생님만 보임'));
     // 답이 없는 차시·키가 없어도 버튼은 켜져 있음 (사용자 요청 2026-11-05)
     const buttons = [...html.matchAll(/<button[^>]*>(?:(?!<\/button>).)*?AI 피드백(?:(?!<\/button>).)*?<\/button>/gs)].map((m) => m[0]);
-    assert.equal(buttons.length, 7);
+    assert.equal(buttons.length, 8, '1~8차시 (4·5차시 따로)');
+    assert.ok(html.includes('4차시 AI 피드백') && html.includes('5차시 AI 피드백') && html.includes('8차시 AI 피드백'));
     for (const b of buttons) assert.ok(!/\sdisabled=""/.test(b), `꺼진 버튼: ${b.slice(0, 80)}`);
     assert.ok(html.includes('· 답 없음'), '답 없는 차시 표시');
   } finally {
@@ -149,4 +150,18 @@ test('학생 화면 코드는 AI 피드백 모듈을 쓰지 않는다 (교사 �
   };
   walk(src);
   assert.deepEqual(users, []);
+});
+
+test('4·5차시 AI 요청은 그 차시 문항만 보내고, 도움 받은 정도(4·5차시 모두)는 보내지 않는다', () => {
+  const r = sampleRecord();
+  r.l4.l4HelpSource = 'ai';
+  r.l4.helpSource = 'hint';
+  const d4 = buildLessonAnswerDigest(r, 'l4');
+  const d5 = buildLessonAnswerDigest(r, 'l4b');
+  assert.ok(d4.startsWith('[4차시') && d5.startsWith('[5차시'));
+  assert.ok(d4.includes('예제') && !d4.includes('(g∘f)⁻¹(x)'), '4차시에 5차시 문항 없음');
+  assert.ok(d5.includes('(g∘f)⁻¹(x)') && !d5.includes('예제 y = 3x + 4'), '5차시에 4차시 문항 없음');
+  for (const d of [d4, d5]) {
+    assert.ok(!d.includes('해결 방법') && !d.includes('AI 도움') && !d.includes('힌트 도움'), '도움 받은 정도는 보내지 않음');
+  }
 });

@@ -7,29 +7,28 @@
  *   (학생은 자기 teacher 문서를 읽을 수 있으므로 — firestore.rules 참고).
  * - API 키는 선생님이 직접 넣은 키를 선생님 브라우저에만 보관한다(코드·저장소·서버에 없음).
  */
-import { LESSON_ANSWER_CONFIG, isEmptyAnswer } from './answerLabels';
+import { LESSON_ANSWER_CONFIG, answerStorageKey, isEmptyAnswer, type AnswerLessonKey } from './answerLabels';
 import { answerToCsvText } from './funcTeacherMetrics';
-import type { LessonKey } from './lessonMerge';
 import type { StudentRecord } from './mathLogic';
 import { QUESTION_STATUS_LABEL, getQuestionStatus, isStatusLesson } from './questionStatus';
 
 /** 기본 모델 (2026-11 Gemini 공식 문서의 최신 Flash). 모델이 바뀌면 교사 화면 [AI 설정]에서 고칠 수 있음 */
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 
-/** AI에 보내지 않는 항목: 도움 받은 정도(학생에게 '혼내지 않는다'고 약속한 선택) */
-const NEVER_SEND_KEYS = new Set(['helpSource']);
+/** AI에 보내지 않는 항목: 도움 받은 정도(학생에게 '혼내지 않는다'고 약속한 선택 — 5차시 helpSource, 4차시 l4HelpSource) */
+export const NEVER_SEND_KEYS = new Set(['helpSource', 'l4HelpSource']);
 const MAX_VALUE_CHARS = 600;
 const MAX_DIGEST_CHARS = 12000;
 
 const clip = (t: string, n: number) => (t.length > n ? `${t.slice(0, n)}…(이하 생략)` : t);
 
 /** 차시에 학생이 입력한 답이 하나라도 있는지 (버튼 사용 가능 여부) */
-export function lessonHasAnswers(record: StudentRecord, lesson: LessonKey): boolean {
-  const data = (record[lesson] ?? {}) as unknown as Record<string, unknown>;
+export function lessonHasAnswers(record: StudentRecord, lesson: AnswerLessonKey): boolean {
+  const data = (record[answerStorageKey(lesson)] ?? {}) as unknown as Record<string, unknown>;
   return LESSON_ANSWER_CONFIG[lesson].groups.some((g) =>
     g.fields.some(
       (f) =>
-        // 확인 표시(check·checks)는 답이 아님 — 5~7차시는 빈 기록에도 [false, false, …]가 들어 있음
+        // 확인 표시(check·checks)는 답이 아님 — 6~8차시는 빈 기록에도 [false, false, …]가 들어 있음
         f.format?.kind !== 'check' && f.format?.kind !== 'checks' && !NEVER_SEND_KEYS.has(f.key) && !isEmptyAnswer(data[f.key])
     )
   );
@@ -37,11 +36,12 @@ export function lessonHasAnswers(record: StudentRecord, lesson: LessonKey): bool
 
 /**
  * 한 차시의 답안을 AI에게 보낼 글로 정리한다. 학생 식별 정보는 넣지 않는다.
- * 1~4차시는 문항마다 확인 완료/점검/오답/미작성 상태도 함께 적는다.
+ * 1~5차시는 문항마다 확인 완료/점검/오답/미작성 상태도 함께 적는다.
+ * 4·5차시는 같은 저장 칸(l4)이지만 그 차시 묶음의 문항만 보낸다.
  */
-export function buildLessonAnswerDigest(record: StudentRecord, lesson: LessonKey): string {
+export function buildLessonAnswerDigest(record: StudentRecord, lesson: AnswerLessonKey): string {
   const config = LESSON_ANSWER_CONFIG[lesson];
-  const data = (record[lesson] ?? {}) as unknown as Record<string, unknown>;
+  const data = (record[answerStorageKey(lesson)] ?? {}) as unknown as Record<string, unknown>;
   const lines: string[] = [`[${config.title}]`];
   for (const group of config.groups) {
     lines.push('', `■ ${group.title}`);
@@ -111,7 +111,7 @@ export async function requestLessonFeedback(opts: {
   apiKey: string;
   model: string;
   record: StudentRecord;
-  lesson: LessonKey;
+  lesson: AnswerLessonKey;
   fetchImpl?: typeof fetch;
 }): Promise<AiFeedbackDraft> {
   const apiKey = opts.apiKey.trim();

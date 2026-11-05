@@ -49,7 +49,11 @@ import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 
 /**
  * Func 4차시 · 역함수 탐구 (학생 화면)
- * 문항 자료·채점: src/utils/lesson4Logic.ts / 단계 완료: mathLogic.ts evaluateLevel4Completion
+ * 문항 자료·채점: src/utils/lesson4Logic.ts / 단계 완료: mathLogic.ts evaluateLevel4Completion(4차시)·evaluateLevel5Completion(5차시)
+ *
+ * 2026-11-05 역함수를 두 차시로 나눔 — 같은 화면 코드와 같은 저장 칸(l4)을 쓰고 part로 구분합니다.
+ *   part 1 = 4차시: 생각 열기 · 문제 1 · 역함수 구하기 · 성찰(새 항목 l4Reflection1·2·l4HelpSource)
+ *   part 2 = 5차시: 함께하기 · 문제 3 → 그래프 · 문제 4 · 공학 도구 · 성찰(reflection1·2·helpSource) — src/components/Lesson5View.tsx
  */
 
 export interface Lesson4ViewProps {
@@ -58,8 +62,18 @@ export interface Lesson4ViewProps {
   onStepChange: (nextStep: number) => void;
   onUpdate: (updater: (prev: Lesson4State) => Lesson4State) => void;
   onGoToLesson5?: () => void;
+  onGoToLesson6?: () => void;
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
+  /** 1 = 4차시(기본), 2 = 5차시 */
+  part?: 1 | 2;
 }
+
+/** 차시(part)별 단계 → 화면 구역 */
+type Section = 'open' | 'p1' | 'inverse' | 'reflect4' | 'together' | 'graph';
+export const LESSON4_SECTIONS: Record<1 | 2, Section[]> = {
+  1: ['open', 'p1', 'inverse', 'reflect4'],
+  2: ['together', 'graph'],
+};
 
 // ── 교과서 그림 경로 (1·2차시와 같은 방식: GitHub Pages에서는 ./public/… 경로) ──
 const textbookSrc = (fileName: string): string => {
@@ -527,14 +541,69 @@ const PAD_TITLES = {
   p3: '[문제 3] (f⁻¹∘g⁻¹)(3)',
 } as const;
 type PadId = keyof typeof PAD_TITLES;
-/** 연습장이 속한 단계 (다른 단계로 가면 창을 숨김) */
-const PAD_STEP: Record<PadId, number> = { ex1: 2, p2: 2, p5: 2, together: 3, p3: 3 };
+/** 연습장이 속한 구역 (다른 단계로 가면 창을 숨김) */
+const PAD_SECTION: Record<PadId, Section> = { ex1: 'inverse', p2: 'inverse', p5: 'inverse', together: 'together', p3: 'together' };
 
 /** 1단계 비교용: 일대일대응이 아닌 함수 h : A → B와 그 화살표를 뒤집은 대응 */
 const NO_INV_A = ['1', '2', '3'] as const;
 const NO_INV_B = ['a', 'b', 'c'] as const;
 const NO_INV_MAP: Record<string, string> = { '1': 'a', '2': 'a', '3': 'b' };
 const NO_INV_REVERSED: [string, string][] = Object.entries(NO_INV_MAP).map(([x, y]) => [y, x]);
+
+/** 4차시 초기화 항목 (5차시 항목은 건드리지 않음) */
+export const PART1_RESET: Partial<Lesson4State> = {
+  openReverseMap: {},
+  openReverseIsFunc: '',
+  openConditionChoice: '',
+  openDomainRangeSame: '',
+  openReason: '',
+  openVerified: false,
+  p1_f3: '',
+  p1_1: '',
+  p1_2: '',
+  p1_3: '',
+  p1_4: '',
+  p1Reason: '',
+  p1Verified: false,
+  ex1_solveX: '',
+  ex1_ans: '',
+  ex1Verified: false,
+  p2_1: '',
+  p2_2: '',
+  p2Reason: '',
+  p2Verified: false,
+  p5_inv: '',
+  p5_celsius: '',
+  p5Verified: false,
+  l4Reflection1: '',
+  l4Reflection2: '',
+  l4HelpSource: '',
+};
+/** 5차시 초기화 항목 (4차시 항목은 건드리지 않음) */
+export const PART2_RESET: Partial<Lesson4State> = {
+  tg_gf: '',
+  tg_gfInv: '',
+  tg_fInv: '',
+  tg_gInv: '',
+  tg_inner: '',
+  tg_result: '',
+  tg_relation: '',
+  togetherVerified: false,
+  p3_ans: '',
+  p3Reason: '',
+  p3Verified: false,
+  p4_1_inv: '',
+  p4_2_inv: '',
+  p4Verified: false,
+  toolAlwaysOverlap: '',
+  toolParallelA: '',
+  toolSameA: '',
+  toolVerified: false,
+  reflection1: '',
+  reflection2: '',
+  helpSource: '',
+};
+
 
 // ─────────────────────────────────────────────
 // 4차시 화면
@@ -545,8 +614,13 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   onStepChange,
   onUpdate,
   onGoToLesson5,
+  onGoToLesson6,
   onRequestConfirm,
+  part = 1,
 }) => {
+  const sections = LESSON4_SECTIONS[part];
+  const section: Section = sections[step] ?? sections[0];
+  const lessonNo = part === 1 ? 4 : 5;
   const [hints, setHints] = useState<Record<string, boolean>>({});
   const toggleHint = (k: string) => setHints((prev) => ({ ...prev, [k]: !prev[k] }));
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L4Feedback | null>>>({});
@@ -598,61 +672,18 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
     if (res.ok) onUpdate((prev) => ({ ...prev, [flag]: true }));
   };
 
-  const goStep = (n: number) => onStepChange(n);
+  /** 이 차시 안의 구역으로 이동 */
+  const goSection = (sec: Section) => onStepChange(Math.max(0, sections.indexOf(sec)));
 
   const handleReset = () => {
     onRequestConfirm(
-      '4차시 탐구 기록 초기화',
-      '4차시(역함수 탐구)에 입력한 모든 답안과 확인 상태를 초기화할까요?',
+      `${lessonNo}차시 탐구 기록 초기화`,
+      part === 1
+        ? '4차시(역함수의 뜻과 구하기)에 입력한 모든 답안과 확인 상태를 초기화할까요? 5차시 기록은 그대로 둡니다.'
+        : '5차시(역함수의 성질과 그래프)에 입력한 모든 답안과 확인 상태를 초기화할까요? 4차시 기록은 그대로 둡니다.',
       () => {
-        onUpdate((prev) => ({
-          ...prev,
-          openReverseMap: {},
-          openReverseIsFunc: '',
-          openConditionChoice: '',
-          openDomainRangeSame: '',
-          openReason: '',
-          openVerified: false,
-          p1_f3: '',
-          p1_1: '',
-          p1_2: '',
-          p1_3: '',
-          p1_4: '',
-          p1Reason: '',
-          p1Verified: false,
-          ex1_solveX: '',
-          ex1_ans: '',
-          ex1Verified: false,
-          p2_1: '',
-          p2_2: '',
-          p2Reason: '',
-          p2Verified: false,
-          p5_inv: '',
-          p5_celsius: '',
-          p5Verified: false,
-          tg_gf: '',
-          tg_gfInv: '',
-          tg_fInv: '',
-          tg_gInv: '',
-          tg_inner: '',
-          tg_result: '',
-          tg_relation: '',
-          togetherVerified: false,
-          p3_ans: '',
-          p3Reason: '',
-          p3Verified: false,
-          p4_1_inv: '',
-          p4_2_inv: '',
-          p4Verified: false,
-          toolAlwaysOverlap: '',
-          toolParallelA: '',
-          toolSameA: '',
-          toolVerified: false,
-          reflection1: '',
-          reflection2: '',
-          helpSource: '',
-          // 예전 귀류법 항목(fractionExamples·prob1ProofText 등)은 이 화면에서 쓰지 않으므로 건드리지 않음
-        }));
+        // 예전 귀류법 항목(fractionExamples·prob1ProofText 등)은 이 화면에서 쓰지 않으므로 건드리지 않음
+        onUpdate((prev) => ({ ...prev, ...(part === 1 ? PART1_RESET : PART2_RESET) }));
         setFeedback({});
       }
     );
@@ -715,10 +746,21 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200/80 bg-indigo-50/60 px-4 py-3">
         <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-indigo-950 flex-wrap">
           <Repeat className="h-4 w-4 text-indigo-600 shrink-0" />
-          <span>04차시 · 역함수 탐구:</span>
-          <span className="font-semibold text-indigo-800">
-            대응을 거꾸로 되돌리는 역함수 <MathText text="f⁻¹" />와 직선 <MathText text="y = x" /> 대칭
-          </span>
+          {part === 1 ? (
+            <>
+              <span>04차시 · 역함수의 뜻과 구하기:</span>
+              <span className="font-semibold text-indigo-800">
+                대응을 거꾸로 되돌리는 역함수 <MathText text="f⁻¹" />의 존재 조건과 구하는 방법
+              </span>
+            </>
+          ) : (
+            <>
+              <span>05차시 · 역함수의 성질과 그래프:</span>
+              <span className="font-semibold text-indigo-800">
+                <MathText text="(g ∘ f)⁻¹ = f⁻¹ ∘ g⁻¹" />와 직선 <MathText text="y = x" /> 대칭
+              </span>
+            </>
+          )}
         </div>
         <button
           type="button"
@@ -726,14 +768,14 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
         >
           <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
-          <span>4차시 초기화</span>
+          <span>{lessonNo}차시 초기화</span>
         </button>
       </div>
 
       {/* =====================================================================
           STEP 0: 생각 열기 · 역함수의 뜻
       ===================================================================== */}
-      {step === 0 && (
+      {section === 'open' && (
         <div className="space-y-6">
           <TextbookCard
             theme="indigo"
@@ -1042,14 +1084,14 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             </div>
           </div>
 
-          <NavRow onNext={() => goStep(1)} nextLabel="다음 단계: 문제 1 · 역함수의 함숫값" />
+          <NavRow onNext={() => goSection('p1')} nextLabel="다음 단계: 문제 1 · 역함수의 함숫값" />
         </div>
       )}
 
       {/* =====================================================================
           STEP 1: 문제 1 · 역함수의 함숫값
       ===================================================================== */}
-      {step === 1 && (
+      {section === 'p1' && (
         <div className="space-y-6">
           <TextbookCard
             theme="emerald"
@@ -1181,14 +1223,14 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             {graphReveal('p1', state.p1Verified, [p1Panel])}
           </div>
 
-          <NavRow onPrev={() => goStep(0)} onNext={() => goStep(2)} nextLabel="다음 단계: 역함수 구하기" />
+          <NavRow onPrev={() => goSection('open')} onNext={() => goSection('inverse')} nextLabel="다음 단계: 역함수 구하기" />
         </div>
       )}
 
       {/* =====================================================================
           STEP 2: 역함수 구하기 — 예제 1 변형, 문제 2, 문제 5
       ===================================================================== */}
-      {step === 2 && (
+      {section === 'inverse' && (
         <div className="space-y-6">
           {/* 역함수 구하는 순서 */}
           <div className="rounded-2xl border-2 border-sky-600/70 bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/50 p-5 space-y-3">
@@ -1411,14 +1453,70 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             {graphReveal('p5', state.p5Verified, linearPanels('p5'))}
           </div>
 
-          <NavRow onPrev={() => goStep(1)} onNext={() => goStep(3)} nextLabel="다음 단계: 함께하기 · (g∘f)⁻¹" />
+          <NavRow onPrev={() => goSection('p1')} onNext={() => goSection('reflect4')} nextLabel="다음 단계: 4차시 성찰" />
+        </div>
+      )}
+
+      {/* =====================================================================
+          4차시 마무리 성찰 (2026-11-05 역함수를 두 차시로 나누며 추가)
+      ===================================================================== */}
+      {section === 'reflect4' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-xs font-extrabold text-indigo-600">4차시 마무리 성찰</span>
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">역함수의 뜻과 구하는 방법 정리하기</h4>
+              </div>
+              <HintToggle open={!!hints.reflect4} onClick={() => toggleHint('reflect4')} label="💡 성찰 힌트 보기" />
+            </div>
+            {hints.reflect4 && (
+              <HintBox>
+                <div>
+                  • <strong>성찰 1 예시</strong>: “먼저 y = f(x)를 x에 대하여 풀어 x = f⁻¹(y)로 나타내고, x와 y를 서로 바꾸면 역함수 y = f⁻¹(x)를 얻는다.”
+                </div>
+                <div>
+                  • <strong>성찰 2 예시</strong>: “섭씨를 화씨로 바꾸는 함수의 역함수가 화씨를 섭씨로 되돌리는 함수라는 것이 신기했다.”
+                </div>
+              </HintBox>
+            )}
+            <HelpSourcePicker
+              idPrefix="l4"
+              value={state.l4HelpSource}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, l4HelpSource: v }))}
+            />
+            <ReasonInput
+              id="l4-reflection1"
+              theme="indigo"
+              label={<>1. 함수 <MathText text="y = f(x)" />의 역함수를 구하는 방법을 자신의 말로 정리해 보세요.</>}
+              value={state.l4Reflection1}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, l4Reflection1: v }))}
+              min={L4_MIN_REFLECTION}
+            />
+            <ReasonInput
+              id="l4-reflection2"
+              theme="indigo"
+              label="2. 오늘 새롭게 알게 된 점이나 어려웠던 점을 적어 보세요."
+              value={state.l4Reflection2}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, l4Reflection2: v }))}
+              min={L4_MIN_REFLECTION}
+            />
+            <div className="pt-3 border-t border-slate-100">
+              <NavRow
+                onPrev={() => goSection('inverse')}
+                onNext={onGoToLesson5}
+                nextLabel="다음 차시: 05차시 역함수의 성질과 그래프로 이동"
+                nextDark
+              />
+            </div>
+          </div>
         </div>
       )}
 
       {/* =====================================================================
           STEP 3: 함께하기 · (g∘f)⁻¹ = f⁻¹∘g⁻¹, 문제 3
       ===================================================================== */}
-      {step === 3 && (
+      {section === 'together' && (
         <div className="space-y-6">
           <TextbookCard
             theme="violet"
@@ -1582,14 +1680,14 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             {graphReveal('p3', state.p3Verified, linearPanels('p3'))}
           </div>
 
-          <NavRow onPrev={() => goStep(2)} onNext={() => goStep(4)} nextLabel="다음 단계: 그래프와 y = x 대칭" />
+          <NavRow onNext={() => goSection('graph')} nextLabel="다음 단계: 그래프와 y = x 대칭" />
         </div>
       )}
 
       {/* =====================================================================
           STEP 4: 함수와 그 역함수의 그래프 — y = x 대칭, 문제 4, 공학 도구, 성찰
       ===================================================================== */}
-      {step === 4 && (
+      {section === 'graph' && (
         <div className="space-y-6">
           <TextbookCard
             theme="orange"
@@ -1822,7 +1920,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
               <div>
-                <span className="text-xs font-extrabold text-indigo-600">4차시 마무리 성찰</span>
+                <span className="text-xs font-extrabold text-indigo-600">5차시 마무리 성찰</span>
                 <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">역함수의 존재 조건과 그래프의 대칭성 정리하기</h4>
               </div>
               <HintToggle open={!!hints.reflection} onClick={() => toggleHint('reflection')} label="💡 성찰 힌트 보기" />
@@ -1838,12 +1936,12 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               </HintBox>
             )}
             <HelpSourcePicker
-              idPrefix="l4"
+              idPrefix="l5"
               value={state.helpSource}
               onChange={(v) => onUpdate((prev) => ({ ...prev, helpSource: v }))}
             />
             <ReasonInput
-              id="l4-reflection1"
+              id="l5-reflection1"
               theme="indigo"
               label="1. 역함수가 존재하기 위한 조건과 그 이유를 정리해 보세요."
               value={state.reflection1}
@@ -1851,7 +1949,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               min={L4_MIN_REFLECTION}
             />
             <ReasonInput
-              id="l4-reflection2"
+              id="l5-reflection2"
               theme="indigo"
               label={<>2. 함수와 역함수의 그래프가 직선 <MathText text="y = x" />에 대하여 대칭인 이유나 오늘 새롭게 알게 된 점을 적어 보세요.</>}
               value={state.reflection2}
@@ -1860,9 +1958,9 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             />
             <div className="pt-3 border-t border-slate-100">
               <NavRow
-                onPrev={() => goStep(3)}
-                onNext={onGoToLesson5}
-                nextLabel="다음 차시: 05차시 유리함수1로 이동"
+                onPrev={() => goSection('together')}
+                onNext={onGoToLesson6}
+                nextLabel="다음 차시: 06차시 유리함수1로 이동"
                 nextDark
               />
             </div>
@@ -1870,8 +1968,8 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
         </div>
       )}
 
-      {/* 문제별 연습장 (3·4단계에서만) */}
-      {openPad && PAD_STEP[openPad] === step && (
+      {/* 문제별 연습장 (역함수 구하기·함께하기 구역에서만) */}
+      {openPad && PAD_SECTION[openPad] === section && (
         <ScratchPadWindow
           key={openPad}
           title={PAD_TITLES[openPad]}
@@ -1879,7 +1977,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
           onChange={(next) => setPads((prev) => ({ ...prev, [openPad]: next }))}
           onClose={() => setOpenPad(null)}
           onRequestConfirm={onRequestConfirm}
-          fileName={`4차시_연습장_${openPad}`}
+          fileName={`${lessonNo}차시_연습장_${openPad}`}
         />
       )}
     </div>

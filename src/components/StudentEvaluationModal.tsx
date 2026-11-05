@@ -191,7 +191,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       {student.code} 탐정의 {EVAL_CRITERIA.length}대 수학적 탐구 역량
                     </div>
                     <p className="text-xs text-slate-600">
-                      1~7차시 탐구 활동(함수의 뜻과 그래프, 여러 가지 함수, 합성함수 등)의 기록과 서술을 종합하여 평정되었습니다.
+                      1~8차시 탐구 활동(함수의 뜻과 그래프, 여러 가지 함수, 합성함수 등)의 기록과 서술을 종합하여 평정되었습니다.
                     </p>
                   </div>
 
@@ -320,7 +320,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-slate-500" />
-                    <span>내가 작성한 1~7차시 핵심 서술 확인</span>
+                    <span>내가 작성한 1~8차시 핵심 서술 확인</span>
                   </div>
                   {showInquirySummary ? (
                     <ChevronUp className="h-4 w-4 text-slate-400" />
@@ -372,18 +372,33 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
 
                   {/* 4차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-purple-700">4차시 · 역함수 탐구</div>
+                      <div className="font-bold text-purple-700">4차시 · 역함수의 뜻과 구하기</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>[생각 열기·문제 1] 역함수의 뜻과 함숫값:</strong> {summarizeL4(student.l4).part1 || '(미작성)'}
+                        <strong>[생각 열기·문제 1·역함수 구하기]:</strong> {summarizeL4(student.l4).part1 || '(미작성)'}
                       </div>
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>[역함수 구하기·함께하기·그래프]:</strong> {summarizeL4(student.l4).part2 || '(미작성)'}
-                      </div>
+                      {student.l4?.l4Reflection1 && (
+                        <div className="text-slate-600">
+                          <strong>성찰 1:</strong> {student.l4.l4Reflection1}
+                        </div>
+                      )}
                     </div>
 
-                    {/* 5차시 */}
+                    {/* 5차시 (4차시와 같은 저장 칸 l4) */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-cyan-700">5차시 · 절대부등식1 (완전제곱식)</div>
+                      <div className="font-bold text-fuchsia-700">5차시 · 역함수의 성질과 그래프</div>
+                      <div className="text-slate-600 whitespace-pre-wrap">
+                        <strong>[함께하기·문제 3·그래프]:</strong> {summarizeL4(student.l4).part2 || '(미작성)'}
+                      </div>
+                      {student.l4?.reflection1 && (
+                        <div className="text-slate-600">
+                          <strong>성찰 1:</strong> {student.l4.reflection1}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 6차시 */}
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
+                      <div className="font-bold text-cyan-700">6차시 · 절대부등식1 (완전제곱식)</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
                         <strong>문제 1 (a²+b² ≥ ab):</strong> {student.l5?.prob1ProofText || '(미작성)'}
                       </div>
@@ -407,9 +422,9 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       )}
                     </div>
 
-                    {/* 6차시 */}
+                    {/* 7차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-teal-700">6차시 · 절대부등식2 (산술·기하평균)</div>
+                      <div className="font-bold text-teal-700">7차시 · 절대부등식2 (산술·기하평균)</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
                         <strong>문제 1 ((a+b)/2 ≥ √ab):</strong> {student.l6?.prob1ProofText || '(미작성)'}
                       </div>
@@ -433,9 +448,9 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       )}
                     </div>
 
-                    {/* 7차시 */}
+                    {/* 8차시 */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-rose-700">7차시 · 절대부등식3 (절댓값 부등식)</div>
+                      <div className="font-bold text-rose-700">8차시 · 절대부등식3 (절댓값 부등식)</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
                         <strong>문제 1 (|a+b| ≤ |a|+|b|):</strong> {student.l7?.prob1ProofText || '(미작성)'}
                       </div>
@@ -474,7 +489,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                     아직 교수자의 평가 결과가 등록되지 않았습니다
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
-                    1~7차시 탐구 활동을 충실히 작성하여 완료하면, 교수자가 제출된 기록을 검토하고
+                    1~8차시 탐구 활동을 충실히 작성하여 완료하면, 교수자가 제출된 기록을 검토하고
                     {EVAL_CRITERIA.length}대 핵심 탐구 역량 평정 점수와 맞춤형 피드백을 이곳에 등록해 줍니다.
                   </p>
                 </div>

@@ -1,5 +1,5 @@
 import type { LessonKey } from './lessonMerge';
-import { HELP_SOURCE_OPTIONS } from './mathLogic';
+import { HELP_SOURCE_OPTIONS, type LessonTabNumber } from './mathLogic';
 
 /**
  * 교사 [전체 답안 보기]에 표시할 문항 이름표 (Func — 함수와 그래프)
@@ -12,6 +12,27 @@ import { HELP_SOURCE_OPTIONS } from './mathLogic';
  * - 단위 테스트(answerLabels.test.ts)가 학생 화면이 쓰는 모든 필드가 이름표 또는 hidden에
  *   들어 있는지 검사합니다.
  */
+
+/**
+ * 교사 화면의 답안 묶음 = 표시 차시 (2026-11-05 역함수를 4·5차시로 나눔)
+ * - 'l4b' = 5차시 (저장 칸은 4차시와 같은 l4) / l5·l6·l7 = 6·7·8차시
+ * - 학생 기록을 꺼낼 때는 answerStorageKey로 저장 칸을 찾습니다.
+ */
+export const ANSWER_LESSON_KEYS = ['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7'] as const;
+export type AnswerLessonKey = (typeof ANSWER_LESSON_KEYS)[number];
+export const ANSWER_LESSON_NO: Record<AnswerLessonKey, LessonTabNumber> = {
+  l1: 1,
+  l2: 2,
+  l3: 3,
+  l4: 4,
+  l4b: 5,
+  l5: 6,
+  l6: 7,
+  l7: 8,
+};
+export function answerStorageKey(k: AnswerLessonKey): LessonKey {
+  return k === 'l4b' ? 'l4' : k;
+}
 
 /** 학생이 아무것도 입력하지 않은 값인지 (빈 글자, 빈 목록, 모든 칸이 빈 표·대응 포함) */
 export function isEmptyAnswer(value: unknown): boolean {
@@ -63,14 +84,15 @@ const CHECKS: AnswerFormat = { kind: 'checks' };
 const CHOICES: AnswerFormat = { kind: 'choices' };
 const FUNC_YN: AnswerFormat = { kind: 'yesno', yes: '함수이다 (O)', no: '함수가 아니다 (X)' };
 const ONE_TO_ONE_YN: AnswerFormat = { kind: 'yesno', yes: '예 (O)', no: '아니오 (X)' };
-/** 성찰 단계 '이번 차시를 어떻게 해결했나요?' (1~4차시, 선택 응답 — 완료·평가와 무관) */
-const HELP_SOURCE_FIELD: AnswerField = {
-  key: 'helpSource',
+/** 성찰 단계 '이번 차시를 어떻게 해결했나요?' (1~5차시, 선택 응답 — 완료·평가와 무관) */
+const helpSourceField = (key: string): AnswerField => ({
+  key,
   label: '해결 방법 (도움 받은 정도)',
   format: { kind: 'choice', options: Object.fromEntries(HELP_SOURCE_OPTIONS.map((o) => [o.value, o.short])) },
   optional: true,
   emptyLabel: '미선택',
-};
+});
+const HELP_SOURCE_FIELD: AnswerField = helpSourceField('helpSource');
 
 /** 4~7차시 (Func·Props 공통 문항) — Func는 4차시를 아래 LESSON_ANSWER_CONFIG.l4(역함수)로 바꿔 씀 */
 export const COMMON_L4_TO_L7: Record<'l4' | 'l5' | 'l6' | 'l7', LessonAnswerConfig> = {
@@ -310,7 +332,27 @@ export const CHALLENGE_GROUPS: LessonAnswerGroup[] = [
   },
 ];
 
-export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
+/** 예전 4차시(귀류법) 화면의 항목 — 데이터는 보존하되 표시하지 않음 */
+const L4_LEGACY_HIDDEN = [
+  'fractionExamples', 'contradictionConceptChecked', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+  'closureChecked', 'closureReason', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+];
+/** 4차시(역함수 1부) 항목 */
+export const L4_PART1_KEYS = [
+  'openReverseMap', 'openReverseIsFunc', 'openConditionChoice', 'openDomainRangeSame', 'openReason', 'openVerified',
+  'p1_f3', 'p1_1', 'p1_2', 'p1_3', 'p1_4', 'p1Reason', 'p1Verified',
+  'ex1_solveX', 'ex1_ans', 'ex1Verified', 'p2_1', 'p2_2', 'p2Reason', 'p2Verified', 'p5_inv', 'p5_celsius', 'p5Verified',
+  'l4HelpSource', 'l4Reflection1', 'l4Reflection2',
+];
+/** 5차시(역함수 2부) 항목 */
+export const L4_PART2_KEYS = [
+  'tg_gf', 'tg_gfInv', 'tg_fInv', 'tg_gInv', 'tg_inner', 'tg_result', 'tg_relation', 'togetherVerified',
+  'p3_ans', 'p3Reason', 'p3Verified',
+  'p4_1_inv', 'p4_2_inv', 'p4Verified', 'toolAlwaysOverlap', 'toolParallelA', 'toolSameA', 'toolVerified',
+  'helpSource', 'reflection1', 'reflection2',
+];
+
+export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> = {
   l1: {
     title: '1차시 · 함수의 뜻과 그래프',
     groups: [
@@ -612,9 +654,14 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
     ],
   },
   ...COMMON_L4_TO_L7,
-  // Func 4차시는 역함수 수업 (2026-10-30~). 공통 4차시(귀류법) 이름표 대신 사용.
+  // Func에서는 예전 5·6·7차시(저장 칸 l5·l6·l7)가 6·7·8차시 (2026-11-05)
+  l5: { ...COMMON_L4_TO_L7.l5, title: COMMON_L4_TO_L7.l5.title.replace('5차시', '6차시') },
+  l6: { ...COMMON_L4_TO_L7.l6, title: COMMON_L4_TO_L7.l6.title.replace('6차시', '7차시') },
+  l7: { ...COMMON_L4_TO_L7.l7, title: COMMON_L4_TO_L7.l7.title.replace('7차시', '8차시') },
+  // Func 4·5차시는 역함수 수업 (2026-10-30~, 2026-11-05 두 차시로 나눔). 공통 4차시(귀류법) 이름표 대신 사용.
+  // 두 차시가 같은 저장 칸(l4)을 쓰므로, 서로 상대 차시 항목을 hidden에 넣어 '기타 기록'에 섞이지 않게 함.
   l4: {
-    title: '4차시 · 역함수',
+    title: '4차시 · 역함수의 뜻과 구하기',
     groups: [
       {
         title: '[생각 열기] 온실가스 대응 뒤집기와 역함수의 뜻',
@@ -678,6 +725,20 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
         ],
       },
       {
+        title: '성찰',
+        fields: [
+          helpSourceField('l4HelpSource'),
+          { key: 'l4Reflection1', label: '4차시 성찰 1. 역함수를 구하는 방법' },
+          { key: 'l4Reflection2', label: '4차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
+        ],
+      },
+    ],
+    hidden: [...L4_LEGACY_HIDDEN, ...L4_PART2_KEYS],
+  },
+  l4b: {
+    title: '5차시 · 역함수의 성질과 그래프',
+    groups: [
+      {
         title: '[함께하기] (g∘f)⁻¹와 f⁻¹∘g⁻¹ · 문제 3',
         fields: [
           { key: 'tg_gf', label: '(i) (g∘f)(x)' },
@@ -722,10 +783,6 @@ export const LESSON_ANSWER_CONFIG: Record<LessonKey, LessonAnswerConfig> = {
         ],
       },
     ],
-    // 예전 4차시(귀류법) 화면의 항목 — 데이터는 보존하되 표시하지 않음
-    hidden: [
-      'fractionExamples', 'contradictionConceptChecked', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
-      'closureChecked', 'closureReason', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
-    ],
+    hidden: [...L4_LEGACY_HIDDEN, ...L4_PART1_KEYS],
   },
 };

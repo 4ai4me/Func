@@ -29,8 +29,8 @@
   - **평가·피드백 [저장] 버튼 (2026-11-04)**: 상세 비교 창(인라인·비모달)의 평가 입력 칸 아래에 [저장] 버튼과 저장 상태(`변경 사항 없음` / `저장되지 않은 변경 있음` / `저장 중…` / `저장됨 (시각)` / `저장 실패`)를 표시합니다. 입력 후 1.5초 자동 저장은 그대로이며, 버튼은 바로 저장할 때 씁니다. 저장이 겹치지 않도록 `serializeRuns`로 한 번에 하나씩 보냅니다 (`src/components/TeacherSaveBar.tsx`, 테스트 `TeacherSaveBar.test.tsx`).
   - **비모달 상세 비교 창 이동 (2026-10-30)**: 창의 어두운 제목 표시줄을 마우스로 끌거나 패드에서 손가락으로 끌어 옮길 수 있습니다(최대화·최소화 상태 제외). 창을 다시 열면 처음 위치(오른쪽 아래)에서 시작하며, 화면 밖으로 완전히 나가지 않습니다. (`src/utils/useDraggableWindow.ts`)
   - **차시별 학습 활성(ON) / 비활성(OFF·잠금) 통제 및 서버 강제 동기화 (선행 학습 원천 차단)**:
-    - 교사가 `01차시`~`07차시`를 개별적으로 ON/OFF하거나 원클릭 프리셋(`1차시만 열기`, `1~2차시 열기`, `1~3차시 열기`, `1~4차시 열기`, `전체 열기`)으로 제어할 수 있으며, **`[차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)]`** 버튼 및 실시간 클라우드 동기화 상태 배너(`클라우드 서버 저장 완료` / `서버 상태 확인`)를 제공합니다.
-    - 설정 변경 시 현재 브라우저의 `localStorage`뿐 아니라 Firebase Firestore(`/app_settings/lesson_access`) 서버에 즉시 기록·검증(`getDocFromServer`)되어, **다른 PC·시크릿 창·다른 브라우저**에서 접속하는 모든 학습자에게 동일하게 잠금이 적용됩니다.
+    - 교사가 `01차시`~`08차시`를 개별적으로 ON/OFF하거나 원클릭 프리셋(`1차시만 열기`, `1~2차시 열기`, `1~3차시 열기`, `1~4차시 열기`, `1~5차시 열기`, `전체 열기`)으로 제어할 수 있으며, **`[차시 잠금 설정 서버 저장 (전체 PC·브라우저 적용)]`** 버튼 및 실시간 클라우드 동기화 상태 배너(`클라우드 서버 저장 완료` / `서버 상태 확인`)를 제공합니다.
+    - 설정 변경 시 현재 브라우저의 `localStorage`(`func_lesson_access_v2`)뿐 아니라 Firebase Firestore(**`/app_settings/func_lesson_access`**, Func 전용 8칸 — 2026-11-05~) 서버에 즉시 기록·검증(`getDocFromServer`)되어, **다른 PC·시크릿 창·다른 브라우저**에서 접속하는 모든 학습자에게 동일하게 잠금이 적용됩니다.
     - **학습자 우회 예외 상황 차단 (Render Gate)**: ① 신규 브라우저 초기 로딩 시 서버 설정 확인 전까지 잠긴 차시 렌더링 차단(`syncing` 게이트), ② URL 쿼리(`?lesson=2` 등) 직접 입력 및 브라우저 뒤로/앞으로 가기(`popstate`) 시 즉시 허용된 차시로 강제 리다이렉트 및 주소창 교정, ③ 상단 탭·다음 차시 버튼·평가 결과 모달 바로가기 잠금, ④ 잠긴 차시에 대한 답안 상태 변경(`onUpdate`) 원천 차단이 적용되어 있습니다.
   - 학생 가입 신청 실시간 승인/반려, 기기 잠금 초기화, 실시간 접속 로그(오전/오후 필터), 학생 이름 검색 및 다중 열 필터링, 비모달(Modeless) 상세 비교 창, 루브릭 채점·피드백 저장, 개별 평가서 PDF 인쇄 및 CSV 내보내기/가져오기를 지원합니다.
 
@@ -104,9 +104,30 @@
 
 - **5단계 — 도전!! 실생활 합성함수 · 학교 축제 할인 쿠폰의 비밀 (2026-10-31 추가)**: f = 20% 할인, g = 포장비 1,000원 추가일 때 A 시스템 g(f(x))와 B 시스템 f(g(x))를 비교합니다. 예상하기 → 결제 실험기(상품 가격·할인율·포장비 슬라이더, 비율/정액 할인 쿠폰 전환, 계산 순서 함수 기계, 가격별 비교표) → 미션 1(10,000원: A 9,000원, B 8,800원) → 미션 2(합성함수 식, 0.8x·4/5x 등 표기 인정) → 미션 3(A − B = 200으로 x와 무관 → 항상 B 유리) → 미션 4(비율 할인은 0%·0원일 때만 같고, 정액 할인은 항상 같음) → 마무리 질문("왜 순서에 따라 결과가 달라질까?"). 계산·채점: `src/utils/lesson3Coupon.ts`, 화면: `src/components/Lesson3CouponStep.tsx`. 3차시 단계 완료는 5단계 기준(교사 루브릭·평가 항목은 기존 그대로).
 
+## 4-0. 역함수를 4·5차시로 나눔 · 기존 5~7차시 → 6~8차시 (2026-11-05)
+
+- **4차시 · 역함수의 뜻과 구하기** = 생각 열기 · 문제 1 · 역함수 구하기(예제 1·문제 2·문제 5) · **성찰(새로 추가)**
+- **5차시 · 역함수의 성질과 그래프** = 함께하기 · 문제 3 → 그래프와 y = x 대칭 · 문제 4 · 공학 도구 · 성찰(나누기 전 4차시 성찰 그대로)
+- 기존 5·6·7차시 화면(현재 내용은 명제 수업의 절대부등식, 유리·무리함수로 교체 예정)은 **6·7·8차시**로 이름과 순서만 이동. 파일도 `Lesson6View`~`Lesson8View`로 바뀜
+- **학생 기록은 옮기지 않았습니다** — 표시 차시와 저장 칸을 분리했습니다(`mathLogic.ts`의 `LESSON_STORAGE_KEY`).
+
+| 표시 차시 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| 저장 칸(`func_lessons/…`) | l1 | l2 | l3 | **l4** | **l4** | l5 | l6 | l7 |
+
+  - 4·5차시는 같은 문서 `l4`를 함께 씁니다. 나누기 전에 4차시에서 함께하기·그래프까지 풀어 둔 학생은 **5차시에 그 답이 그대로** 보이고 완료로 표시됩니다(4차시는 새 성찰만 남음).
+  - 4차시 성찰은 새 항목 `l4Reflection1`·`l4Reflection2`·`l4HelpSource`, 5차시 성찰은 기존 `reflection1`·`reflection2`·`helpSource`. 성찰 1(10자 이상)이 각 차시 마지막 단계 완료 조건
+  - 화면 코드는 `Lesson4View` 하나를 `part`로 나눠 씁니다(`Lesson5View.tsx`는 `part={2}`로 감싼 것). [N차시 초기화]는 그 차시 항목만 지웁니다.
+  - 교사 화면에서 5차시 답안 묶음 이름은 `l4b`(저장 칸 l4) — `answerLabels.ts`의 `ANSWER_LESSON_KEYS`·`answerStorageKey`
+- **차시 잠금은 Func 전용 문서로 분리**: 예전에는 Func와 Props가 `app_settings/lesson_access`(7칸)를 함께 써서 한쪽에서 잠그면 다른 쪽도 잠겼습니다. 이제 Func는 `app_settings/func_lesson_access`(l1~l8)만 씁니다. 이 문서가 아직 없으면 공용 문서 값을 읽어 **1~4차시 그대로, 새 5차시 = 4차시와 같게, 6~8차시 = 예전 5~7차시**로 이어받고(`lessonAccessFromLegacy`), 교사가 들어오면 그 값으로 전용 문서를 만듭니다. 공용 문서는 Func가 더 이상 쓰지 않습니다(Props는 그대로 사용).
+  - ⚠️ 전용 문서를 쓰려면 보안 규칙(`firestore.rules`의 `func_lesson_access` 부분)을 Firebase 콘솔에 **먼저 게시**해야 합니다. 게시 전에는 교사 화면에서 잠금을 바꿔도 서버 저장이 실패합니다(학생은 이어받은 값으로 정상 접속).
+- **교사 점수 8칸**: 평가 항목이 8개가 되었습니다. 7칸으로 저장된 점수는 불러올 때 5번째 자리(새 5차시)에 빈칸을 끼워 **예전 5·6·7차시 점수가 6·7·8차시 칸으로** 갑니다(`migrateEvalScoresForLessonSplit`). 7차시 기준으로 평가를 마쳤던 학생은 '평가 진행 중(새 5차시 미평정)'으로 바뀝니다. 저장된 문서는 교사가 평가를 고쳐 저장할 때 8칸으로 바뀝니다.
+- 교사 화면(대시보드·학생 목록 열/필터·CSV·상세 비교·문항 상태·전체 답안·AI 피드백 버튼·인쇄·학생 평가 창)이 모두 8차시 기준. CSV 파일 이름 `수학탐정단_1-8차시_학급응답.csv`
+- 테스트: `src/components/LessonSplit.test.tsx`(나누기 전 기록 이어받기, 차시별 초기화, 교사 답안 묶음, 문항 상태, 저장 칸), `mathLogic.test.ts`(점수 이어받기, 잠금 이어받기, 저장 칸 표)
+
 ## 4-1. 4차시: 역함수 탐구 (`Lesson4View`, 2026-10-30)
 
-교과서 역함수 단원(`[생각 열기]`, `역함수와 그 성질`, `[보기]`, `[문제 1]`, `[예제 1]`, `[문제 2]`, `[함께하기]`, `[문제 3]`, 그래프 관계, `[문제 4]`, `[과학+ 문제 5]`, `공학 도구`)을 3차시와 같은 형식(교과서 그림 + 인터랙티브 + 단계별 입력·[정답 확인] + 힌트 + 성찰)으로 5단계 활동지로 만들었습니다. 이전 4차시 화면(명제 수업의 귀류법)을 대체합니다.
+교과서 역함수 단원(`[생각 열기]`, `역함수와 그 성질`, `[보기]`, `[문제 1]`, `[예제 1]`, `[문제 2]`, `[함께하기]`, `[문제 3]`, 그래프 관계, `[문제 4]`, `[과학+ 문제 5]`, `공학 도구`)을 3차시와 같은 형식(교과서 그림 + 인터랙티브 + 단계별 입력·[정답 확인] + 힌트 + 성찰)으로 5단계 활동지로 만들었습니다. 이전 4차시 화면(명제 수업의 귀류법)을 대체합니다. **2026-11-05부터 아래 1~3단계(+성찰)는 4차시, 4~5단계는 5차시입니다(위 4-0 참고).**
 
 1. **생각 열기 · 역함수의 뜻**: 온실가스 X → 화학식 Y 대응을 벤다이어그램으로 보여 주고 [화살표 뒤집기]로 Y → X 대응을 학생이 직접 연결. 일대일대응이 아닌 함수와 비교(뒤집으면 함수가 아님). 함수인지 판단, 역함수 존재 조건(일대일대응), 생각 톡톡(f의 정의역 = f⁻¹의 치역), 이유 서술. 핵심 개념(역함수의 성질 ①~④, [보기])
 2. **문제 1 · 역함수의 함숫값**: 그림 속 3을 7에 연결해 그림 완성(다른 곳에 연결하면 일대일대응이 아님을 안내) → f⁻¹(7)=3, (f⁻¹∘f)(4)=4, (f∘f⁻¹)(3)=3, (f⁻¹)⁻¹(2)=5. 완성 후 역함수 그림으로 전환
@@ -169,6 +190,8 @@
 student_registrations/{studentKey}                 가입 정보·승인 상태·uid
                                                     (+ 예전 worksheetJson: 보존용, 더 이상 갱신하지 않음)
 student_registrations/{studentKey}/func_lessons/l1~l7   차시별 답안 (승인된 학생 본인만 쓰기)
+                                                    표시 차시 1~8 ↔ 저장 칸: l1 l2 l3 l4 l4 l5 l6 l7 (4·5차시는 l4 공용)
+app_settings/func_lesson_access                     Func 전용 차시 잠금 l1~l8 (교사만 쓰기)
 student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (교사만 쓰기, 학생은 읽기만)
 ```
 - 학생이 입력을 멈추고 **10초** 뒤, **내용이 바뀐 차시 문서만** 저장합니다. 탭을 닫거나 다른 창으로 전환하면 즉시 저장합니다.
@@ -198,7 +221,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 | 차시 문서 `l1~l7` | 교사, 본인 | 승인된 본인, 교사 |
 | 교사 평가 `teacher` | 교사, 본인 | 교사 |
 | 접속 기록 | 교사 | 로그인한 사용자(생성만) |
-| 차시 잠금 설정 | 누구나 | 교사 |
+| 차시 잠금 설정 (`lesson_access` 공용 7칸 · `func_lesson_access` Func 8칸) | 누구나 | 교사 |
 | 학생 비밀번호 사용 설정 | 누구나 | 교사 |
 | 비밀번호 해시 | 교사, 본인 | 처음 설정: 본인(비밀번호 없을 때만) · 초기화: 교사 |
 
@@ -215,7 +238,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

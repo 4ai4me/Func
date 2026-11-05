@@ -25,7 +25,7 @@ import {
 import { MathText } from './MathText';
 
 interface MathSymbolInputBarProps {
-  activeLesson: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  activeLesson: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 }
 
 const STORAGE_KEY_MATH_RECENTS = 'math_detective_recent_symbols_v1';

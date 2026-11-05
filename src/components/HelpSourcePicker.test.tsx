@@ -101,7 +101,7 @@ test('기기 간 합치기: 선택 값이 차시 기록과 함께 남는다', ()
 test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 회색 미선택으로 보이고 작성 개수에는 들어가지 않는다', () => {
   const r = createInitialStudentState();
   const emptyHtml = renderToStaticMarkup(<FullAnswerPanel record={r} initiallyOpen />);
-  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 4, '1~4차시에 하나씩');
+  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 5, '1~5차시에 하나씩 (4·5차시는 같은 저장 칸이지만 따로)');
   assert.ok(emptyHtml.includes('text-slate-400">미선택<'));
   const countBefore = emptyHtml.match(/작성 0\/(\d+)/g);
 
@@ -114,9 +114,16 @@ test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 
 });
 
 test('CSV: 차시마다 해결 방법 열이 생기고 짧은 이름으로 나온다', () => {
-  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4']).filter((c) => c.header.includes('해결 방법'));
-  assert.equal(cols.length, 4);
+  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b']).filter((c) => c.header.includes('해결 방법'));
+  assert.equal(cols.length, 5);
   const r = createInitialStudentState();
   r.l1.helpSource = 'self';
   assert.equal(cols[0].value(r), '스스로 해결');
+  // 4차시(l4HelpSource)와 5차시(helpSource)는 같은 저장 칸 l4에서 서로 다른 항목
+  r.l4.l4HelpSource = 'hint';
+  r.l4.helpSource = 'ai';
+  assert.ok(cols[3].header.startsWith('4차시'));
+  assert.equal(cols[3].value(r), '힌트 도움');
+  assert.ok(cols[4].header.startsWith('5차시'));
+  assert.equal(cols[4].value(r), 'AI 도움');
 });
