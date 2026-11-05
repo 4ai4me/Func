@@ -83,6 +83,18 @@ test('AI 요청 실패·키 없음은 알아들을 수 있는 문구로 알린�
   assert.match(describeGeminiError(404, ''), /모델/);
 });
 
+test('답이 없는 차시도 요청할 수 있고, 지시문에 빈 답안일 때의 규칙이 있다', async () => {
+  let body = '';
+  const fakeFetch = (async (_url: string, init: RequestInit) => {
+    body = String(init.body);
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"feedback":"시작해 봐요.","nextStep":"생각 열기부터."}' }] } }] }));
+  }) as unknown as typeof fetch;
+  const out = await requestLessonFeedback({ apiKey: 'k', model: '', record: createInitialStudentState(), lesson: 'l2', fetchImpl: fakeFetch });
+  assert.equal(out.feedback, '시작해 봐요.');
+  assert.ok(body.includes('(비어 있음)'));
+  assert.ok(body.includes('비어 있으면 칭찬할 내용을 지어내지'));
+});
+
 test('응답 읽기: 코드 블록으로 감싼 JSON도 읽고, 내용이 없으면 오류', () => {
   assert.deepEqual(parseFeedbackJson('```json\n{"feedback":"a","nextStep":"b"}\n```'), { feedback: 'a', nextStep: 'b' });
   assert.throws(() => parseFeedbackJson('그냥 글'));
@@ -102,6 +114,11 @@ test('화면을 열기만 해서는 AI를 부르지 않는다 (버튼을 눌러�
     );
     assert.ok(html.includes('3차시 AI 피드백') && html.includes('1차시 AI 피드백'), '차시별 버튼');
     assert.ok(html.includes('선생님만 보임'));
+    // 답이 없는 차시·키가 없어도 버튼은 켜져 있음 (사용자 요청 2026-11-05)
+    const buttons = [...html.matchAll(/<button[^>]*>(?:(?!<\/button>).)*?AI 피드백(?:(?!<\/button>).)*?<\/button>/gs)].map((m) => m[0]);
+    assert.equal(buttons.length, 7);
+    for (const b of buttons) assert.ok(!/\sdisabled=""/.test(b), `꺼진 버튼: ${b.slice(0, 80)}`);
+    assert.ok(html.includes('· 답 없음'), '답 없는 차시 표시');
   } finally {
     globalThis.fetch = original;
   }

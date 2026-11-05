@@ -140,6 +140,7 @@ export function AiFeedbackPanel({
   const run = async (lesson: LessonKey) => {
     const key = aiDraftKey(record, lesson);
     if (inFlight.has(key)) return; // 중복 요청 방지
+    if (!settings.apiKey) setShowSettings(true); // 키가 없으면 설정 칸을 열어 안내 (요청은 보내지 않음)
     inFlight.add(key);
     const previous = drafts[key];
     onDraftChange(key, { ...previous, loading: true, error: undefined });
@@ -241,13 +242,15 @@ export function AiFeedbackPanel({
             <button
               key={lesson}
               type="button"
-              disabled={!has || !settings.apiKey || st?.loading}
-              title={!has ? '이 차시에 입력한 답이 없습니다' : !settings.apiKey ? '먼저 AI 설정에서 키를 넣어 주세요' : undefined}
+              // 학생 답안 작성 여부와 관계없이 누를 수 있음 (요청 중일 때만 잠금)
+              disabled={st?.loading}
+              title={!has ? '이 차시에 입력한 답이 없습니다 — 활동을 시작하도록 돕는 피드백이 만들어집니다' : undefined}
               onClick={() => void run(lesson)}
               className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-violet-300 bg-white px-2.5 py-1 text-xs font-bold text-violet-800 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {st?.loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : st?.draft ? <RefreshCw className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
               {short} AI 피드백
+              {!has && <span className="text-[10px] font-semibold text-slate-500">· 답 없음</span>}
             </button>
           );
         })}
