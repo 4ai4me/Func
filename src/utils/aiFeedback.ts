@@ -15,6 +15,18 @@ import { QUESTION_STATUS_LABEL, getQuestionStatus, isStatusLesson } from './ques
 /** 기본 모델 (2026-11 Gemini 공식 문서의 최신 Flash). 모델이 바뀌면 교사 화면 [AI 설정]에서 고칠 수 있음 */
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 
+/**
+ * [AI 설정] 모델 목록 (글쓰기용 Flash 계열, 2026-11-05 Firebase AI Logic 지원 모델 문서의 '안정(Stable)' 목록 기준).
+ * 한 모델이 과부하(5xx)일 때 다른 모델을 골라 볼 수 있게 함. 목록에 없는 이름은 [직접 입력]으로 쓸 수 있음.
+ * 모델이 종료되면 이 목록만 고치면 됨.
+ */
+export const GEMINI_MODEL_OPTIONS: { id: string; label: string }[] = [
+  { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash (기본 · 최신)' },
+  { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash (안정)' },
+  { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite (빠름 · 저렴)' },
+  { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite (가장 가벼움)' },
+];
+
 /** AI에 보내지 않는 항목: 도움 받은 정도(학생에게 '혼내지 않는다'고 약속한 선택 — 5차시 helpSource, 4차시 l4HelpSource) */
 export const NEVER_SEND_KEYS = new Set(['helpSource', 'l4HelpSource']);
 const MAX_VALUE_CHARS = 600;
@@ -102,7 +114,7 @@ export function describeGeminiError(status: number, body: string): string {
   if (status === 401 || status === 403) return 'API 키 권한이 없습니다. [AI 설정]에서 키를 확인해 주세요.';
   if (status === 404) return '모델 이름을 찾을 수 없습니다. [AI 설정]에서 모델 이름을 확인해 주세요.';
   if (status === 429) return '사용 한도를 넘었습니다. 잠시 뒤 다시 시도해 주세요.';
-  if (status >= 500) return 'Gemini 서버에 일시적인 문제가 있습니다. 잠시 뒤 다시 시도해 주세요.';
+  if (status >= 500) return `Gemini 서버에 일시적인 문제가 있습니다 (상태 ${status}). 잠시 뒤 다시 시도하거나 [AI 설정]에서 다른 모델을 골라 보세요.`;
   return `AI 요청이 실패했습니다 (상태 ${status}).`;
 }
 

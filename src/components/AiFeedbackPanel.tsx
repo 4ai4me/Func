@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Check, ClipboardCopy, KeyRound, Loader2, RefreshCw, Settings2 } from 'lucide-react';
 import { ANSWER_LESSON_KEYS, LESSON_ANSWER_CONFIG, type AnswerLessonKey } from '../utils/answerLabels';
-import { DEFAULT_GEMINI_MODEL, AiFeedbackDraft, lessonHasAnswers, requestLessonFeedback } from '../utils/aiFeedback';
+import { DEFAULT_GEMINI_MODEL, GEMINI_MODEL_OPTIONS, AiFeedbackDraft, lessonHasAnswers, requestLessonFeedback } from '../utils/aiFeedback';
 import { StudentRecord, studentKey } from '../utils/mathLogic';
 
 /**
@@ -21,6 +21,7 @@ export const aiDraftKey = (record: StudentRecord, lesson: AnswerLessonKey) => `$
 // ── 선생님 브라우저에만 보관하는 설정 (서버·저장소에 없음) ──
 const KEY_STORAGE = 'func.teacher.geminiApiKey';
 const MODEL_STORAGE = 'func.teacher.geminiModel';
+const CUSTOM_MODEL = '__custom__';
 let sessionKey = ''; // '이 브라우저에 기억'을 끈 경우: 페이지를 닫으면 사라짐
 /** 지금 요청 중인 학생·차시 — 버튼을 빠르게 여러 번 눌러도 한 번만 요청 (화면 상태보다 먼저 막음) */
 const inFlight = new Set<string>();
@@ -135,6 +136,8 @@ export function AiFeedbackPanel({
   const settings = useGeminiSettings();
   const [showSettings, setShowSettings] = useState(() => !settings.apiKey);
   const [keyInput, setKeyInput] = useState('');
+  // 목록에 없는 모델 이름을 쓰고 있으면 [직접 입력] 칸을 보여 줌
+  const [customModel, setCustomModel] = useState(() => !GEMINI_MODEL_OPTIONS.some((o) => o.id === settings.model));
 
   const run = async (lesson: AnswerLessonKey) => {
     const key = aiDraftKey(record, lesson);
@@ -217,15 +220,43 @@ export function AiFeedbackPanel({
             <input type="checkbox" checked={settings.remember} onChange={(e) => settings.toggleRemember(e.target.checked)} />
             이 브라우저에 키 기억하기 (학교 공용 컴퓨터에서는 끄세요 — 끄면 페이지를 닫을 때 지워짐)
           </label>
-          <label className="flex items-center gap-1.5 text-slate-700">
-            모델
-            <input
-              value={settings.model}
-              onChange={(e) => settings.setModel(e.target.value.trim())}
-              className="w-44 rounded-lg border border-slate-300 px-2 py-1 mono"
-            />
-            <span className="text-slate-500">기본 {DEFAULT_GEMINI_MODEL}</span>
-          </label>
+          <div className="flex items-center gap-1.5 flex-wrap text-slate-700">
+            <label htmlFor={`${idPrefix}-ai-model`}>모델</label>
+            <select
+              id={`${idPrefix}-ai-model`}
+              value={customModel ? CUSTOM_MODEL : settings.model}
+              onChange={(e) => {
+                if (e.target.value === CUSTOM_MODEL) {
+                  setCustomModel(true);
+                } else {
+                  setCustomModel(false);
+                  settings.setModel(e.target.value);
+                }
+              }}
+              className="min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-2 py-1"
+            >
+              {GEMINI_MODEL_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+              <option value={CUSTOM_MODEL}>직접 입력…</option>
+            </select>
+            {customModel && (
+              <input
+                id={`${idPrefix}-ai-model-custom`}
+                aria-label="모델 이름 직접 입력"
+                value={settings.model}
+                onChange={(e) => settings.setModel(e.target.value.trim())}
+                placeholder={DEFAULT_GEMINI_MODEL}
+                className="w-44 rounded-lg border border-slate-300 px-2 py-1 mono"
+              />
+            )}
+            <span className="text-slate-500 mono">{settings.model || DEFAULT_GEMINI_MODEL}</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            '서버에 일시적인 문제' 오류가 계속되면 다른 모델을 골라 다시 눌러 보세요. 모델마다 서버가 달라 한쪽이 붐빌 때 다른 쪽은 될 수 있습니다.
+          </p>
           <p className="text-[11px] text-slate-500">
             키는 이 브라우저에만 저장되며 사이트 코드·서버·학생 화면에는 없습니다. 사용량에 따라 선생님 Google 계정에 요금이 생길 수 있습니다.
           </p>

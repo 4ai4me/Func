@@ -165,3 +165,27 @@ test('4·5차시 AI 요청은 그 차시 문항만 보내고, 도움 받은 정�
     assert.ok(!d.includes('해결 방법') && !d.includes('AI 도움') && !d.includes('힌트 도움'), '도움 받은 정도는 보내지 않음');
   }
 });
+
+test('AI 설정: 모델을 목록에서 고르고, 목록에 기본 모델이 있으며, 5xx 안내에 상태 번호와 모델 바꾸기 안내가 있다', async () => {
+  const { GEMINI_MODEL_OPTIONS, describeGeminiError: describe } = await import('./aiFeedback');
+  assert.ok(GEMINI_MODEL_OPTIONS.some((o) => o.id === DEFAULT_GEMINI_MODEL));
+  assert.equal(new Set(GEMINI_MODEL_OPTIONS.map((o) => o.id)).size, GEMINI_MODEL_OPTIONS.length);
+  for (const o of GEMINI_MODEL_OPTIONS) assert.match(o.id, /^[a-z0-9][a-z0-9.\-]{1,80}$/i, '요청 주소에 쓸 수 있는 이름');
+  const html = renderToStaticMarkup(<AiFeedbackPanel record={sampleRecord()} drafts={{}} onDraftChange={() => {}} idPrefix="t" />);
+  assert.ok(html.includes('<select id="t-ai-model"'), '모델 선택 목록');
+  for (const o of GEMINI_MODEL_OPTIONS) assert.ok(html.includes(`value="${o.id}"`), o.id);
+  assert.ok(html.includes('직접 입력'));
+  assert.ok(!html.includes('id="t-ai-model-custom"'), '기본 모델이면 직접 입력 칸은 숨김');
+  const msg = describe(503, 'overloaded');
+  assert.ok(msg.includes('503') && msg.includes('다른 모델'));
+});
+
+test('목록에서 고른 모델 이름이 요청 주소에 쓰인다', async () => {
+  const calls: string[] = [];
+  const fakeFetch = (async (url: string) => {
+    calls.push(String(url));
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"feedback":"좋아요","nextStep":"다음"}' }] } }] }));
+  }) as unknown as typeof fetch;
+  await requestLessonFeedback({ apiKey: 'k', model: 'gemini-3.5-flash-lite', record: sampleRecord(), lesson: 'l1', fetchImpl: fakeFetch });
+  assert.ok(calls[0].includes('/models/gemini-3.5-flash-lite:generateContent'));
+});
