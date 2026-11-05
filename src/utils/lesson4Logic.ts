@@ -248,6 +248,46 @@ export function validateL4Tool(p: Lesson4State): L4Feedback {
 }
 
 // ─────────────────────────────────────────────
+// 문제별 [그래프로 확인하기] — 주어진 함수 · 역함수 · y = x
+// ─────────────────────────────────────────────
+/** 일차함수 y = ax + b (a ≠ 0)의 역함수 y = (1/a)x − b/a */
+export function inverseLinear(a: number, b: number): { a: number; b: number } {
+  return { a: 1 / a, b: -b / a };
+}
+
+export interface L4GraphFunc {
+  /** 같은 문제 안에서 그래프를 구분하는 이름 (예: '(1)', 'f') */
+  title?: string;
+  /** 범례에 쓰는 주어진 함수 식 */
+  label: string;
+  a: number;
+  b: number;
+  /** 역함수 범례 앞부분 (기본 'y =') */
+  invPrefix?: string;
+  /** 보이는 범위 −range ~ range */
+  range: number;
+  /** 눈금 간격 (기본 1) */
+  tick?: number;
+}
+
+/** 그래프 버튼을 둔 문제 → 그릴 함수들. 역함수는 inverseLinear로 계산 (테스트에서 채점 정답과 같은지 확인) */
+export const L4_GRAPH_SETS = {
+  ex1: [{ label: 'y = 3x + 4', a: 3, b: 4, range: 6 }],
+  p2: [
+    { title: '(1)', label: 'y = −3x + 1', a: -3, b: 1, range: 6 },
+    { title: '(2)', label: 'y = (1/4)x + 2', a: 1 / 4, b: 2, range: 10 },
+  ],
+  p5: [{ label: 'y = (9/5)x + 32', a: 9 / 5, b: 32, range: 100, tick: 10 }],
+  together: [
+    { title: 'f', label: 'f(x) = x − 1', a: 1, b: -1, invPrefix: 'f⁻¹(x) =', range: 6 },
+    { title: 'g', label: 'g(x) = 2x + 4', a: 2, b: 4, invPrefix: 'g⁻¹(x) =', range: 6 },
+    { title: 'g ∘ f', label: '(g∘f)(x) = 2x + 2', a: 2, b: 2, invPrefix: '(g∘f)⁻¹(x) =', range: 6 },
+  ],
+  p3: [{ label: '(g∘f)(x) = 2x − 5', a: 2, b: -5, invPrefix: '(g∘f)⁻¹(x) =', range: 8 }],
+} satisfies Record<string, L4GraphFunc[]>;
+export type L4GraphKey = keyof typeof L4_GRAPH_SETS | 'p1';
+
+// ─────────────────────────────────────────────
 // 교사 화면·인쇄용 요약
 // ─────────────────────────────────────────────
 const v = (s?: string) => (s && s.trim() ? s.trim() : '-');

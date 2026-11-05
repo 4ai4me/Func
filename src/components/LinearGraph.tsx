@@ -28,6 +28,8 @@ export interface LinearGraphProps {
   /** 두 점을 잇는 점선 (예: (a, b)와 (b, a)) */
   links?: { from: GraphPoint; to: GraphPoint }[];
   range?: number;
+  /** 눈금(격자) 간격 — 범위가 넓을 때 크게 (기본 1) */
+  tick?: number;
   ariaLabel: string;
 }
 
@@ -39,12 +41,13 @@ export function lineEndpoints(a: number, b: number, range: number): [number, num
   return [-range, a * -range + b, range, a * range + b];
 }
 
-export function LinearGraph({ lines, points = [], links = [], range = 6, ariaLabel }: LinearGraphProps) {
+export function LinearGraph({ lines, points = [], links = [], range = 6, tick = 1, ariaLabel }: LinearGraphProps) {
   const clipId = `lg-clip-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const unit = (SIZE - PAD * 2) / (range * 2);
   const sx = (x: number) => PAD + (x + range) * unit;
   const sy = (y: number) => PAD + (range - y) * unit;
-  const ticks = Array.from({ length: range * 2 + 1 }, (_, i) => i - range);
+  const tickCount = Math.floor(range / tick);
+  const ticks = Array.from({ length: tickCount * 2 + 1 }, (_, i) => (i - tickCount) * tick);
 
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="w-full max-w-[360px] mx-auto block select-none" role="img" aria-label={ariaLabel}>
@@ -110,13 +113,17 @@ export function LinearGraph({ lines, points = [], links = [], range = 6, ariaLab
 }
 
 /** 그래프 옆에 붙이는 범례 */
-export function GraphLegend({ items }: { items: { color: string; label: string; dashed?: boolean }[] }) {
+export function GraphLegend({ items }: { items: { color: string; label: string; dashed?: boolean; dot?: boolean }[] }) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] sm:text-xs font-bold text-slate-700">
       {items.map((it) => (
         <span key={it.label} className="inline-flex items-center gap-1.5">
           <svg width="22" height="8" aria-hidden="true">
-            <line x1="1" y1="4" x2="21" y2="4" stroke={it.color} strokeWidth="2.5" strokeDasharray={it.dashed ? '5 3' : undefined} />
+            {it.dot ? (
+              <circle cx="11" cy="4" r="3.5" fill={it.color} />
+            ) : (
+              <line x1="1" y1="4" x2="21" y2="4" stroke={it.color} strokeWidth="2.5" strokeDasharray={it.dashed ? '5 3' : undefined} />
+            )}
           </svg>
           <span>{it.label}</span>
         </span>

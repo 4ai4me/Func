@@ -115,6 +115,7 @@
 5. **그래프와 y = x 대칭**: [보기] y=2x−2와 역함수 위의 점 (a, b)↔(b, a) 이동 → 문제 4(역함수 식을 입력하면 그래프에 바로 그려짐) → 공학 도구(GeoGebra 대신 화면 안 슬라이더로 f(x)=ax+1과 역함수·대칭이동 비교, 평행 a=1, 일치 a=−1) → 성찰
 
 - **추가 (2026-10-30 저녁)**: 생각 열기의 대응 그림과 1번 답 칸을 벤다이어그램으로(1번은 그림에서 화학식 → 온실가스를 눌러 연결, [다시 연결하기]), [역함수가 없는 경우와 비교]에 [화살표 뒤집기 : B → A] 버튼(뒤집으면 a에서 화살표 2개, c는 없음 — 빨간색 강조), 문제 1·[보기] 그림 위에 `X —f→ Y` 함수 이름 화살표(역함수 그림은 f⁻¹)
+- **문제별 [그래프로 확인하기] (2026-11-05)**: 문제 1·예제 1·문제 2·문제 5·함께하기·문제 3의 [정답 확인] 아래 버튼을 누르면 주어진 함수(파랑)·역함수(빨강)·직선 y = x(회색)를 한 좌표평면에 그립니다. 다시 누르면 닫힙니다. **그 문제의 정답 확인을 통과해야 버튼이 켜지고**(역함수 그래프에 정답 식이 드러나므로), 답을 고쳐 확인이 풀리면 다시 잠깁니다. 문제 1은 완성한 대응의 점 (x, f(x))와 (f(x), x)를 점선으로 잇고, 문제 2는 (1)·(2) 두 그래프, 함께하기는 f·g·g∘f 세 그래프, 문제 5는 −100~100(눈금 10). 문제 4·공학 도구는 원래 그래프가 있어 그대로입니다. 열림 상태는 화면에만 있고 저장하지 않습니다. 그릴 함수는 `lesson4Logic.ts`의 `L4_GRAPH_SETS`, 역함수는 `inverseLinear`로 계산하며 채점 정답과 같은지 테스트합니다 (`src/components/InverseGraphReveal.tsx`, 테스트 `InverseGraphReveal.test.tsx`). `LinearGraph`에 눈금 간격 `tick`(기본 1)을 추가했습니다.
 - **문제별 연습장 (3·4단계)**: 예제 1·문제 2·문제 5·함께하기·문제 3 제목 옆 [연습장] 버튼 → 떠 있는 창에서 펜(마우스·손가락·태블릿 펜)으로 그림·글씨. 색 3가지·굵기 2가지·지우개·되돌리기·모두 지우기·모눈·크게 보기·PNG 저장, 제목 줄을 끌어 이동. 태블릿 펜을 쓰면 손바닥 터치는 무시. **그린 내용은 화면 안에서만 보관**(서버 저장 안 함 — Firestore 쓰기 한도·문서 크기 때문). 4차시 화면을 떠나거나 새로고침하면 사라짐. (`src/components/ScratchPad.tsx`)
 - **식 채점**: 학생이 쓴 일차식을 a·x + b로 읽어 계수를 비교하므로 `1/3x`, `x/3`, `(x-4)/3`, `5/9(x-32)`처럼 다르게 써도 같은 답으로 인정합니다. 입력칸 아래에 "읽은 식"을 보여 줍니다. (`src/utils/linearExpr.ts`)
 - **문항 자료·채점·교사용 요약**: `src/utils/lesson4Logic.ts` / 좌표평면 그리기: `src/components/LinearGraph.tsx` / 교과서 그림: `public/assets/aistudio/image_l4_*.png`
@@ -214,7 +215,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

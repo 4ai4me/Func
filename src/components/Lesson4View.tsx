@@ -10,6 +10,8 @@ import {
   L4_P1_Y,
   L4_P1_GIVEN,
   L4_P4_FUNCS,
+  L4_GRAPH_SETS,
+  type L4GraphKey,
   validateL4Open,
   validateL4Prob1,
   validateL4Ex1,
@@ -26,6 +28,7 @@ import { parseLinear, formatLinear, fractionText } from '../utils/linearExpr';
 import { MathText } from './MathText';
 import { MappingVennDiagram } from './MappingVennDiagram';
 import { LinearGraph, GraphLegend } from './LinearGraph';
+import { InverseGraphReveal, linearInversePanel, GRAPH_COLORS, type InverseGraphPanel } from './InverseGraphReveal';
 import { ScratchPadButton, ScratchPadWindow, PadStroke } from './ScratchPad';
 import {
   CheckCircle2,
@@ -567,6 +570,13 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   const [showToolImg, setShowToolImg] = useState(false);
   // 3·4단계 연습장: 문제별 그림(화면 안에서만 보관 — 저장 데이터에 넣지 않음)과 열려 있는 연습장
   const [pads, setPads] = useState<Partial<Record<PadId, PadStroke[]>>>({});
+  // 문제별 [그래프로 확인하기] 열림 상태 (화면에만 — 저장하지 않음, 정답 확인을 통과해야 보임)
+  const [graphOpen, setGraphOpen] = useState<Partial<Record<L4GraphKey, boolean>>>({});
+  const toggleGraph = (k: L4GraphKey) => setGraphOpen((prev) => ({ ...prev, [k]: !prev[k] }));
+  const graphReveal = (k: L4GraphKey, unlocked: boolean | undefined, panels: InverseGraphPanel[]) => (
+    <InverseGraphReveal unlocked={Boolean(unlocked)} open={Boolean(graphOpen[k])} onToggle={() => toggleGraph(k)} panels={panels} />
+  );
+  const linearPanels = (k: keyof typeof L4_GRAPH_SETS) => L4_GRAPH_SETS[k].map((fn, i) => linearInversePanel(fn, `${k}-${i}`));
   const [openPad, setOpenPad] = useState<PadId | null>(null);
   const padButton = (id: PadId) => (
     <ScratchPadButton
@@ -668,6 +678,32 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   const p1Targets = Object.values(p1Map);
   const p1IsBijection = p1Targets.length === 4 && new Set(p1Targets).size === 4;
   const p1InverseMap: Record<string, string> = Object.fromEntries(Object.entries(p1Map).map(([x, y]) => [y, x]));
+  /** [문제 1] 그래프: 완성한 대응 f의 점 (x, f(x))와 역함수의 점 (f(x), x) */
+  const p1Pairs = L4_P1_X.filter((x) => p1Map[x]).map((x) => ({ x: Number(x), y: Number(p1Map[x]) }));
+  const p1Panel: InverseGraphPanel = {
+    key: 'p1-0',
+    lines: [{ a: 1, b: 0, color: GRAPH_COLORS.yx, width: 1.6, label: 'y=x' }],
+    points: [
+      ...p1Pairs.map((pt) => ({ ...pt, color: GRAPH_COLORS.f })),
+      ...p1Pairs.map((pt) => ({ x: pt.y, y: pt.x, color: GRAPH_COLORS.inv })),
+    ],
+    links: p1Pairs.map((pt) => ({ from: { ...pt, color: '' }, to: { x: pt.y, y: pt.x, color: '' } })),
+    range: 8,
+    legend: [
+      { color: GRAPH_COLORS.f, label: 'y = f(x)', dot: true },
+      { color: GRAPH_COLORS.inv, label: 'y = f⁻¹(x)', dot: true },
+      { color: GRAPH_COLORS.yx, label: 'y = x' },
+    ],
+    note: (
+      <>
+        <div className="text-blue-700 font-bold">f : {p1Pairs.map((pt) => `(${pt.x}, ${pt.y})`).join(', ')}</div>
+        <div className="text-rose-700 font-bold">f⁻¹ : {p1Pairs.map((pt) => `(${pt.y}, ${pt.x})`).join(', ')}</div>
+      </>
+    ),
+    ariaLabel: `함수 f의 점 ${p1Pairs.map((pt) => `(${pt.x}, ${pt.y})`).join(', ')}와 역함수의 점 ${p1Pairs
+      .map((pt) => `(${pt.y}, ${pt.x})`)
+      .join(', ')}, 직선 y = x`,
+  };
 
   // ── 5단계 계산 ──
   const P = { x: pointT, y: 2 * pointT - 2 };
@@ -1142,6 +1178,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="emerald" onClick={() => verify('p1', 'p1Verified', validateL4Prob1)}>
               [문제 1] 정답 확인하기
             </VerifyButton>
+            {graphReveal('p1', state.p1Verified, [p1Panel])}
           </div>
 
           <NavRow onPrev={() => goStep(0)} onNext={() => goStep(2)} nextLabel="다음 단계: 역함수 구하기" />
@@ -1245,6 +1282,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="sky" onClick={() => verify('ex1', 'ex1Verified', validateL4Ex1)}>
               [예제 1] 정답 확인하기
             </VerifyButton>
+            {graphReveal('ex1', state.ex1Verified, linearPanels('ex1'))}
           </div>
 
           {/* 문제 2 */}
@@ -1301,6 +1339,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="sky" onClick={() => verify('p2', 'p2Verified', validateL4Prob2)}>
               [문제 2] 정답 확인하기
             </VerifyButton>
+            {graphReveal('p2', state.p2Verified, linearPanels('p2'))}
           </div>
 
           {/* 문제 5 섭씨·화씨 */}
@@ -1369,6 +1408,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="sky" onClick={() => verify('p5', 'p5Verified', validateL4Prob5)}>
               [문제 5] 정답 확인하기
             </VerifyButton>
+            {graphReveal('p5', state.p5Verified, linearPanels('p5'))}
           </div>
 
           <NavRow onPrev={() => goStep(1)} onNext={() => goStep(3)} nextLabel="다음 단계: 함께하기 · (g∘f)⁻¹" />
@@ -1497,6 +1537,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="violet" onClick={() => verify('together', 'togetherVerified', validateL4Together)}>
               [함께하기] 정답 확인하기
             </VerifyButton>
+            {graphReveal('together', state.togetherVerified, linearPanels('together'))}
 
             <div className="rounded-xl border-2 border-violet-500/70 bg-violet-50/60 p-4 text-center space-y-1">
               <div className="text-xs font-bold text-slate-600">일반적으로 두 함수 f와 g의 역함수가 존재할 때</div>
@@ -1538,6 +1579,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
             <VerifyButton theme="violet" onClick={() => verify('p3', 'p3Verified', validateL4Prob3)}>
               [문제 3] 정답 확인하기
             </VerifyButton>
+            {graphReveal('p3', state.p3Verified, linearPanels('p3'))}
           </div>
 
           <NavRow onPrev={() => goStep(2)} onNext={() => goStep(4)} nextLabel="다음 단계: 그래프와 y = x 대칭" />
