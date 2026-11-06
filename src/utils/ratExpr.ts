@@ -282,12 +282,12 @@ export function compareRat(raw: string | undefined | null, expected: string, can
   return 'equal';
 }
 
-/** 숫자 답 읽기 ("5", "-1/3", "x≠5", "x ≠ -1/3" 등). 읽을 수 없으면 null */
+/** 숫자 답 읽기 ("5", "-1/3", "x≠5", "x ≠ -1/3", "y = -5" 등). 읽을 수 없으면 null */
 export function parseRatNumber(raw: string | undefined | null): number | null {
   if (!raw) return null;
   const cleaned = raw
     .replace(/\s+/g, '')
-    .replace(/^x(≠|!=|=\/=|=)/i, '');
+    .replace(/^[xy](≠|!=|=\/=|=)/i, '');
   const n = parseRat(cleaned);
   if (!n || hasVar(n)) return null;
   const v = evalRat(n, 0);

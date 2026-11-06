@@ -17,7 +17,7 @@
 - **스마트 수식 입력 도우미 (`MathSymbolInputBar` & `MathText`)**:
   - 함수 기호(`f(x)`, `g(x)`, `(g∘f)(x)`, `f⁻¹(x)`, `∘`, `↦`, `→`), 부등호·등호(`≥`, `≤`, `≠`, `±`), 제곱·근호(`²`, `³`, `√(□)`), 논리·집합 기호(`∴`, `∵`, `⇒`, `⇔`, `∈`, `∉`, `⊂`, `∪`, `∩`)를 원클릭 버튼 및 키보드 단축어로 입력할 수 있습니다.
   - 벡터 SVG 근호 갈고리와 윗줄(Vinculum)이 결합된 `<MathText />` 렌더러를 통해 루트 수식을 명확하게 표시합니다.
-- **성찰 단계 「이번 차시 문제를 어떻게 해결했나요?」 (2026-11-04, 1~4차시)**: 성찰 칸 위에 [AI의 도움을 받았어요] [힌트의 도움을 받았어요] [스스로 해결했어요] 중 하나를 고르는 버튼과 "도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요." 안내를 표시합니다. 같은 버튼을 다시 누르면 선택이 풀립니다. 저장 항목은 차시별 `helpSource`(`'ai' | 'hint' | 'self'`)이며 **완료 조건·평가·자동 루브릭에는 쓰지 않습니다**. 교사 [전체 답안 보기]·CSV에 `해결 방법 (도움 받은 정도)`로 표시되고, 고르지 않았으면 회색 `미선택`(작성 개수에서 제외). 예전 기록을 불러올 때 빈 값을 붙이지 않아 불필요한 재저장이 생기지 않습니다 (`src/components/HelpSourcePicker.tsx`, 테스트 `HelpSourcePicker.test.tsx`).
+- **성찰 단계 「이번 차시 문제를 어떻게 해결했나요?」 (2026-11-04, 1~4차시 → 현재 1~7차시)**: 성찰 칸 위에 [AI의 도움을 받았어요] [힌트의 도움을 받았어요] [친구나 선생님의 도움을 받았어요](2026-11-06 추가) [스스로 해결했어요] 중 하나를 고르는 버튼과 "도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요." 안내를 표시합니다. 같은 버튼을 다시 누르면 선택이 풀립니다. 저장 항목은 차시별 `helpSource`(`'ai' | 'hint' | 'peer' | 'self'`)이며 **완료 조건·평가·자동 루브릭에는 쓰지 않습니다**. 교사 [전체 답안 보기]·CSV에 `해결 방법 (도움 받은 정도)`로 표시되고, 고르지 않았으면 회색 `미선택`(작성 개수에서 제외). 예전 기록을 불러올 때 빈 값을 붙이지 않아 불필요한 재저장이 생기지 않습니다 (`src/components/HelpSourcePicker.tsx`, 테스트 `HelpSourcePicker.test.tsx`).
 - **서술 칸 글자 수 표시 (2026-11-05)**: 모든 차시의 서술 칸에 `CharCountBadge`(현재 n자 / 최소 m자)와 테두리 색을 표시합니다. 최소 글자 수는 채점 함수와 같은 상수(`L3_MIN_REASON`·`L3_MIN_REFLECTION`·`L3_COUPON_MIN_FINAL`, `lesson4Logic`의 `MIN_REASON`·`L4_MIN_REFLECTION`)를 씁니다. `CharCountCoverage.test.tsx`가 모든 `Lesson{N}View.tsx`의 각 단계를 그려 빠진 칸을 찾아냅니다(새 차시도 자동 검사).
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
@@ -159,6 +159,30 @@
 - **교사 화면**: KPI·완료 분포(0~6개 차시)·문항별 확인 현황, 학생 목록 6차시 열·필터, CSV 6차시 열(답안 이름표 기준 — 예전 절대부등식 6차시 열은 뺌), 상세 비교 두 곳(문항 상태 점검·오답·미작성 포함), 전체 답안 보기(고른 식은 식 이름으로 표시), AI 피드백(6차시 '도움 받은 정도'는 보내지 않음), 학생 평가 창, 인쇄 평가서. 평가 항목 이름 `유리식과 유리함수의 정의역 (6차시)`
 - 7·8차시는 아직 예전 화면(절대부등식) — 같은 방식(저장 칸 l6·l7에 항목 추가)으로 교체 예정
 
+## 4-3. 7차시: 유리함수의 그래프 (`Lesson7View`, 2026-11-06)
+
+교과서 `유리함수 y = k/x의 그래프`(`[함께하기]`, `[문제 4]`, `y = k/(x − p) + q` 정리, `[보기]`, `[생각 톡톡]`, `[문제 5]`, `[예제 2]`, `[문제 6]`)를 6차시와 같은 형식으로 5단계 활동지로 만들었습니다. 이전 7차시 화면(명제 수업의 절대부등식2)을 대체합니다.
+
+1. **함께하기 · y = k/x**: k 슬라이더(−5~5, 빠른 버튼) — 빨간 그래프·비교용 y = 1/x(회색 점선)·점 (1, k) → ① k > 0 / k < 0일 때 사분면 ② |k|가 커지면 원점에서 멀어진다 + 이유. 통과하면 핵심 개념(정의역·치역, 사분면, 원점 대칭, 점근선 = x축·y축) 열림
+2. **문제 4**: (1) y = 3/x (2) y = −3/x (3) y = 1/(4x) (4) y = −1/(4x) 각각 사분면 고르기 + x = 1일 때 y → 통과 후 [그래프로 확인하기](k > 0 묶음, k < 0 묶음)
+3. **평행이동**: k·p·q 슬라이더 실험실(y = k/x 회색 점선, 옮긴 그래프 빨강, 점근선 점선, 원점 → (p, q), 정의역·치역·점근선 글자) → 정리 카드(교과서 그림은 버튼) → [보기] → 생각 톡톡(대칭인 점 (p, q), 문자로 입력) → 문제 5 점근선 입력 + 그래프 확인
+4. **y = (ax + b)/(cx + d) 변형**: 예제 2를 문제로 `y = □/(x − □) + □` 틀과 점근선 입력(교과서 풀이는 버튼) → 문제 6 (1)(2) + 변형 방법 서술. 각각 그래프 확인, [연습장]
+5. **성찰**: 도움 받은 정도 + 성찰 2칸(성찰 1, 10자 이상이 완료 조건)
+
+- **그래프 (`src/components/RationalGraph.tsx`)**: y = k/(x − p) + q를 점근선 양쪽 두 갈래로 나눠 그림(점근선을 가로지르는 선 없음), 점근선 점선·점 표시. `RationalGraphReveal`은 4차시와 같은 규칙(정답 확인을 통과해야 켜짐, 답을 고치면 다시 잠김, 열림 상태는 저장 안 함)
+- **분수 모양 수식**: 6차시에서 쓰던 `Frac`·`RatView`·`Expr`를 `src/components/RatMath.tsx`로 옮겨 6·7차시가 함께 씀
+- **숫자 채점**: `5`, `-1/3`, `0.25`, `x=1`, `y = -5` 모두 인정(`ratExpr.ts`의 `parseRatNumber`가 `y=`도 읽도록 확장)
+- **문항 자료·채점·교사용 요약**: `src/utils/lesson7Logic.ts` / 교과서 그림: `public/assets/aistudio/image_l7_*.png`(9장)
+- **저장 데이터**: 저장 칸은 그대로 `func_lessons/l6`(형식 `Lesson6State`). 새 항목을 **추가만** 했습니다(`tgPosQuad`·`p4q1`·`p4v1`·`thinkSymX`·`p5_1x`·`ex2k`·`p6_1k`·`rgReflection1`·`rgHelpSource` 등). 예전 절대부등식2 항목은 보존·숨김, 완료는 새 항목 기준, [7차시 초기화]는 새 항목만 지움
+- **교사 화면**: 6차시와 같은 범위(KPI·완료 분포 0~7·문항별 현황·목록 7차시 열·필터·CSV·상세 비교 2곳·문항 상태·전체 답안·AI 피드백(`rgHelpSource` 보내지 않음)·평가 창·인쇄). 평가 항목 이름 `유리함수의 그래프 (7차시)`
+- 8차시는 아직 예전 화면(절대부등식3)
+
+## 4-4. 성찰 '도움 받은 정도'에 「친구나 선생님의 도움을 받았어요」 추가 (2026-11-06)
+
+- 선택지가 AI · 힌트 · **친구나 선생님** · 스스로 4개가 됨(모든 차시 공통). 저장 값 `'peer'`, 교사 화면·CSV 짧은 이름 `친구·선생님 도움`
+- 버튼은 2×2 배치(긴 문구가 줄바꿈되지 않도록)
+- 주의: 배포 전 화면(예전 코드)이 열려 있던 기기에서는 `'peer'`를 모르는 값으로 보고 '미선택'으로 표시할 수 있음 — 새로고침하면 해결
+
 ## 5. 시스템 아키텍처
 
 ```text
@@ -254,7 +278,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx src/utils/lesson6Logic.test.ts
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx src/utils/lesson6Logic.test.ts src/utils/lesson7Logic.test.ts
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

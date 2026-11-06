@@ -307,9 +307,12 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   s.l5.openVerified = true;
   assert.equal(evaluateLevel6Completion(s.l5)[0], true);
 
+  // 7차시는 2026-11-06 유리함수의 그래프로 교체 — 예전 절대부등식2 기록으로는 완료되지 않음
   assert.deepEqual(evaluateLevel7Completion(s.l6), [false, false, false, false, false]);
   s.l6.examples = [calc6Means(4, 4), calc6Means(1, 9), calc6Means(2, 8)];
   s.l6.amgmConceptChoice = 'positive';
+  assert.equal(evaluateLevel7Completion(s.l6)[0], false);
+  s.l6.tgVerified = true;
   assert.equal(evaluateLevel7Completion(s.l6)[0], true);
 
   assert.deepEqual(evaluateLevel8Completion(s.l7), [false, false, false, false, false]);

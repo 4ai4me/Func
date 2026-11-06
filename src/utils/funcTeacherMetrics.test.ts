@@ -49,7 +49,7 @@ test('예시 학생 2명: 완료 학생은 1·2차시 완료, 진행 학생은 �
   assert.equal(funcLessonProgress(s1, 2), 'done');
   assert.equal(funcLessonProgress(s2, 2), 'progress');
   const dist = completedLessonDistribution([s1, s2]);
-  assert.equal(dist.length, 7, '0~6개 차시 완료');
+  assert.equal(dist.length, 8, '0~7개 차시 완료');
   assert.equal(dist.reduce((a, b) => a + b, 0), 2, '분포 합계 = 학생 수');
   // 4차시(역함수 1부): 완료 학생은 완료, 진행 학생은 생각 열기만 → 진행 중
   assert.equal(funcLessonProgress(s1, 4), 'done');
@@ -57,12 +57,15 @@ test('예시 학생 2명: 완료 학생은 1·2차시 완료, 진행 학생은 �
   // 5차시(역함수 2부, 같은 저장 칸 l4): 완료 학생은 완료, 진행 학생은 시작 전
   assert.equal(funcLessonProgress(s1, 5), 'done');
   assert.equal(funcLessonProgress(s2, 5), 'none');
-  assert.ok(FUNC_ITEM_CHECKS.filter((c) => /^[456]차시/.test(c.title)).every((c) => c.done(s1)));
+  assert.ok(FUNC_ITEM_CHECKS.filter((c) => /^[4567]차시/.test(c.title)).every((c) => c.done(s1)));
   assert.ok(FUNC_ITEM_CHECKS.some((c) => c.title.startsWith('5차시')));
   // 6차시(유리식·정의역, 저장 칸 l5): 완료 학생은 완료, 진행 학생은 시작 전
   assert.equal(funcLessonProgress(s1, 6), 'done');
   assert.equal(funcLessonProgress(s2, 6), 'none');
   assert.ok(FUNC_ITEM_CHECKS.filter((c) => c.title.startsWith('6차시')).every((c) => !c.done(s2)));
+  // 7차시(유리함수의 그래프, 저장 칸 l6)
+  assert.equal(funcLessonProgress(s1, 7), 'done');
+  assert.equal(funcLessonProgress(s2, 7), 'none');
 });
 
 test('CSV 4차시 열은 역함수 문항 이름을 쓰고, 귀류법 항목이 없다', () => {

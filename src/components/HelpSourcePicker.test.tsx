@@ -25,12 +25,12 @@ const withId = (r: StudentRecord) => {
   return r;
 };
 
-test('선택 버튼: 안내 문구와 버튼 3개가 보이고, 고른 버튼만 선택 표시된다', () => {
+test('선택 버튼: 안내 문구와 버튼 4개가 보이고, 고른 버튼만 선택 표시된다', () => {
   const html = renderToStaticMarkup(<HelpSourcePicker idPrefix="l1" value="hint" onChange={() => {}} />);
   assert.ok(html.includes('도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요.'));
-  for (const t of ['AI의 도움을 받았어요', '힌트의 도움을 받았어요', '스스로 해결했어요']) assert.ok(html.includes(t), t);
+  for (const t of ['AI의 도움을 받았어요', '힌트의 도움을 받았어요', '친구나 선생님의 도움을 받았어요', '스스로 해결했어요']) assert.ok(html.includes(t), t);
   assert.equal((html.match(/aria-checked="true"/g) || []).length, 1);
-  assert.equal((html.match(/aria-checked="false"/g) || []).length, 2);
+  assert.equal((html.match(/aria-checked="false"/g) || []).length, 3);
   const none = renderToStaticMarkup(<HelpSourcePicker idPrefix="l1" value={undefined} onChange={() => {}} />);
   assert.equal((none.match(/aria-checked="true"/g) || []).length, 0);
 });
@@ -74,7 +74,7 @@ test('완료 조건과 무관: 무엇을 고르든(또는 안 고르든) 단계 
       evaluateLevel3Completion(s.l3),
       evaluateLevel4Completion(s.l4),
     ];
-    for (const v of ['ai', 'hint', 'self', ''] as const) {
+    for (const v of ['ai', 'hint', 'peer', 'self', ''] as const) {
       assert.deepEqual(
         [
           evaluateLevel1Completion({ ...s.l1, helpSource: v }),
@@ -101,7 +101,7 @@ test('기기 간 합치기: 선택 값이 차시 기록과 함께 남는다', ()
 test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 회색 미선택으로 보이고 작성 개수에는 들어가지 않는다', () => {
   const r = createInitialStudentState();
   const emptyHtml = renderToStaticMarkup(<FullAnswerPanel record={r} initiallyOpen />);
-  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 6, '1~6차시에 하나씩 (4·5차시는 같은 저장 칸이지만 따로)');
+  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 7, '1~7차시에 하나씩 (4·5차시는 같은 저장 칸이지만 따로)');
   assert.ok(emptyHtml.includes('text-slate-400">미선택<'));
   const countBefore = emptyHtml.match(/작성 0\/(\d+)/g);
 
@@ -114,8 +114,8 @@ test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 
 });
 
 test('CSV: 차시마다 해결 방법 열이 생기고 짧은 이름으로 나온다', () => {
-  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5']).filter((c) => c.header.includes('해결 방법'));
-  assert.equal(cols.length, 6);
+  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6']).filter((c) => c.header.includes('해결 방법'));
+  assert.equal(cols.length, 7);
   const r = createInitialStudentState();
   r.l1.helpSource = 'self';
   assert.equal(cols[0].value(r), '스스로 해결');
@@ -130,4 +130,26 @@ test('CSV: 차시마다 해결 방법 열이 생기고 짧은 이름으로 나�
   r.l5.ratHelpSource = 'self';
   assert.ok(cols[5].header.startsWith('6차시'));
   assert.equal(cols[5].value(r), '스스로 해결');
+  // 7차시(저장 칸 l6)는 rgHelpSource
+  r.l6.rgHelpSource = 'hint';
+  assert.ok(cols[6].header.startsWith('7차시'));
+  assert.equal(cols[6].value(r), '힌트 도움');
+});
+
+
+test('친구나 선생님의 도움 (2026-11-06 추가): 버튼 4개, 저장·불러오기·교사 표시', () => {
+  const html = renderToStaticMarkup(<HelpSourcePicker idPrefix="t" value="peer" onChange={() => {}} />);
+  assert.equal((html.match(/role="radio"/g) || []).length, 4);
+  assert.ok(html.includes('친구나 선생님의 도움을 받았어요'));
+  assert.match(html, /aria-checked="true"[^>]*>(?:(?!<\/button>).)*친구나 선생님/s);
+  assert.equal(sanitizeHelpSource('peer'), 'peer');
+  assert.equal(nextHelpSource('peer', 'peer'), '');
+  const r = createInitialStudentState();
+  r.l2.helpSource = 'peer';
+  r.l6.rgHelpSource = 'peer';
+  const back = cleanStudentState(JSON.parse(JSON.stringify(r)));
+  assert.equal(back.l2.helpSource, 'peer');
+  assert.equal(back.l6.rgHelpSource, 'peer');
+  const cols = lessonAnswerCsvColumns(['l2']).filter((c) => c.header.includes('해결 방법'));
+  assert.equal(cols[0].value(r), '친구·선생님 도움');
 });

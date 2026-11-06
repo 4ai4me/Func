@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { summarizeL4 } from '../utils/lesson4Logic';
 import { summarizeL6 } from '../utils/lesson6Logic';
+import { summarizeL7 } from '../utils/lesson7Logic';
 import {
   Award,
   CheckCircle2,
@@ -415,28 +416,20 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       )}
                     </div>
 
-                    {/* 7차시 */}
+                    {/* 7차시 (저장 칸 l6 — 유리함수의 그래프, 2026-11-06~) */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-teal-700">7차시 · 절대부등식2 (산술·기하평균)</div>
+                      <div className="font-bold text-teal-700">7차시 · 유리함수의 그래프</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 1 ((a+b)/2 ≥ √ab):</strong> {student.l6?.prob1ProofText || '(미작성)'}
+                        <strong>[함께하기·문제 4·평행이동·문제 5·예제 2·문제 6]:</strong> {summarizeL7(student.l6) || '(미작성)'}
                       </div>
-                      {student.l6?.harmonicReason && (
+                      {student.l6?.rgReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>조화평균 유도 이유:</strong> {student.l6.harmonicReason}
+                          <strong>성찰 1:</strong> {student.l6.rgReflection1}
                         </div>
                       )}
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 2 (a+1/a ≥ 2 외):</strong> {student.l6?.prob2ProofText || '(미작성)'}
-                      </div>
-                      {student.l6?.reflection1 && (
+                      {student.l6?.rgReflection2 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 1:</strong> {student.l6.reflection1}
-                        </div>
-                      )}
-                      {student.l6?.reflection2 && (
-                        <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 2:</strong> {student.l6.reflection2}
+                          <strong>성찰 2:</strong> {student.l6.rgReflection2}
                         </div>
                       )}
                     </div>

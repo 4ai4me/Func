@@ -1,18 +1,20 @@
 import React from 'react';
-import { Bot, Dumbbell, Lightbulb } from 'lucide-react';
+import { Bot, Dumbbell, Lightbulb, Users } from 'lucide-react';
 import { HELP_SOURCE_OPTIONS, HelpSource } from '../utils/mathLogic';
 
 /**
- * 성찰 단계: 이번 차시를 어떻게 해결했는지 하나 고르기 (1~5차시 공용, 4차시는 l4HelpSource).
+ * 성찰 단계: 이번 차시를 어떻게 해결했는지 하나 고르기 (1~7차시 공용 — 4차시 l4HelpSource, 6차시 ratHelpSource, 7차시 rgHelpSource).
+ * 선택지: AI · 힌트 · 친구나 선생님(2026-11-06 추가) · 스스로
  * 같은 버튼을 다시 누르면 선택이 풀린다(잘못 누른 것을 되돌릴 수 있게).
  * 완료 조건·평가에는 쓰지 않는다.
  */
 
-const ICONS = { ai: Bot, hint: Lightbulb, self: Dumbbell } as const;
+const ICONS = { ai: Bot, hint: Lightbulb, peer: Users, self: Dumbbell } as const;
 
 const SELECTED_CLASS = {
   ai: 'border-violet-500 bg-violet-600 text-white shadow-sm',
   hint: 'border-amber-500 bg-amber-500 text-white shadow-sm',
+  peer: 'border-sky-500 bg-sky-600 text-white shadow-sm',
   self: 'border-emerald-500 bg-emerald-600 text-white shadow-sm',
 } as const;
 
@@ -40,7 +42,7 @@ export const HelpSourcePicker: React.FC<HelpSourcePickerProps> = ({ value, onCha
           도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요.
         </p>
       </div>
-      <div role="radiogroup" aria-labelledby={titleId} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div role="radiogroup" aria-labelledby={titleId} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {HELP_SOURCE_OPTIONS.map(({ value: v, label }) => {
           const selected = value === v;
           const Icon = ICONS[v];

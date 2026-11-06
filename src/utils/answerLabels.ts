@@ -726,7 +726,90 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
       'reflection1', 'reflection2',
     ],
   },
-  l6: { ...COMMON_L4_TO_L7.l6, title: COMMON_L4_TO_L7.l6.title.replace('6차시', '7차시') },
+  // 7차시(저장 칸 l6)는 유리함수의 그래프 수업 (2026-11-06~). 예전 절대부등식2 항목은 hidden(보존만).
+  l6: {
+    title: '7차시 · 유리함수의 그래프',
+    groups: [
+      {
+        title: '[함께하기] y = k/x의 그래프와 k',
+        fields: [
+          { key: 'tgPosQuad', label: '① k > 0일 때 지나는 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          { key: 'tgNegQuad', label: '① k < 0일 때 지나는 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          {
+            key: 'tgAbsTrend',
+            label: '② |k|가 커지면 그래프는?',
+            format: { kind: 'choice', options: { far: '원점에서 멀어진다', near: '원점에 가까워진다', same: '변하지 않는다' } },
+          },
+          { key: 'tgReason', label: '② 그렇게 생각한 이유' },
+          { key: 'tgVerified', label: '함께하기 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[문제 4] y = k/x의 그래프',
+        fields: [
+          { key: 'p4q1', label: '(1) y = 3/x 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          { key: 'p4v1', label: '(1) x = 1일 때 y' },
+          { key: 'p4q2', label: '(2) y = −3/x 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          { key: 'p4v2', label: '(2) x = 1일 때 y' },
+          { key: 'p4q3', label: '(3) y = 1/(4x) 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          { key: 'p4v3', label: '(3) x = 1일 때 y' },
+          { key: 'p4q4', label: '(4) y = −1/(4x) 사분면', format: { kind: 'choice', options: { '13': '제1·3사분면', '24': '제2·4사분면' } } },
+          { key: 'p4v4', label: '(4) x = 1일 때 y' },
+          { key: 'p4Verified', label: '문제 4 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[평행이동] 생각 톡톡 · 문제 5',
+        fields: [
+          { key: 'thinkSymX', label: '생각 톡톡: 대칭인 점의 x좌표' },
+          { key: 'thinkSymY', label: '생각 톡톡: 대칭인 점의 y좌표' },
+          { key: 'thinkVerified', label: '생각 톡톡 확인', format: CHECK },
+          { key: 'p5_1x', label: '문제 5 (1) 점근선 x = □' },
+          { key: 'p5_1y', label: '문제 5 (1) 점근선 y = □' },
+          { key: 'p5_2x', label: '문제 5 (2) 점근선 x = □' },
+          { key: 'p5_2y', label: '문제 5 (2) 점근선 y = □' },
+          { key: 'p5Verified', label: '문제 5 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[y = (ax + b)/(cx + d) 변형] 예제 2 · 문제 6',
+        fields: [
+          { key: 'ex2k', label: '예제 2 y = (2x − 1)/(x + 1) → k' },
+          { key: 'ex2p', label: '예제 2 → p' },
+          { key: 'ex2q', label: '예제 2 → q' },
+          { key: 'ex2ax', label: '예제 2 점근선 x = □' },
+          { key: 'ex2ay', label: '예제 2 점근선 y = □' },
+          { key: 'ex2Verified', label: '예제 2 확인', format: CHECK },
+          { key: 'p6_1k', label: '문제 6 (1) y = 2x/(x − 3) → k' },
+          { key: 'p6_1p', label: '문제 6 (1) → p' },
+          { key: 'p6_1q', label: '문제 6 (1) → q' },
+          { key: 'p6_1ax', label: '문제 6 (1) 점근선 x = □' },
+          { key: 'p6_1ay', label: '문제 6 (1) 점근선 y = □' },
+          { key: 'p6_2k', label: '문제 6 (2) y = (−3x + 1)/(x − 1) → k' },
+          { key: 'p6_2p', label: '문제 6 (2) → p' },
+          { key: 'p6_2q', label: '문제 6 (2) → q' },
+          { key: 'p6_2ax', label: '문제 6 (2) 점근선 x = □' },
+          { key: 'p6_2ay', label: '문제 6 (2) 점근선 y = □' },
+          { key: 'p6Reason', label: '문제 6 변형 방법' },
+          { key: 'p6Verified', label: '문제 6 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '성찰',
+        fields: [
+          helpSourceField('rgHelpSource'),
+          { key: 'rgReflection1', label: '7차시 성찰 1. y = k/(x − p) + q의 그래프·점근선 정리' },
+          { key: 'rgReflection2', label: '7차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
+        ],
+      },
+    ],
+    // 예전 절대부등식2(명제 수업) 항목 — 지우지 않고 보존만, 표시하지 않음
+    hidden: [
+      'examples', 'amgmConceptChoice', 'step1HintLevel', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+      'harmonicChecked', 'harmonicReason', 'step3HintLevel', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+      'reflection1', 'reflection2',
+    ],
+  },
   l7: { ...COMMON_L4_TO_L7.l7, title: COMMON_L4_TO_L7.l7.title.replace('7차시', '8차시') },
   // Func 4·5차시는 역함수 수업 (2026-10-30~, 2026-11-05 두 차시로 나눔). 공통 4차시(귀류법) 이름표 대신 사용.
   // 두 차시가 같은 저장 칸(l4)을 쓰므로, 서로 상대 차시 항목을 hidden에 넣어 '기타 기록'에 섞이지 않게 함.

@@ -39,15 +39,17 @@ export interface L1Prob3Table {
  * 성찰 단계 '이번 차시를 어떻게 해결했나요?' 선택 (2026-11-04~, 1~5차시 — 4차시는 l4HelpSource, 5차시는 l4.helpSource).
  * 완료 조건·평가 점수에는 쓰지 않는다 — 학생에게 "도움을 받아도 혼내지 않아요"라고 약속했기 때문.
  */
-export type HelpSource = '' | 'ai' | 'hint' | 'self';
+export type HelpSource = '' | 'ai' | 'hint' | 'peer' | 'self';
 export const HELP_SOURCE_OPTIONS: { value: Exclude<HelpSource, ''>; label: string; short: string }[] = [
   { value: 'ai', label: 'AI의 도움을 받았어요', short: 'AI 도움' },
   { value: 'hint', label: '힌트의 도움을 받았어요', short: '힌트 도움' },
+  // 2026-11-06 추가
+  { value: 'peer', label: '친구나 선생님의 도움을 받았어요', short: '친구·선생님 도움' },
   { value: 'self', label: '스스로 해결했어요', short: '스스로 해결' },
 ];
-/** 저장된 값이 정해진 세 가지가 아니면 '미선택'('')으로 본다 */
+/** 저장된 값이 정해진 네 가지가 아니면 '미선택'('')으로 본다 */
 export function sanitizeHelpSource(v: unknown): HelpSource {
-  return v === 'ai' || v === 'hint' || v === 'self' ? v : '';
+  return v === 'ai' || v === 'hint' || v === 'peer' || v === 'self' ? v : '';
 }
 /**
  * 불러오기용: 예전 기록처럼 값이 아예 없으면 undefined를 그대로 둔다.
@@ -475,6 +477,63 @@ export interface Lesson6State {
   prob2ProofText: string;
   reflection1: string;
   reflection2: string;
+
+  // --- Func 7차시: 유리함수 y = k/x와 y = k/(x − p) + q의 그래프 (2026-11-06 추가, 저장 칸 l6) ---
+  // 위의 항목(examples ~ reflection2)은 예전 절대부등식2 화면의 항목 — 지우지 않고 보존만 함(화면·완료 판정에 쓰지 않음).
+  // 문항 자료·채점: src/utils/lesson7Logic.ts
+
+  // 1단계 [함께하기] y = k/x와 k의 값 ('13' = 제1·3사분면, '24' = 제2·4사분면)
+  tgPosQuad?: '' | '13' | '24';
+  tgNegQuad?: '' | '13' | '24';
+  tgAbsTrend?: '' | 'far' | 'near' | 'same';
+  tgReason?: string;
+  tgVerified?: boolean;
+
+  // 2단계 [문제 4] 지나는 사분면과 x = 1일 때 y의 값
+  p4q1?: '' | '13' | '24';
+  p4q2?: '' | '13' | '24';
+  p4q3?: '' | '13' | '24';
+  p4q4?: '' | '13' | '24';
+  p4v1?: string;
+  p4v2?: string;
+  p4v3?: string;
+  p4v4?: string;
+  p4Verified?: boolean;
+
+  // 3단계 평행이동 — [생각 톡톡] 대칭인 점, [문제 5] 점근선
+  thinkSymX?: string;
+  thinkSymY?: string;
+  thinkVerified?: boolean;
+  p5_1x?: string;
+  p5_1y?: string;
+  p5_2x?: string;
+  p5_2y?: string;
+  p5Verified?: boolean;
+
+  // 4단계 y = (ax + b)/(cx + d) → y = k/(x − p) + q — 예제 2, [문제 6] (ax·ay = 점근선 x = □, y = □)
+  ex2k?: string;
+  ex2p?: string;
+  ex2q?: string;
+  ex2ax?: string;
+  ex2ay?: string;
+  ex2Verified?: boolean;
+  p6_1k?: string;
+  p6_1p?: string;
+  p6_1q?: string;
+  p6_1ax?: string;
+  p6_1ay?: string;
+  p6_2k?: string;
+  p6_2p?: string;
+  p6_2q?: string;
+  p6_2ax?: string;
+  p6_2ay?: string;
+  p6Reason?: string;
+  p6Verified?: boolean;
+
+  // 5단계 성찰 (완료 조건: 성찰 1 — lesson7Logic L7_MIN_REFLECTION)
+  rgReflection1?: string;
+  rgReflection2?: string;
+  rgHelpSource?: HelpSource;
 }
 
 export interface L7AbsExample {
@@ -1279,7 +1338,7 @@ export const STAGE_TITLES = {
   4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '성찰'],
   5: ['함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
   6: ['생각 열기 · 유리식', '문제 1 · 유리식과 다항식', '유리식의 계산', '유리함수와 정의역', '성찰'],
-  7: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
+  7: ['함께하기 · y = k/x', '문제 4 · y = k/x 그리기', '평행이동 · 문제 5', 'y = (ax+b)/(cx+d) · 문제 6', '성찰'],
   8: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
 } as const;
 
@@ -1293,7 +1352,7 @@ export const EVAL_CRITERIA = [
   '역함수의 뜻과 구하기 (4차시)',
   '역함수의 성질과 그래프 (5차시)',
   '유리식과 유리함수의 정의역 (6차시)',
-  '유리함수2 탐구 (7차시)',
+  '유리함수의 그래프 (7차시)',
   '무리함수 탐구 (8차시)',
 ] as const;
 
@@ -1304,7 +1363,7 @@ export const EVAL_DESCRIPTIONS = [
   '역함수의 존재 조건(일대일대응)을 이해하고 역함수의 함숫값과 식을 구하는 능력',
   '(g∘f)⁻¹ = f⁻¹∘g⁻¹ 성질을 추론하고 함수와 역함수 그래프의 y = x 대칭성을 탐구하는 능력',
   '유리식과 다항식을 구분하고 유리식을 계산하며, 유리함수의 정의역을 구하는 능력',
-  '유리함수 y=k/(x-p)+q의 점근선과 대칭성을 유도하고 정당화하는 능력',
+  '유리함수 y=k/x와 y=k/(x-p)+q의 그래프를 그리고, 점근선과 대칭성을 찾으며 y=(ax+b)/(cx+d)를 변형하는 능력',
   '무리함수 y=√(a(x-p))+q의 정의역·치역과 그래프를 탐구하는 능력',
 ] as const;
 
@@ -2048,13 +2107,17 @@ export function evaluateLevel6Completion(p: Lesson5State): boolean[] {
   ];
 }
 
+/**
+ * 7차시(유리함수의 그래프) 단계 완료 — 학생 화면의 [정답 확인] 통과 표시와 성찰 1만 사용합니다.
+ * 예전 절대부등식2 항목(examples·prob1ProofText 등)은 판정에 쓰지 않습니다(2026-11-06~).
+ */
 export function evaluateLevel7Completion(p: Lesson6State): boolean[] {
   return [
-    p.examples.length >= 3 && p.amgmConceptChoice === 'positive',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.harmonicChecked && p.harmonicReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15,
+    Boolean(p.tgVerified),
+    Boolean(p.p4Verified),
+    Boolean(p.thinkVerified && p.p5Verified),
+    Boolean(p.ex2Verified && p.p6Verified),
+    (p.rgReflection1 || '').trim().length >= 10, // = lesson7Logic L7_MIN_REFLECTION
   ];
 }
 
@@ -3003,14 +3066,9 @@ export function evaluateRubricL6(p: Lesson5State): boolean[] {
   return evaluateLevel6Completion(p);
 }
 
+/** 7차시(유리함수의 그래프) 루브릭 = 학생 화면 5단계 */
 export function evaluateRubricL7(p: Lesson6State): boolean[] {
-  return [
-    p.examples.length >= 3 && p.amgmConceptChoice === 'positive',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.harmonicChecked && p.harmonicReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20,
-  ];
+  return evaluateLevel7Completion(p);
 }
 
 export function evaluateRubricL8(p: Lesson7State): boolean[] {
@@ -3250,6 +3308,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL6.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL6.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL6.prob2Hints, 4),
+      rgHelpSource: cleanHelpSource(rawL6.rgHelpSource),
     },
     l7: {
       ...base.l7,
@@ -3602,7 +3661,27 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.harmonicReason ||
           l.examples?.length ||
           l.reflection1 ||
-          l.reflection2
+          l.reflection2 ||
+          // 유리함수의 그래프 7차시 (2026-11-06~)
+          l.tgVerified ||
+          l.p4Verified ||
+          l.thinkVerified ||
+          l.p5Verified ||
+          l.ex2Verified ||
+          l.p6Verified ||
+          l.tgPosQuad ||
+          l.tgNegQuad ||
+          l.tgReason ||
+          l.p4q1 ||
+          l.p4v1 ||
+          l.thinkSymX ||
+          l.p5_1x ||
+          l.ex2k ||
+          l.p6_1k ||
+          l.p6_2k ||
+          l.p6Reason ||
+          l.rgReflection1 ||
+          l.rgReflection2
       )
   );
   result.l7 = pickNewerOrFilled(
@@ -3714,13 +3793,13 @@ export function studentKey(x: { group?: string; code?: string }): string {
 }
 
 /**
- * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~6차시 답안 (5차시는 4차시와 같은 저장 칸 l4, 6차시는 l5).
+ * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~7차시 답안 (5차시는 4차시와 같은 저장 칸 l4, 6·7차시는 l5·l6).
  * 정답은 각 문항의 채점 함수(validateL1Prob1 등)와 일치하는 값만 사용합니다.
- * - complete: 1~6차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만(6차시 없음)
+ * - complete: 1~7차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만(6·7차시 없음)
  */
 export function createFuncSampleLessons(
   variant: 'complete' | 'partial'
-): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4' | 'l5'> {
+): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6'> {
   const base = createInitialStudentState();
   const full = variant === 'complete';
 
@@ -3968,7 +4047,58 @@ export function createFuncSampleLessons(
       : {}),
   };
 
-  return { l1, l2, l3, l4, l5 };
+  // 7차시 유리함수의 그래프 (저장 칸 l6) — 정답은 lesson7Logic.ts의 채점 함수와 일치하는 값만 사용
+  const l6: Lesson6State = {
+    ...base.l6,
+    ...(full
+      ? {
+          tgPosQuad: '13' as const,
+          tgNegQuad: '24' as const,
+          tgAbsTrend: 'far' as const,
+          tgReason: 'x = 1일 때 점 (1, k)가 k가 커질수록 원점에서 멀어진다.',
+          tgVerified: true,
+          p4q1: '13' as const,
+          p4q2: '24' as const,
+          p4q3: '13' as const,
+          p4q4: '24' as const,
+          p4v1: '3',
+          p4v2: '-3',
+          p4v3: '1/4',
+          p4v4: '-1/4',
+          p4Verified: true,
+          thinkSymX: 'p',
+          thinkSymY: 'q',
+          thinkVerified: true,
+          p5_1x: '1',
+          p5_1y: '-5',
+          p5_2x: '-3',
+          p5_2y: '-2',
+          p5Verified: true,
+          ex2k: '-3',
+          ex2p: '-1',
+          ex2q: '2',
+          ex2ax: '-1',
+          ex2ay: '2',
+          ex2Verified: true,
+          p6_1k: '6',
+          p6_1p: '3',
+          p6_1q: '2',
+          p6_1ax: '3',
+          p6_1ay: '2',
+          p6_2k: '-2',
+          p6_2p: '1',
+          p6_2q: '-3',
+          p6_2ax: '1',
+          p6_2ay: '-3',
+          p6Reason: '분자를 분모의 배수와 나머지로 나누어 k/(x-p)+q 꼴로 바꾸었다.',
+          p6Verified: true,
+          rgReflection1: 'y=k/(x-p)+q의 그래프는 y=k/x를 평행이동한 것이고 점근선은 x=p, y=q이다.',
+          rgReflection2: '그래프가 점근선의 교점 (p, q)에 대하여 대칭이라는 것이 신기했다.',
+        }
+      : {}),
+  };
+
+  return { l1, l2, l3, l4, l5, l6 };
 }
 
 export function createSampleTeacherDataset(): StudentRecord[] {

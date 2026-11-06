@@ -1,29 +1,41 @@
 import React, { useState } from 'react';
+import type { Lesson6State } from '../utils/mathLogic';
 import {
-  Lesson6State,
-  PROOF6_PROB1_STEPS,
-  PROOF6_PROB2_STEPS,
-  calc6GeometrySimulation,
-  calc6Means,
-  evaluateLevel7Completion,
-  evaluateRubricL7,
-  safeN,
-} from '../utils/mathLogic';
-import {
-  HelpCircle,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  ArrowLeft,
-  Sparkles,
-  Trash2,
-  CircleDot,
-  Square,
-  Layers,
-  PlusCircle,
-} from 'lucide-react';
-import { CharCountBadge } from './CharCountBadge';
-import { MathText, MathPreviewBox } from './MathText';
+  type L7Feedback,
+  type Quadrants,
+  type RationalFn,
+  type L7Transform,
+  L7_MIN_REASON,
+  L7_MIN_REFLECTION,
+  L7_P4,
+  L7_P4_QUAD_KEYS,
+  L7_P4_VAL_KEYS,
+  L7_P5,
+  L7_EX2,
+  L7_P6,
+  L7_GRAPH_SETS,
+  rationalLabel,
+  validateL7Together,
+  validateL7Prob4,
+  validateL7Think,
+  validateL7Prob5,
+  validateL7Ex2,
+  validateL7Prob6,
+} from '../utils/lesson7Logic';
+import { MathText } from './MathText';
+import { Frac, Expr } from './RatMath';
+import { RationalGraph, RationalGraphReveal, RAT_COLORS, type RationalPanel } from './RationalGraph';
+import { GraphLegend } from './LinearGraph';
+import { ScratchPadButton, ScratchPadWindow, PadStroke } from './ScratchPad';
+import { HelpSourcePicker } from './HelpSourcePicker';
+import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
+import { CheckCircle2, AlertTriangle, Lightbulb, ArrowRight, ArrowLeft, RotateCcw, BookOpen, Eye, EyeOff, Lock, Spline } from 'lucide-react';
+
+/**
+ * Func 7차시 · 유리함수 y = k/x와 y = k/(x − p) + q의 그래프 (학생 화면, 2026-11-06 — 예전 절대부등식2 화면을 대체)
+ * 문항 자료·채점: src/utils/lesson7Logic.ts / 그래프: src/components/RationalGraph.tsx
+ * 단계 완료: mathLogic.ts evaluateLevel7Completion / 저장 칸: func_lessons/l6 (Lesson6State에 항목 추가만)
+ */
 
 interface Lesson7ViewProps {
   state: Lesson6State;
@@ -34,1840 +46,1273 @@ interface Lesson7ViewProps {
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
 }
 
-const STEP1_HINTS = [
-  '1단계 힌트: 기하평균 √(ab)가 실수로 정의되고 a = (√a)², b = (√b)²으로 변형하려면 두 수 a, b가 양수(a > 0, b > 0)여야 합니다.',
-  '2단계 힌트: 양수 a, b에 대하여 (a + b)/2를 산술평균, √(ab)를 기하평균이라고 부릅니다.',
-  '3단계 힌트: (a + b)/2 − √(ab) = (√a − √b)² / 2 ≥ 0이므로 산술평균은 항상 기하평균 이상입니다.',
-];
+type Section = 'together' | 'p4' | 'shift' | 'transform' | 'reflect';
+export const LESSON7_SECTIONS: Section[] = ['together', 'p4', 'shift', 'transform', 'reflect'];
 
-const STEP3_HINTS = [
-  '1단계 힌트: 문제 2-(1)의 a + 1/a ≥ 2에서는 두 양수 a와 1/a의 곱이 a × (1/a) = 1로 일정하게 약분된다는 점을 활용합니다.',
-  '2단계 힌트: 문제 2-(2)의 우변 2ab / (a + b)는 조화평균이며, 좌변에서 우변을 빼서 통분하면 √(ab)(√a − √b)² / (a + b) ≥ 0이 됩니다.',
-  '3단계 힌트: 또는 (a + b)/2 ≥ √(ab)의 양변에 양수 2√(ab) / (a + b)를 곱하여 √(ab) ≥ 2ab / (a + b)를 바로 이끌어낼 수도 있습니다.',
-];
+// ── 교과서 그림 경로 (4차시와 같은 방식: GitHub Pages에서는 ./public/… 경로) ──
+const textbookSrc = (fileName: string): string => {
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io')) {
+    return `./public/assets/aistudio/${fileName}`;
+  }
+  return `/assets/aistudio/${fileName}`;
+};
+const onTextbookError = (e: React.SyntheticEvent<HTMLImageElement, Event>, fileName: string) => {
+  const img = e.currentTarget;
+  if (!img.dataset.fallbackStep) {
+    img.dataset.fallbackStep = '1';
+    img.src = `./public/assets/aistudio/${fileName}`;
+  } else if (img.dataset.fallbackStep === '1') {
+    img.dataset.fallbackStep = '2';
+    img.src = `./assets/aistudio/${fileName}`;
+  }
+};
 
-export const Lesson7View: React.FC<Lesson7ViewProps> = ({
-  state,
-  step,
-  onStepChange,
-  onUpdate,
-  onGoToLesson8,
-  onRequestConfirm,
-}) => {
-  const [simA, setSimA] = useState<number>(4);
-  const [simB, setSimB] = useState<number>(12);
-  const [inputA, setInputA] = useState<string>('4');
-  const [inputB, setInputB] = useState<string>('12');
-  const [simViewMode, setSimViewMode] = useState<'both' | 'length' | 'area'>('both');
-  const [showFullCircle, setShowFullCircle] = useState<boolean>(true);
-  const [inputWarning, setInputWarning] = useState<string | null>(null);
+const THEME = {
+  rose: {
+    badge: 'bg-rose-600',
+    label: 'text-rose-600',
+    btn: 'bg-rose-600 hover:bg-rose-700',
+    picked: 'border-rose-600 bg-rose-50 text-rose-950 ring-1 ring-rose-600',
+    focus: 'focus:border-rose-500',
+  },
+  teal: {
+    badge: 'bg-teal-600',
+    label: 'text-teal-700',
+    btn: 'bg-teal-600 hover:bg-teal-700',
+    picked: 'border-teal-600 bg-teal-50 text-teal-950 ring-1 ring-teal-600',
+    focus: 'focus:border-teal-500',
+  },
+  emerald: {
+    badge: 'bg-emerald-600',
+    label: 'text-emerald-700',
+    btn: 'bg-emerald-600 hover:bg-emerald-700',
+    picked: 'border-emerald-600 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-600',
+    focus: 'focus:border-emerald-500',
+  },
+  sky: {
+    badge: 'bg-sky-600',
+    label: 'text-sky-700',
+    btn: 'bg-sky-600 hover:bg-sky-700',
+    picked: 'border-sky-600 bg-sky-50 text-sky-950 ring-1 ring-sky-600',
+    focus: 'focus:border-sky-500',
+  },
+  violet: {
+    badge: 'bg-violet-600',
+    label: 'text-violet-700',
+    btn: 'bg-violet-600 hover:bg-violet-700',
+    picked: 'border-violet-600 bg-violet-50 text-violet-950 ring-1 ring-violet-600',
+    focus: 'focus:border-violet-500',
+  },
+} as const;
+type ThemeKey = keyof typeof THEME;
 
-  // Toggle visibility states for hints
-  const [showStep1Hint, setShowStep1Hint] = useState<boolean>(false);
-  const [showStep3Hint, setShowStep3Hint] = useState<boolean>(false);
-  const [prob1HintsOpen, setProb1HintsOpen] = useState<boolean[]>([false, false, false, false]);
-  const [prob2HintsOpen, setProb2HintsOpen] = useState<boolean[]>([false, false, false, false]);
+/** 입력 항목 → 그 항목이 속한 [정답 확인] 표시. 답을 고치면 확인 표시를 해제합니다. */
+const FIELD_FLAG: Partial<Record<keyof Lesson6State, keyof Lesson6State>> = {
+  tgPosQuad: 'tgVerified',
+  tgNegQuad: 'tgVerified',
+  tgAbsTrend: 'tgVerified',
+  tgReason: 'tgVerified',
+  p4q1: 'p4Verified',
+  p4q2: 'p4Verified',
+  p4q3: 'p4Verified',
+  p4q4: 'p4Verified',
+  p4v1: 'p4Verified',
+  p4v2: 'p4Verified',
+  p4v3: 'p4Verified',
+  p4v4: 'p4Verified',
+  thinkSymX: 'thinkVerified',
+  thinkSymY: 'thinkVerified',
+  p5_1x: 'p5Verified',
+  p5_1y: 'p5Verified',
+  p5_2x: 'p5Verified',
+  p5_2y: 'p5Verified',
+  ex2k: 'ex2Verified',
+  ex2p: 'ex2Verified',
+  ex2q: 'ex2Verified',
+  ex2ax: 'ex2Verified',
+  ex2ay: 'ex2Verified',
+  p6_1k: 'p6Verified',
+  p6_1p: 'p6Verified',
+  p6_1q: 'p6Verified',
+  p6_1ax: 'p6Verified',
+  p6_1ay: 'p6Verified',
+  p6_2k: 'p6Verified',
+  p6_2p: 'p6Verified',
+  p6_2q: 'p6Verified',
+  p6_2ax: 'p6Verified',
+  p6_2ay: 'p6Verified',
+  p6Reason: 'p6Verified',
+};
 
-  const done = evaluateLevel7Completion(state);
-  const rubric = evaluateRubricL7(state);
-  const geoSim = calc6GeometrySimulation(simA, simB);
+type FeedbackKey = 'together' | 'p4' | 'think' | 'p5' | 'ex2' | 'p6';
+type GraphKey = 'p4' | 'p5' | 'ex2' | 'p6';
 
-  const syncSimPair = (nextA: number, nextB: number) => {
-    const clampedA = Math.max(0.5, Math.min(20, Number(nextA.toFixed(1))));
-    const clampedB = Math.max(0.5, Math.min(20, Number(nextB.toFixed(1))));
-    setSimA(clampedA);
-    setSimB(clampedB);
-    setInputA(String(clampedA));
-    setInputB(String(clampedB));
-    setInputWarning(null);
+/** 7차시 초기화 항목 — 예전 절대부등식2 항목(examples·prob1ProofText·reflection1 등)은 건드리지 않음 */
+export const LESSON7_RESET: Partial<Lesson6State> = {
+  tgPosQuad: '',
+  tgNegQuad: '',
+  tgAbsTrend: '',
+  tgReason: '',
+  tgVerified: false,
+  p4q1: '',
+  p4q2: '',
+  p4q3: '',
+  p4q4: '',
+  p4v1: '',
+  p4v2: '',
+  p4v3: '',
+  p4v4: '',
+  p4Verified: false,
+  thinkSymX: '',
+  thinkSymY: '',
+  thinkVerified: false,
+  p5_1x: '',
+  p5_1y: '',
+  p5_2x: '',
+  p5_2y: '',
+  p5Verified: false,
+  ex2k: '',
+  ex2p: '',
+  ex2q: '',
+  ex2ax: '',
+  ex2ay: '',
+  ex2Verified: false,
+  p6_1k: '',
+  p6_1p: '',
+  p6_1q: '',
+  p6_1ax: '',
+  p6_1ay: '',
+  p6_2k: '',
+  p6_2p: '',
+  p6_2q: '',
+  p6_2ax: '',
+  p6_2ay: '',
+  p6Reason: '',
+  p6Verified: false,
+  rgReflection1: '',
+  rgReflection2: '',
+  rgHelpSource: '',
+};
+
+// ─────────────────────────────────────────────
+// 작은 화면 조각 (4차시와 같은 모양)
+// ─────────────────────────────────────────────
+function FeedbackBanner({ fb }: { fb: L7Feedback | null | undefined }) {
+  if (!fb) return null;
+  return (
+    <div
+      role="status"
+      className={`flex items-start gap-2.5 rounded-xl border p-3.5 text-xs sm:text-sm font-semibold ${
+        fb.type === 'good' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'
+      }`}
+    >
+      {fb.type === 'good' ? (
+        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+      ) : (
+        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+      )}
+      <span>
+        <MathText text={fb.message} />
+      </span>
+    </div>
+  );
+}
+
+function HintToggle({ open, onClick, label = '💡 힌트 보기' }: { open: boolean; onClick: () => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors shrink-0"
+    >
+      <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+      <span>{open ? '힌트 닫기' : label}</span>
+    </button>
+  );
+}
+
+function HintBox({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-950 space-y-1.5">{children}</div>;
+}
+
+function DoneBadge({ show }: { show?: boolean }) {
+  if (!show) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-extrabold text-emerald-800">
+      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+      확인 완료
+    </span>
+  );
+}
+
+function ActivityHeader({
+  theme,
+  kicker,
+  title,
+  done,
+  extra,
+}: {
+  theme: ThemeKey;
+  kicker: string;
+  title: React.ReactNode;
+  done?: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+      <div>
+        <span className={`text-xs font-extrabold ${THEME[theme].label}`}>{kicker}</span>
+        <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">{title}</h4>
+      </div>
+      <div className="flex items-center gap-2">
+        <DoneBadge show={done} />
+        {extra}
+      </div>
+    </div>
+  );
+}
+
+function TextbookImage({ file, alt, maxH = 'max-h-[260px]' }: { file: string; alt: string; maxH?: string }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 flex justify-center">
+      <img
+        src={textbookSrc(file)}
+        onError={(e) => onTextbookError(e, file)}
+        alt={alt}
+        className={`${maxH} w-auto max-w-full object-contain rounded-lg`}
+      />
+    </div>
+  );
+}
+
+function ChoiceButtons<T extends string>({
+  theme,
+  value,
+  options,
+  onPick,
+  cols = 'sm:grid-cols-2',
+}: {
+  theme: ThemeKey;
+  value: T | '' | undefined;
+  options: readonly (readonly [T, string])[];
+  onPick: (v: T) => void;
+  cols?: string;
+}) {
+  return (
+    <div className={`grid grid-cols-1 ${cols} gap-2.5`}>
+      {options.map(([val, label]) => (
+        <button
+          key={val}
+          type="button"
+          aria-pressed={value === val}
+          onClick={() => onPick(val)}
+          className={`rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-bold text-left transition-all ${
+            value === val ? THEME[theme].picked : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const inputClass = (theme: ThemeKey) =>
+  `w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none ${THEME[theme].focus}`;
+
+function NumInput({
+  id,
+  theme,
+  label,
+  value,
+  onChange,
+  prefix,
+  suffix,
+}: {
+  id: string;
+  theme: ThemeKey;
+  label: React.ReactNode;
+  value?: string;
+  onChange: (v: string) => void;
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+      <label htmlFor={id} className="block text-xs font-bold text-slate-700 mb-1.5">
+        {label}
+      </label>
+      <div className="flex items-center gap-2">
+        {prefix && <span className="text-sm font-bold text-slate-700 shrink-0">{prefix}</span>}
+        <input
+          id={id}
+          type="text"
+          inputMode="text"
+          autoComplete="off"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${inputClass(theme)} min-w-0`}
+        />
+        {suffix && <span className="text-sm font-bold text-slate-600 shrink-0">{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+function ReasonInput({
+  id,
+  theme,
+  label,
+  value,
+  onChange,
+  min,
+}: {
+  id: string;
+  theme: ThemeKey;
+  label: React.ReactNode;
+  value?: string;
+  onChange: (v: string) => void;
+  min: number;
+}) {
+  const count = (value || '').trim().length;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 flex-wrap justify-between">
+        <label htmlFor={id} className="block text-xs sm:text-sm font-bold text-slate-900">
+          {label}
+        </label>
+        <CharCountBadge current={count} min={min} />
+      </div>
+      <textarea
+        id={id}
+        rows={2}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-900 focus:outline-none ${THEME[theme].focus} ${getCharCountBorderClass(count, min)}`}
+      />
+    </div>
+  );
+}
+
+function VerifyButton({ theme, onClick, children }: { theme: ThemeKey; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex min-h-[42px] items-center gap-2 rounded-xl ${THEME[theme].btn} px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white transition-colors shadow-xs`}
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        <span>{children}</span>
+      </button>
+    </div>
+  );
+}
+
+function NavRow({ onPrev, onNext, nextLabel, nextDark }: { onPrev?: () => void; onNext?: () => void; nextLabel: string; nextDark?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+      {onPrev ? (
+        <button
+          type="button"
+          onClick={onPrev}
+          className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>이전 단계</span>
+        </button>
+      ) : (
+        <span />
+      )}
+      {onNext && (
+        <button
+          type="button"
+          onClick={onNext}
+          className={`inline-flex min-h-[42px] items-center gap-2 rounded-xl px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white transition-colors shadow-xs ${
+            nextDark ? 'bg-slate-900 hover:bg-slate-800' : 'bg-rose-600 hover:bg-rose-700'
+          }`}
+        >
+          <span>{nextLabel}</span>
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ToggleButton({ on, onClick, onLabel, offLabel }: { on: boolean; onClick: () => void; onLabel: string; offLabel: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={on}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+    >
+      {on ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      <span>{on ? onLabel : offLabel}</span>
+    </button>
+  );
+}
+
+
+/** 작은 숫자 칸 (분수 틀 안, 점근선 칸) */
+function SmallInput({
+  id,
+  label,
+  value,
+  onChange,
+  width = 'w-16',
+}: {
+  id: string;
+  label: string;
+  value?: string;
+  onChange: (v: string) => void;
+  width?: string;
+}) {
+  return (
+    <input
+      id={id}
+      aria-label={label}
+      type="text"
+      inputMode="text"
+      autoComplete="off"
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${width} rounded-md border border-slate-300 bg-white px-1.5 py-1 text-center text-sm font-bold text-slate-900 focus:outline-none focus:border-violet-500`}
+    />
+  );
+}
+
+/** y = □/(x − □) + □ 와 점근선 x = □, y = □ 입력 틀 */
+function TransformInput({
+  idPrefix,
+  values,
+  onChange,
+}: {
+  idPrefix: string;
+  values: { k?: string; p?: string; q?: string; ax?: string; ay?: string };
+  onChange: (part: 'k' | 'p' | 'q' | 'ax' | 'ay', v: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-3">
+      <div className="flex items-center gap-1.5 flex-wrap text-sm font-bold text-slate-800">
+        <span>
+          <i>y</i> =
+        </span>
+        <Frac
+          n={<SmallInput id={`${idPrefix}-k`} label="k (분자)" value={values.k} onChange={(v) => onChange('k', v)} />}
+          d={
+            <span className="inline-flex items-center gap-1 py-0.5">
+              <i>x</i> − <SmallInput id={`${idPrefix}-p`} label="p (x − p의 p)" value={values.p} onChange={(v) => onChange('p', v)} />
+            </span>
+          }
+        />
+        <span>+</span>
+        <SmallInput id={`${idPrefix}-q`} label="q" value={values.q} onChange={(v) => onChange('q', v)} />
+      </div>
+      <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-bold text-slate-700">
+        <span>점근선:</span>
+        <span className="inline-flex items-center gap-1">
+          <i>x</i> = <SmallInput id={`${idPrefix}-ax`} label="세로 점근선 x" value={values.ax} onChange={(v) => onChange('ax', v)} />
+        </span>
+        <span className="inline-flex items-center gap-1">
+          , <i>y</i> = <SmallInput id={`${idPrefix}-ay`} label="가로 점근선 y" value={values.ay} onChange={(v) => onChange('ay', v)} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** 점근선 x = □, y = □ 입력 */
+function AsymptoteInput({
+  idPrefix,
+  title,
+  x,
+  y,
+  onX,
+  onY,
+}: {
+  idPrefix: string;
+  title: React.ReactNode;
+  x?: string;
+  y?: string;
+  onX: (v: string) => void;
+  onY: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+      <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">{title}</div>
+      <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm font-bold text-slate-700">
+        <span>점근선:</span>
+        <span className="inline-flex items-center gap-1">
+          <i>x</i> = <SmallInput id={`${idPrefix}-x`} label="세로 점근선 x" value={x} onChange={onX} />
+        </span>
+        <span className="inline-flex items-center gap-1">
+          , <i>y</i> = <SmallInput id={`${idPrefix}-y`} label="가로 점근선 y" value={y} onChange={onY} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** k의 값을 분수로 (예: 0.25 → "1/4") */
+const kText = (k: number) => {
+  if (Number.isInteger(k)) return String(k).replace('-', '−');
+  const r = Math.round(k * 4);
+  if (Math.abs(k * 4 - r) < 1e-9) return `${r < 0 ? '−' : ''}${Math.abs(r)}/4`;
+  return String(k).replace('-', '−');
+};
+
+/** 함수 하나 → 그래프 묶음 (y = k/x는 회색 점선, 주어진 함수는 빨강 + 점근선) */
+function shiftedPanel(key: string, title: string | undefined, label: string, fn: RationalFn): RationalPanel {
+  const shifted = fn.p !== 0 || fn.q !== 0;
+  return {
+    key,
+    title,
+    curves: [
+      ...(shifted ? [{ fn: { k: fn.k, p: 0, q: 0 }, color: RAT_COLORS.base, dashed: true, width: 1.8 }] : []),
+      { fn, color: RAT_COLORS.main, asymptotes: true },
+    ],
+    points: shifted ? [{ x: fn.p, y: fn.q, color: RAT_COLORS.asym, label: `(${kText(fn.p)}, ${kText(fn.q)})` }] : [],
+    legend: [
+      ...(shifted ? [{ color: RAT_COLORS.base, label: `y = ${kText(fn.k)}/x`, dashed: true }] : []),
+      { color: RAT_COLORS.main, label },
+      ...(shifted ? [{ color: RAT_COLORS.asym, label: `점근선 x = ${kText(fn.p)}, y = ${kText(fn.q)}`, dashed: true }] : []),
+    ],
+    ariaLabel: `${label}의 그래프${shifted ? `, 점근선 x = ${fn.p}, y = ${fn.q}` : ''}`,
+  };
+}
+
+const SLIDER_VALUES = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
+
+// ─────────────────────────────────────────────
+// 7차시 화면
+// ─────────────────────────────────────────────
+export const Lesson7View: React.FC<Lesson7ViewProps> = ({ state, step, onStepChange, onUpdate, onGoToLesson8, onRequestConfirm }) => {
+  const section: Section = LESSON7_SECTIONS[step] ?? LESSON7_SECTIONS[0];
+  const [hints, setHints] = useState<Record<string, boolean>>({});
+  const toggleHint = (k: string) => setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L7Feedback | null>>>({});
+  const [graphOpen, setGraphOpen] = useState<Partial<Record<GraphKey, boolean>>>({});
+  const toggleGraph = (k: GraphKey) => setGraphOpen((prev) => ({ ...prev, [k]: !prev[k] }));
+  // 1단계 k 슬라이더, 3단계 k·p·q 슬라이더 (화면에만 — 저장하지 않음)
+  const [kVal, setKVal] = useState(1);
+  const [sk, setSk] = useState(1);
+  const [sp, setSp] = useState(2);
+  const [sq, setSq] = useState(1);
+  const [showEx2Img, setShowEx2Img] = useState(false);
+  const [showSummaryImg, setShowSummaryImg] = useState(false);
+  const [pads, setPads] = useState<Partial<Record<'ex2' | 'p6', PadStroke[]>>>({});
+  const [openPad, setOpenPad] = useState<'ex2' | 'p6' | null>(null);
+  const padButton = (id: 'ex2' | 'p6') => (
+    <ScratchPadButton onClick={() => setOpenPad((cur) => (cur === id ? null : id))} used={Boolean(pads[id]?.length)} active={openPad === id} />
+  );
+
+  const setField = <K extends keyof Lesson6State>(key: K, value: Lesson6State[K]) => {
+    const flag = FIELD_FLAG[key];
+    onUpdate((prev) => ({ ...prev, [key]: value, ...(flag ? { [flag]: false } : {}) }));
   };
 
-  const handleAddExample = (aVal?: number, bVal?: number) => {
-    const parsedA = aVal !== undefined ? aVal : Number(inputA);
-    const parsedB = bVal !== undefined ? bVal : Number(inputB);
-    const a = Number.isFinite(parsedA) ? Number(parsedA.toFixed(2)) : safeN(inputA);
-    const b = Number.isFinite(parsedB) ? Number(parsedB.toFixed(2)) : safeN(inputB);
-    if (a === null || b === null || a <= 0 || b <= 0) {
-      setInputWarning('양수 조건(a > 0, b > 0)을 만족하는 양수를 입력해 주세요. (예: a=4, b=12 또는 a=1, b=9)');
-      return;
-    }
-    syncSimPair(a, b);
-    if (state.examples.some((x) => Math.abs(x.a - a) < 1e-6 && Math.abs(x.b - b) < 1e-6)) {
-      setInputWarning(`이미 (a=${a}, b=${b}) 순서쌍이 단서 표에 기록되어 있습니다. 도형 시뮬레이션 값은 업데이트되었습니다.`);
-      return;
-    }
-    setInputWarning(null);
-    const nextItem = calc6Means(a, b);
-    onUpdate((prev) => ({
-      ...prev,
-      examples: [...prev.examples, nextItem],
-    }));
+  const verify = (key: FeedbackKey, flag: keyof Lesson6State, validator: (p: Lesson6State) => L7Feedback) => {
+    const res = validator(state);
+    setFeedback((prev) => ({ ...prev, [key]: res }));
+    if (res.ok) onUpdate((prev) => ({ ...prev, [flag]: true }));
   };
 
-  // SVG Geometry Coordinates Calculation for Circle/Semicircle
-  const circleSvgGeometry = (() => {
-    const cx = 190;
-    const cy = showFullCircle ? 128 : 178;
-    const radiusPx = showFullCircle ? 84 : 118;
-    const totalAB = geoSim.diameter;
-    const scale = (2 * radiusPx) / totalAB;
-    // Left endpoint A = (cx - R, cy), Right endpoint B = (cx + R, cy), Center O = (cx, cy)
-    const ax = cx - radiusPx;
-    const bx = cx + radiusPx;
-    // Split point H at distance a from A
-    const hx = ax + geoSim.a * scale;
-    // Altitude PH = sqrt(ab) * scale
-    const hPx = geoSim.geom * scale;
-    const px = hx;
-    const py = cy - hPx;
-    // Projection Q of H onto OP:
-    // Vector OP = (px - cx, py - cy), length = radiusPx
-    // In right triangle OPH, distance OQ along OP is OH^2 / R, and PQ along PO is PH^2 / R = harm * scale
-    const ux = (px - cx) / (radiusPx || 1);
-    const uy = (py - cy) / (radiusPx || 1);
-    const oqLen = (geoSim.centerOffset * scale * (geoSim.centerOffset * scale)) / (radiusPx || 1);
-    const qx = cx + ux * oqLen;
-    const qy = cy + uy * oqLen;
+  const goSection = (sec: Section) => {
+    setOpenPad(null);
+    onStepChange(Math.max(0, LESSON7_SECTIONS.indexOf(sec)));
+  };
 
-    return {
-      cx,
-      cy,
-      radiusPx,
-      ax,
-      bx,
-      hx,
-      px,
-      py,
-      qx,
-      qy,
-      viewHeight: showFullCircle ? 248 : 225,
-    };
-  })();
+  const handleReset = () => {
+    onRequestConfirm('7차시 탐구 기록 초기화', '7차시(유리함수의 그래프)에 입력한 모든 답안과 확인 상태를 초기화할까요?', () => {
+      onUpdate((prev) => ({ ...prev, ...LESSON7_RESET }));
+      setFeedback({});
+      setGraphOpen({});
+    });
+  };
+
+  const graphReveal = (k: GraphKey, unlocked: boolean | undefined, panels: RationalPanel[], caption?: React.ReactNode) => (
+    <RationalGraphReveal unlocked={Boolean(unlocked)} open={Boolean(graphOpen[k])} onToggle={() => toggleGraph(k)} panels={panels} caption={caption} />
+  );
+
+  const transformPanels = (items: typeof L7_GRAPH_SETS.ex2) =>
+    items.map((g, i) => shiftedPanel(`${i}`, g.title, g.label, g.fn));
+
+  const transformFields = (t: L7Transform, keys: { k: keyof Lesson6State; p: keyof Lesson6State; q: keyof Lesson6State; ax: keyof Lesson6State; ay: keyof Lesson6State }) => ({
+    values: {
+      k: state[keys.k] as string | undefined,
+      p: state[keys.p] as string | undefined,
+      q: state[keys.q] as string | undefined,
+      ax: state[keys.ax] as string | undefined,
+      ay: state[keys.ay] as string | undefined,
+    },
+    onChange: (part: 'k' | 'p' | 'q' | 'ax' | 'ay', v: string) => setField(keys[part], v as never),
+    label: t.label,
+  });
+
+  const shiftFn: RationalFn = { k: sk, p: sp, q: sq };
 
   return (
-    <div className="space-y-6">
-      {/* STEP 0: 1단계 산술·기하 단서 수집 (원·반원 길이 & 사각형 면적 시뮬레이션) */}
-      {step === 0 && (
+    <div className="space-y-7">
+      {/* 상단 차시 표시 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200/80 bg-rose-50/60 px-4 py-3">
+        <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-rose-950 flex-wrap">
+          <Spline className="h-4 w-4 text-rose-600 shrink-0" />
+          <span>07차시 · 유리함수의 그래프:</span>
+          <span className="font-semibold text-rose-800">
+            <MathText text="y = k/x" />의 그래프와 평행이동, 점근선 찾기
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleReset}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+        >
+          <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+          <span>7차시 초기화</span>
+        </button>
+      </div>
+
+      {/* =====================================================================
+          1단계: [함께하기] y = k/x의 그래프와 k
+      ===================================================================== */}
+      {section === 'together' && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-            <div className="text-xs font-bold text-blue-600">
-              STAGE 01 · 도형 시뮬레이션 단서 수집 · 원·반원의 길이와 정사각형·직사각형의 넓이 비교
-            </div>
-            <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-slate-900">
-              절대부등식 수사 2: 원·반원과 사각형에서 산술평균과 기하평균을 눈으로 확인하라!
-            </h3>
-            <p className="mt-1.5 text-sm sm:text-base text-slate-700 leading-relaxed">
-              두 양수 <span className="mono font-bold">a &gt; 0, b &gt; 0</span>을 지름의 두 선분 또는 직사각형의 두 변으로 두면,{' '}
-              <span className="mono font-bold text-blue-700">산술평균 (a+b)/2</span>는 <strong>원의 반지름(정사각형의 한 변)</strong>이 되고,{' '}
-              <span className="mono font-bold text-indigo-700">
-                <MathText text="기하평균 √(ab)" />
-              </span>
-              는 <strong>수선의 높이(넓이가 같은 정사각형의 한 변)</strong>가 됩니다.
-              슬라이더나 추천 순서쌍을 조작하여 <strong>길이 비교(원·반원)</strong>와 <strong>면적 비교(사각형)</strong>를 실험하고 단서를 3개 이상 기록해 보세요.
-            </p>
-          </div>
-
-          {/* Interactive Geometric Simulator Card */}
-          <div className="rounded-2xl border border-blue-200/90 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/40 p-4 sm:p-6 shadow-xs space-y-5">
-            {/* Simulator Header & Mode Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-extrabold text-white">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    실시간 도형 시뮬레이터
-                  </span>
-                  <span className="text-sm sm:text-base font-extrabold text-slate-900">
-                    양수 (a={geoSim.a}, b={geoSim.b}) 길이·면적 기하학 비교
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-slate-600">
-                  슬라이더를 움직이거나 프리셋을 클릭하면 반원·원의 현과 정사각형·직사각형의 면적이 실시간으로 변합니다.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="도형 시뮬레이션 보기 방식">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={simViewMode === 'both'}
-                  onClick={() => setSimViewMode('both')}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
-                    simViewMode === 'both'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Layers className="h-3.5 w-3.5" />
-                  <span>길이+면적 함께 보기</span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={simViewMode === 'length'}
-                  onClick={() => setSimViewMode('length')}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
-                    simViewMode === 'length'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <CircleDot className="h-3.5 w-3.5" />
-                  <span>원·반원 길이 비교</span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={simViewMode === 'area'}
-                  onClick={() => setSimViewMode('area')}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all ${
-                    simViewMode === 'area'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Square className="h-3.5 w-3.5" />
-                  <span>사각형 면적 비교</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Sliders & Quick Presets Bar */}
-            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] items-center rounded-xl border border-slate-200 bg-white p-4">
-              {/* Slider A */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <label htmlFor="l6-slider-a" className="text-slate-700">
-                    선분·가로 길이 <span className="mono text-blue-700 font-extrabold">a = {geoSim.a}</span>
-                  </label>
-                  <span className="text-[11px] text-slate-400 mono">0.5 ~ 16</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    id="l6-slider-a"
-                    type="range"
-                    min="0.5"
-                    max="16"
-                    step="0.5"
-                    value={simA}
-                    onChange={(e) => syncSimPair(Number(e.target.value), simB)}
-                    className="w-full accent-blue-600 cursor-pointer"
-                  />
-                  <input
-                    id="l6-a-input"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label="양수 a 직접 입력"
-                    value={inputA}
-                    onChange={(e) => {
-                      setInputA(e.target.value);
-                      const v = Number(e.target.value);
-                      if (Number.isFinite(v) && v > 0 && v <= 50) {
-                        setSimA(v);
-                      }
-                    }}
-                    className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center text-xs font-bold mono focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Slider B */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <label htmlFor="l6-slider-b" className="text-slate-700">
-                    선분·세로 길이 <span className="mono text-indigo-700 font-extrabold">b = {geoSim.b}</span>
-                  </label>
-                  <span className="text-[11px] text-slate-400 mono">0.5 ~ 16</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    id="l6-slider-b"
-                    type="range"
-                    min="0.5"
-                    max="16"
-                    step="0.5"
-                    value={simB}
-                    onChange={(e) => syncSimPair(simA, Number(e.target.value))}
-                    className="w-full accent-indigo-600 cursor-pointer"
-                  />
-                  <input
-                    id="l6-b-input"
-                    type="text"
-                    inputMode="numeric"
-                    aria-label="양수 b 직접 입력"
-                    value={inputB}
-                    onChange={(e) => {
-                      setInputB(e.target.value);
-                      const v = Number(e.target.value);
-                      if (Number.isFinite(v) && v > 0 && v <= 50) {
-                        setSimB(v);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddExample();
-                      }
-                    }}
-                    className="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center text-xs font-bold mono focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Record Button */}
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleAddExample(simA, simB)}
-                  className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs sm:text-sm font-extrabold text-white shadow-xs hover:bg-blue-700 transition-colors whitespace-nowrap"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  <span>현재 ({simA}, {simB}) 단서 표에 추가</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Preset Chips */}
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-bold text-slate-600 mr-1">빠른 실험 &amp; 단서 추가:</span>
-                {[
-                  { a: 4, b: 4, tag: 'a=b 등호 성립' },
-                  { a: 1, b: 9, tag: '산술 5 > 기하 3' },
-                  { a: 2, b: 8, tag: '산술 5 > 기하 4' },
-                  { a: 4, b: 16, tag: '산술 10 > 기하 8' },
-                  { a: 3, b: 12, tag: '산술 7.5 > 기하 6' },
-                  { a: 6, b: 6, tag: 'a=b 등호 성립' },
-                ].map((preset) => {
-                  const isCurrent = Math.abs(simA - preset.a) < 1e-6 && Math.abs(simB - preset.b) < 1e-6;
-                  return (
-                    <button
-                      key={`${preset.a}-${preset.b}`}
-                      type="button"
-                      onClick={() => handleAddExample(preset.a, preset.b)}
-                      className={`rounded-xl border px-3 py-1.5 font-bold transition-all ${
-                        isCurrent
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-2xs'
-                          : 'border-blue-200 bg-blue-50/80 text-blue-800 hover:bg-blue-100'
-                      }`}
-                    >
-                      <span className="mono">({preset.a}, {preset.b})</span>{' '}
-                      <span className="text-[11px] opacity-85">· {preset.tag}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
-                <input
-                  type="checkbox"
-                  checked={showFullCircle}
-                  onChange={(e) => setShowFullCircle(e.target.checked)}
-                  className="rounded accent-blue-600"
-                />
-                <span>전체 원(Circle) 보조선 표시</span>
-              </label>
-            </div>
-
-            {/* Visual Simulation Panels (Length & Area) */}
-            <div
-              className={`grid gap-5 ${
-                simViewMode === 'both' ? 'lg:grid-cols-2' : 'grid-cols-1'
-              }`}
-            >
-              {/* PANEL 1: Semicircle / Circle Length Comparison */}
-              {(simViewMode === 'both' || simViewMode === 'length') && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3 flex flex-col justify-between">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div>
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">
-                        GEOMETRY 01 · 반원·원에서의 선분 길이 비교
-                      </span>
-                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                        <MathText text="반지름 R = (a+b)/2 vs 수선 높이 h = √(ab) vs 조화선분 = 2ab/(a+b)" />
-                      </h4>
-                    </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${
-                        geoSim.isEqual
-                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                          : 'bg-blue-50 text-blue-800 border border-blue-200'
-                      }`}
-                    >
-                      {geoSim.isEqual ? 'a = b (수선 P가 원의 정중앙 M과 일치!)' : '빗변(반지름) > 높이(기하평균)'}
-                    </span>
-                  </div>
-
-                  {/* Interactive Circle/Semicircle SVG */}
-                  <div className="rounded-xl border border-slate-100 bg-slate-950 p-3 text-white">
-                    <svg
-                      viewBox={`0 0 380 ${circleSvgGeometry.viewHeight}`}
-                      className="w-full h-auto max-h-[250px] overflow-visible"
-                      role="img"
-                      aria-label={`지름이 a+b=${geoSim.diameter}인 원에서 산술평균 반지름 ${geoSim.arith}와 기하평균 높이 ${geoSim.geom}를 비교하는 기하 시뮬레이션`}
-                    >
-                      {/* Background Grid Lines */}
-                      <line
-                        x1="20"
-                        y1={circleSvgGeometry.cy}
-                        x2="360"
-                        y2={circleSvgGeometry.cy}
-                        stroke="rgba(148,163,184,0.2)"
-                        strokeDasharray="3 3"
-                      />
-                      <line
-                        x1={circleSvgGeometry.cx}
-                        y1="18"
-                        x2={circleSvgGeometry.cx}
-                        y2={circleSvgGeometry.viewHeight - 18}
-                        stroke="rgba(148,163,184,0.2)"
-                        strokeDasharray="3 3"
-                      />
-
-                      {/* Lower Half Circle (when full circle is enabled) */}
-                      {showFullCircle && (
-                        <circle
-                          cx={circleSvgGeometry.cx}
-                          cy={circleSvgGeometry.cy}
-                          r={circleSvgGeometry.radiusPx}
-                          fill="rgba(59,130,246,0.05)"
-                          stroke="rgba(148,163,184,0.35)"
-                          strokeWidth="1.5"
-                          strokeDasharray="5 4"
-                        />
-                      )}
-
-                      {/* Upper Semicircle Arc */}
-                      <path
-                        d={`M ${circleSvgGeometry.ax} ${circleSvgGeometry.cy} A ${circleSvgGeometry.radiusPx} ${circleSvgGeometry.radiusPx} 0 0 1 ${circleSvgGeometry.bx} ${circleSvgGeometry.cy}`}
-                        fill="rgba(59,130,246,0.12)"
-                        stroke="#60a5fa"
-                        strokeWidth="2.5"
-                      />
-
-                      {/* Inscribed Right Triangle APB (dashed chords AP and BP showing similarity) */}
-                      <line
-                        x1={circleSvgGeometry.ax}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.px}
-                        y2={circleSvgGeometry.py}
-                        stroke="rgba(148,163,184,0.45)"
-                        strokeWidth="1.2"
-                        strokeDasharray="3 3"
-                      />
-                      <line
-                        x1={circleSvgGeometry.bx}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.px}
-                        y2={circleSvgGeometry.py}
-                        stroke="rgba(148,163,184,0.45)"
-                        strokeWidth="1.2"
-                        strokeDasharray="3 3"
-                      />
-
-                      {/* Highlight Right Triangle OPH */}
-                      <polygon
-                        points={`${circleSvgGeometry.cx},${circleSvgGeometry.cy} ${circleSvgGeometry.hx},${circleSvgGeometry.cy} ${circleSvgGeometry.px},${circleSvgGeometry.py}`}
-                        fill="rgba(99,102,241,0.22)"
-                        stroke="none"
-                      />
-
-                      {/* Segment AH = a (Sky Blue) */}
-                      <line
-                        x1={circleSvgGeometry.ax}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.hx}
-                        y2={circleSvgGeometry.cy}
-                        stroke="#38bdf8"
-                        strokeWidth="4"
-                      />
-                      {/* Segment HB = b (Violet) */}
-                      <line
-                        x1={circleSvgGeometry.hx}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.bx}
-                        y2={circleSvgGeometry.cy}
-                        stroke="#c084fc"
-                        strokeWidth="4"
-                      />
-
-                      {/* Center Vertical Radius OM = (a+b)/2 (dashed reference) */}
-                      <line
-                        x1={circleSvgGeometry.cx}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.cx}
-                        y2={circleSvgGeometry.cy - circleSvgGeometry.radiusPx}
-                        stroke="rgba(96,165,250,0.55)"
-                        strokeWidth="1.8"
-                        strokeDasharray="4 3"
-                      />
-
-                      {/* Hypotenuse Radius OP = (a+b)/2 (Arithmetic Mean, Blue) */}
-                      <line
-                        x1={circleSvgGeometry.cx}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.px}
-                        y2={circleSvgGeometry.py}
-                        stroke="#3b82f6"
-                        strokeWidth="3.5"
-                      />
-
-                      {/* Harmonic Mean Segment PQ along OP (Emerald) */}
-                      {!geoSim.isEqual && (
-                        <>
-                          <line
-                            x1={circleSvgGeometry.hx}
-                            y1={circleSvgGeometry.cy}
-                            x2={circleSvgGeometry.qx}
-                            y2={circleSvgGeometry.qy}
-                            stroke="rgba(16,185,129,0.65)"
-                            strokeWidth="1.5"
-                            strokeDasharray="2 2"
-                          />
-                          <line
-                            x1={circleSvgGeometry.qx}
-                            y1={circleSvgGeometry.qy}
-                            x2={circleSvgGeometry.px}
-                            y2={circleSvgGeometry.py}
-                            stroke="#10b981"
-                            strokeWidth="4"
-                          />
-                        </>
-                      )}
-
-                      {/* Altitude PH = sqrt(ab) (Geometric Mean, Amber/Indigo bright) */}
-                      <line
-                        x1={circleSvgGeometry.hx}
-                        y1={circleSvgGeometry.cy}
-                        x2={circleSvgGeometry.px}
-                        y2={circleSvgGeometry.py}
-                        stroke="#f59e0b"
-                        strokeWidth="3.5"
-                      />
-
-                      {/* Key Points */}
-                      <circle cx={circleSvgGeometry.ax} cy={circleSvgGeometry.cy} r="4" fill="#38bdf8" />
-                      <circle cx={circleSvgGeometry.bx} cy={circleSvgGeometry.cy} r="4" fill="#c084fc" />
-                      <circle cx={circleSvgGeometry.cx} cy={circleSvgGeometry.cy} r="4.5" fill="#60a5fa" />
-                      <circle cx={circleSvgGeometry.hx} cy={circleSvgGeometry.cy} r="4.5" fill="#f59e0b" />
-                      <circle cx={circleSvgGeometry.px} cy={circleSvgGeometry.py} r="5" fill="#fbbf24" />
-                      <circle
-                        cx={circleSvgGeometry.cx}
-                        cy={circleSvgGeometry.cy - circleSvgGeometry.radiusPx}
-                        r="3.5"
-                        fill="#60a5fa"
-                      />
-
-                      {/* Labels */}
-                      <text x={circleSvgGeometry.ax - 4} y={circleSvgGeometry.cy + 18} fill="#94a3b8" fontSize="11" fontWeight="bold" textAnchor="middle">
-                        A
-                      </text>
-                      <text x={circleSvgGeometry.bx + 4} y={circleSvgGeometry.cy + 18} fill="#94a3b8" fontSize="11" fontWeight="bold" textAnchor="middle">
-                        B
-                      </text>
-                      <text x={circleSvgGeometry.cx} y={circleSvgGeometry.cy + 18} fill="#60a5fa" fontSize="11" fontWeight="bold" textAnchor="middle">
-                        O(중심)
-                      </text>
-                      <text
-                        x={circleSvgGeometry.hx}
-                        y={Math.abs(circleSvgGeometry.hx - circleSvgGeometry.cx) < 22 ? circleSvgGeometry.cy + 31 : circleSvgGeometry.cy + 18}
-                        fill="#fbbf24"
-                        fontSize="11"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                      >
-                        H
-                      </text>
-                      <text x={circleSvgGeometry.px} y={circleSvgGeometry.py - 8} fill="#fde68a" fontSize="11" fontWeight="bold" textAnchor="middle">
-                        P (<tspan fontFamily="Cambria Math, STIX Two Math, Times New Roman, serif">√</tspan>
-                        <tspan style={{ textDecoration: 'overline' }}>ab</tspan>={geoSim.geom})
-                      </text>
-                      <text
-                        x={circleSvgGeometry.cx}
-                        y={circleSvgGeometry.cy - circleSvgGeometry.radiusPx - 7}
-                        fill="#93c5fd"
-                        fontSize="10"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                      >
-                        반지름 R=(a+b)/2={geoSim.arith}
-                      </text>
-
-                      {/* Segment a and b labels */}
-                      <text
-                        x={(circleSvgGeometry.ax + circleSvgGeometry.hx) / 2}
-                        y={circleSvgGeometry.cy - 6}
-                        fill="#38bdf8"
-                        fontSize="11"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                      >
-                        a={geoSim.a}
-                      </text>
-                      <text
-                        x={(circleSvgGeometry.hx + circleSvgGeometry.bx) / 2}
-                        y={circleSvgGeometry.cy - 6}
-                        fill="#c084fc"
-                        fontSize="11"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                      >
-                        b={geoSim.b}
-                      </text>
-                    </svg>
-
-                    {/* Length Comparison Bar Meters */}
-                    <div className="mt-2 pt-2.5 border-t border-white/10 space-y-1.5 text-xs">
-                      <div className="grid grid-cols-[120px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-sky-300">산술 반지름 (a+b)/2</span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div className="h-full rounded-full bg-blue-500 transition-all duration-150" style={{ width: '100%' }} />
-                        </div>
-                        <span className="mono font-extrabold text-right text-sky-200">{geoSim.arith}</span>
-                      </div>
-                      <div className="grid grid-cols-[120px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-amber-300">
-                          <MathText text="기하 수선 √(ab)" />
-                        </span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-amber-400 transition-all duration-150"
-                            style={{ width: `${Math.min(100, (geoSim.geom / (geoSim.arith || 1)) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="mono font-extrabold text-right text-amber-200">{geoSim.geom}</span>
-                      </div>
-                      <div className="grid grid-cols-[120px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-emerald-300">조화 선분 2ab/(a+b)</span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-emerald-400 transition-all duration-150"
-                            style={{ width: `${Math.min(100, (geoSim.harm / (geoSim.arith || 1)) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="mono font-extrabold text-right text-emerald-200">{geoSim.harm}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-blue-50/80 border border-blue-200/80 px-3 py-2 text-xs text-slate-700 leading-relaxed">
-                    <strong className="text-blue-900">원·반원 기하학적 원리:</strong> 직각삼각형 <span className="mono font-bold">△OPH</span>에서 빗변(반지름)의 길이는{' '}
-                    <span className="mono font-bold text-blue-700">OP = (a+b)/2 = {geoSim.arith}</span>이고, 수선의 높이는{' '}
-                    <span className="mono font-bold text-amber-700">
-                      <MathText text={`PH = √(ab) = ${geoSim.geom}`} />
-                    </span>
-                    , 밑변은{' '}
-                    <span className="mono font-bold">|a−b|/2 = {geoSim.centerOffset}</span>입니다. 직각삼각형의 빗변은 항상 높이보다 길거나 같으므로{' '}
-                    <span className="mono font-extrabold text-slate-900">
-                      <MathText text="(a+b)/2 ≥ √(ab)" />
-                    </span>
-                    가 성립합니다!
-                  </div>
-                </div>
-              )}
-
-              {/* PANEL 2: Square & Rectangle Area Comparison */}
-              {(simViewMode === 'both' || simViewMode === 'area') && (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3 flex flex-col justify-between">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div>
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
-                        GEOMETRY 02 · 정사각형·직사각형 면적(넓이) 비교
-                      </span>
-                      <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                        정사각형 넓이 ((a+b)/2)² vs 직사각형 넓이 ab &amp; 4분할 바람개비
-                      </h4>
-                    </div>
-                    <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-xs font-extrabold text-indigo-800 mono">
-                      넓이 차 = {geoSim.areaDiff}
-                    </span>
-                  </div>
-
-                  {/* Area Comparison SVG: Left = Square ((a+b)/2)^2 vs Rectangle a*b, Right = Pinwheel (a+b)^2 = 4ab + (a-b)^2 */}
-                  <div className="rounded-xl border border-slate-100 bg-slate-950 p-3 text-white">
-                    {(() => {
-                      const maxDim = Math.max(geoSim.a, geoSim.b, geoSim.arith, 1);
-                      const boxScale = 86 / maxDim;
-                      const sqSide = geoSim.arith * boxScale;
-                      const rectW = geoSim.a * boxScale;
-                      const rectH = geoSim.b * boxScale;
-
-                      // Pinwheel square of side (a+b) scaled to 108px
-                      const pinSize = 108;
-                      const pinScale = pinSize / (geoSim.diameter || 1);
-                      const pa = geoSim.a * pinScale;
-                      const pb = geoSim.b * pinScale;
-                      const holeSide = Math.abs(pa - pb);
-                      const holeStart = Math.min(pa, pb);
-
-                      return (
-                        <svg
-                          viewBox="0 0 380 185"
-                          className="w-full h-auto max-h-[215px]"
-                          role="img"
-                          aria-label={`정사각형 넓이 ${geoSim.arithSquareArea}와 직사각형 넓이 ${geoSim.rectArea}를 비교하는 도형 시뮬레이션`}
-                        >
-                          {/* Left Side: Overlay comparison of Square ((a+b)/2)^2 and Rectangle a*b */}
-                          <text x="95" y="16" fill="#93c5fd" fontSize="10.5" fontWeight="bold" textAnchor="middle">
-                            ① 둘레가 2(a+b)로 같은 정사각형 vs 직사각형
-                          </text>
-
-                          {/* Square of side (a+b)/2 */}
-                          <rect
-                            x={95 - sqSide / 2}
-                            y={92 - sqSide / 2}
-                            width={sqSide}
-                            height={sqSide}
-                            fill="rgba(59,130,246,0.22)"
-                            stroke="#60a5fa"
-                            strokeWidth="2"
-                            strokeDasharray="4 2"
-                          />
-                          {/* Rectangle of width a and height b */}
-                          <rect
-                            x={95 - rectW / 2}
-                            y={92 - rectH / 2}
-                            width={rectW}
-                            height={rectH}
-                            fill="rgba(245,158,11,0.32)"
-                            stroke="#fbbf24"
-                            strokeWidth="2"
-                          />
-
-                          <text x="95" y="156" fill="#bfdbfe" fontSize="10" fontWeight="bold" textAnchor="middle">
-                            파란 정사각형 넓이 = ((a+b)/2)² = {geoSim.arithSquareArea}
-                          </text>
-                          <text x="95" y="171" fill="#fde68a" fontSize="10" fontWeight="bold" textAnchor="middle">
-                            주황 직사각형 넓이 = a×b = {geoSim.rectArea}
-                          </text>
-
-                          {/* Divider */}
-                          <line x1="196" y1="12" x2="196" y2="174" stroke="rgba(148,163,184,0.2)" />
-
-                          {/* Right Side: (a+b)^2 = 4ab + (a-b)^2 Pinwheel Square */}
-                          <text x="290" y="16" fill="#c4b5fd" fontSize="10.5" fontWeight="bold" textAnchor="middle">
-                            ② (a+b)² = 4ab + (a−b)² 면적 분할
-                          </text>
-
-                          <g transform="translate(236, 28)">
-                            {/* Outer Square (a+b)^2 */}
-                            <rect
-                              x={0}
-                              y={0}
-                              width={pinSize}
-                              height={pinSize}
-                              fill="rgba(30,41,59,0.9)"
-                              stroke="#94a3b8"
-                              strokeWidth="1.5"
-                            />
-                            {/* 4 Rectangles of a x b */}
-                            {/* Top-Left: width pa, height pb */}
-                            <rect x={0} y={0} width={pa} height={pb} fill="rgba(99,102,241,0.42)" stroke="#818cf8" strokeWidth="1.2" />
-                            {/* Top-Right: width pb, height pa */}
-                            <rect x={pa} y={0} width={pb} height={pa} fill="rgba(59,130,246,0.42)" stroke="#60a5fa" strokeWidth="1.2" />
-                            {/* Bottom-Right: width pa, height pb */}
-                            <rect x={pb} y={pa} width={pa} height={pb} fill="rgba(99,102,241,0.42)" stroke="#818cf8" strokeWidth="1.2" />
-                            {/* Bottom-Left: width pb, height pa */}
-                            <rect x={0} y={pb} width={pb} height={pa} fill="rgba(59,130,246,0.42)" stroke="#60a5fa" strokeWidth="1.2" />
-
-                            {/* Center Hole Square (a-b)^2 */}
-                            {holeSide > 0.5 && (
-                              <rect
-                                x={holeStart}
-                                y={holeStart}
-                                width={holeSide}
-                                height={holeSide}
-                                fill="rgba(244,63,94,0.45)"
-                                stroke="#fb7185"
-                                strokeWidth="1.8"
-                              />
-                            )}
-                          </g>
-
-                          <text x="290" y="156" fill="#a5b4fc" fontSize="10" fontWeight="bold" textAnchor="middle">
-                            전체 (a+b)²={geoSim.bigSquareArea} / 4ab={geoSim.fourRectArea}
-                          </text>
-                          <text x="290" y="171" fill="#fda4af" fontSize="10" fontWeight="bold" textAnchor="middle">
-                            가운데 빈틈 (a−b)² = {geoSim.innerHoleArea} {geoSim.isEqual ? '(빈틈 0!)' : '> 0'}
-                          </text>
-                        </svg>
-                      );
-                    })()}
-
-                    {/* Area Comparison Bar Meters */}
-                    <div className="mt-2 pt-2.5 border-t border-white/10 space-y-1.5 text-xs">
-                      <div className="grid grid-cols-[135px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-sky-300">정사각형 ((a+b)/2)²</span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div className="h-full rounded-full bg-blue-500 transition-all duration-150" style={{ width: '100%' }} />
-                        </div>
-                        <span className="mono font-extrabold text-right text-sky-200">{geoSim.arithSquareArea}</span>
-                      </div>
-                      <div className="grid grid-cols-[135px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-amber-300">직사각형 넓이 a×b</span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-amber-400 transition-all duration-150"
-                            style={{ width: `${Math.min(100, (geoSim.rectArea / (geoSim.arithSquareArea || 1)) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="mono font-extrabold text-right text-amber-200">{geoSim.rectArea}</span>
-                      </div>
-                      <div className="grid grid-cols-[135px_1fr_64px] items-center gap-2">
-                        <span className="font-bold text-rose-300">넓이 차 (a−b)²/4</span>
-                        <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-rose-400 transition-all duration-150"
-                            style={{ width: `${Math.min(100, (geoSim.areaDiff / (geoSim.arithSquareArea || 1)) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="mono font-extrabold text-right text-rose-200">{geoSim.areaDiff}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-indigo-50/80 border border-indigo-200/80 px-3 py-2 text-xs text-slate-700 leading-relaxed">
-                    <strong className="text-indigo-900">사각형 면적 원리:</strong> 한 변이 <span className="mono font-bold">(a+b)/2</span>인 정사각형의 넓이{' '}
-                    <span className="mono font-bold text-blue-700">{geoSim.arithSquareArea}</span>는 가로 <span className="mono">a</span>, 세로 <span className="mono">b</span>인 직사각형의 넓이{' '}
-                    <span className="mono font-bold text-amber-700">ab = {geoSim.rectArea}</span>보다 항상{' '}
-                    <span className="mono font-bold text-rose-700">(a−b)²/4 = {geoSim.areaDiff}</span>만큼 크거나 같습니다. 양변에 루트를 씌우면{' '}
-                    <span className="mono font-extrabold text-slate-900">
-                      <MathText text="(a+b)/2 ≥ √(ab)" />
-                    </span>
-                    가 됩니다!
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            {/* Left: Collected Clues Table */}
-            <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div>
-                  <span className="text-sm font-bold text-slate-900">
-                    수집한 양수 (a, b) 단서 기록표 (3개 이상 수집)
-                  </span>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    표의 행을 클릭하면 해당 (a, b) 값을 위 도형 시뮬레이터로 즉시 불러옵니다.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-                    현재 {state.examples.length}개 (권장 3개 이상)
-                  </span>
-                  {state.examples.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onRequestConfirm('단서 표 초기화', '입력한 양수 (a, b) 사례를 모두 지울까요?', () => {
-                          onUpdate((prev) => ({ ...prev, examples: [] }));
-                        })
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      초기화
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {inputWarning && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900">
-                  {inputWarning}
-                </div>
-              )}
-
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full min-w-[460px] border-collapse text-xs sm:text-sm">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700">
-                      <th className="py-2 px-2.5 text-center font-bold border-b border-slate-200">(a, b)</th>
-                      <th className="py-2 px-2.5 text-center font-bold border-b border-slate-200">반지름 (a+b)/2</th>
-                      <th className="py-2 px-2.5 text-center font-bold border-b border-slate-200">
-                        <MathText text="높이 √(ab)" />
-                      </th>
-                      <th className="py-2 px-2.5 text-center font-bold border-b border-slate-200">조화 2ab/(a+b)</th>
-                      <th className="py-2 px-2.5 text-center font-bold border-b border-slate-200">길이·면적 비교</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {state.examples.length > 0 ? (
-                      state.examples.map((item) => {
-                        const isSimSelected =
-                          Math.abs(item.a - simA) < 1e-6 && Math.abs(item.b - simB) < 1e-6;
-                        return (
-                          <tr
-                            key={`${item.a}-${item.b}`}
-                            onClick={() => syncSimPair(item.a, item.b)}
-                            className={`text-center cursor-pointer transition-colors ${
-                              isSimSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'
-                            }`}
-                            title="클릭하여 도형 시뮬레이터에서 (a, b) 길이·넓이 확인"
-                          >
-                            <td className="py-2 px-2.5 mono font-bold">
-                              ({item.a}, {item.b})
-                            </td>
-                            <td className="py-2 px-2.5 mono font-semibold text-blue-700">{item.arith}</td>
-                            <td className="py-2 px-2.5 mono font-semibold text-indigo-700">{item.geom}</td>
-                            <td className="py-2 px-2.5 mono font-semibold text-emerald-700">{item.harm}</td>
-                            <td className="py-2 px-2.5">
-                              {item.isEqual ? (
-                                <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-bold text-amber-800">
-                                  a=b 등호 성립 (=)
-                                </span>
-                              ) : (
-                                <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-bold text-emerald-800">
-                                  산술 &gt; 기하 &gt; 조화
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="py-6 text-center text-slate-500">
-                          위 도형 시뮬레이터의 추천 순서쌍 버튼을 눌러 (4, 4), (1, 9), (2, 8) 등을 실험해 보세요.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Right: AM-GM Prerequisite Check & Hint */}
-            <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-sm font-bold text-slate-900">
-                  산술평균과 기하평균의 전제 조건 확인
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader
+              theme="rose"
+              kicker="탐구 활동 01 · 교과서 [함께하기]"
+              title={
+                <span className="inline-flex items-center gap-1 flex-wrap">
+                  k의 값에 따라 <i>y</i> = <Frac n={<i>k</i>} d={<i>x</i>} />의 그래프 그려 보기
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (state.step1HintLevel === 0) {
-                      onUpdate((prev) => ({ ...prev, step1HintLevel: 1 }));
-                      setShowStep1Hint(true);
-                    } else {
-                      setShowStep1Hint((prev) => !prev);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100"
-                >
-                  <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
-                  {showStep1Hint && state.step1HintLevel > 0
-                    ? `힌트 숨기기 (${state.step1HintLevel}/${STEP1_HINTS.length})`
-                    : `힌트 보기 (${state.step1HintLevel}/${STEP1_HINTS.length})`}
-                </button>
-              </div>
-
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3.5 text-xs sm:text-sm text-indigo-950 space-y-1">
-                <div className="font-extrabold">핵심 개념 — 산술평균과 기하평균의 관계</div>
-                <div className="mono text-xs text-indigo-900">
-                  <MathText text="a > 0, b > 0일 때: (a + b) / 2 ≥ √(ab)   (단, 등호는 a = b일 때 성립)" />
-                </div>
-              </div>
-
-              {showStep1Hint && state.step1HintLevel > 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 space-y-2 text-xs sm:text-sm text-amber-950">
-                  {STEP1_HINTS.slice(0, state.step1HintLevel).map((h, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="font-extrabold text-amber-700 shrink-0">💡</span>
-                      <span>
-                        <MathText text={h} />
-                      </span>
-                    </div>
-                  ))}
-                  <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
-                    {state.step1HintLevel < STEP1_HINTS.length && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdate((prev) => ({
-                            ...prev,
-                            step1HintLevel: Math.min(STEP1_HINTS.length, prev.step1HintLevel + 1),
-                          }))
-                        }
-                        className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
-                      >
-                        + 다음 단계 힌트 더 보기 ({state.step1HintLevel + 1}/{STEP1_HINTS.length})
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowStep1Hint(false)}
-                      className="text-xs font-bold text-amber-800 hover:underline ml-auto"
-                    >
-                      힌트 접기 ▲
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-600 leading-relaxed">
-                  <MathText text="Q. 부등식 (a + b)/2 ≥ √(ab)를 증명할 때 a = (√a)², b = (√b)²으로 바꾸어 완전제곱식 (√a − √b)²을 만들 수 있는 조건은?" />
-                </div>
-                {(
-                  [
-                    [
-                      'positive',
-                      '두 수 a, b가 모두 양수(a > 0, b > 0)일 때 √a와 √b가 실수가 되어 (√a − √b)² ≥ 0을 이용할 수 있다.',
-                    ],
-                    [
-                      'anyreal',
-                      'a, b가 음수여도 항상 (a + b)/2 ≥ √(ab)가 성립한다.',
-                    ],
-                    [
-                      'negative',
-                      'a = −b일 때만 성립하는 조건부 부등식이다.',
-                    ],
-                  ] as const
-                ).map(([val, label]) => {
-                  const isSel = state.amgmConceptChoice === val;
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => onUpdate((prev) => ({ ...prev, amgmConceptChoice: val }))}
-                      className={`w-full rounded-xl border p-3 text-left text-xs sm:text-sm font-semibold leading-relaxed transition-all ${
-                        isSel
-                          ? val === 'positive'
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-500'
-                            : 'border-rose-400 bg-rose-50 text-rose-950'
-                          : 'border-slate-200 bg-slate-50/60 text-slate-800 hover:bg-slate-100/70'
-                      }`}
-                    >
-                      <MathText text={label} />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {state.amgmConceptChoice && (
-                <div
-                  className={`rounded-xl border p-3.5 text-xs sm:text-sm font-medium ${
-                    state.amgmConceptChoice === 'positive'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                      : 'border-rose-200 bg-rose-50 text-rose-900'
-                  }`}
-                >
-                  {state.amgmConceptChoice === 'positive' ? (
-                    <span className="flex items-center gap-1.5 font-bold leading-relaxed">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                      <span>
-                        <MathText text="정확합니다! a > 0, b > 0 조건이 있어야 √a와 √b가 실수로 정의되며 (√a − √b)² ≥ 0이 성립합니다." />
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                      다시 확인해 보세요! 산술평균과 기하평균의 관계는 두 수가 모두 양수(a &gt; 0, b &gt; 0)일 때 성립합니다.
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => onStepChange(1)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
-            >
-              다음 단계 (문제 1 증명)
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 1: 2단계 [문제 1] (교과서 예제 4 변환) */}
-      {step === 1 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-xs font-extrabold text-blue-700 uppercase tracking-wider">
-                STAGE 02 · [문제 1] (교과서 예제 4 변환)
-              </span>
-              <span className="text-xs font-semibold text-blue-800 bg-white px-2.5 py-1 rounded-full border border-blue-200">
-                산술평균과 기하평균의 관계 증명
-              </span>
-            </div>
-            <h3 className="mt-1.5 text-lg sm:text-xl font-extrabold text-slate-900">
-              [문제 1] <span className="mono">a &gt; 0</span>이고 <span className="mono">b &gt; 0</span>일 때, 부등식{' '}
-              <span className="mono text-blue-700">
-                <MathText text="(a + b) / 2 ≥ √(ab)" />
-              </span>
-              가 성립함을 증명하시오. (등호 성립 조건 포함)
-            </h3>
-            <p className="mt-1 text-xs sm:text-sm text-slate-600">
-              각 단계의 빈칸에 들어갈 추론을 선택하고, 막히면 <strong>[힌트 보기]</strong>를 눌러 단서를 확인하세요.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {PROOF6_PROB1_STEPS.map((item, idx) => {
-              const selected = state.prob1Choices[idx];
-              const isVerified = state.prob1Verified[idx];
-              const hintLvl = state.prob1Hints[idx] || 0;
-              const isHintOpen = prob1HintsOpen[idx];
-
-              return (
-                <div
-                  key={idx}
-                  className={`rounded-xl border p-4 sm:p-5 transition-all ${
-                    isVerified
-                      ? 'border-emerald-200 bg-emerald-50/35'
-                      : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="text-sm sm:text-base font-extrabold text-slate-900 leading-relaxed">
-                      <span className="mono text-blue-600 mr-1.5">Step 0{idx + 1}.</span>
-                      <MathText text={item.q} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (hintLvl === 0) {
-                          onUpdate((prev) => {
-                            const nextHints = [...prev.prob1Hints];
-                            nextHints[idx] = 1;
-                            return { ...prev, prob1Hints: nextHints };
-                          });
-                          setProb1HintsOpen((prev) => {
-                            const next = [...prev];
-                            next[idx] = true;
-                            return next;
-                          });
-                        } else {
-                          setProb1HintsOpen((prev) => {
-                            const next = [...prev];
-                            next[idx] = !next[idx];
-                            return next;
-                          });
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100 shrink-0"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
-                      {isHintOpen && hintLvl > 0
-                        ? `힌트 숨기기 (${hintLvl}/${item.hints.length})`
-                        : `힌트 보기 (${hintLvl}/${item.hints.length})`}
-                    </button>
-                  </div>
-
-                  {isHintOpen && hintLvl > 0 && (
-                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/90 p-3 space-y-1.5 text-xs sm:text-sm text-amber-950">
-                      {item.hints.slice(0, hintLvl).map((h, hIdx) => (
-                        <div key={hIdx} className="flex items-start gap-2 leading-relaxed">
-                          <span className="font-bold text-amber-700 shrink-0">힌트 {hIdx + 1}:</span>
-                          <span>
-                            <MathText text={h} />
-                          </span>
-                        </div>
-                      ))}
-                      <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
-                        {hintLvl < item.hints.length && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onUpdate((prev) => {
-                                const nextHints = [...prev.prob1Hints];
-                                nextHints[idx] = Math.min(item.hints.length, (nextHints[idx] || 0) + 1);
-                                return { ...prev, prob1Hints: nextHints };
-                              })
-                            }
-                            className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
-                          >
-                            + 다음 힌트 더 보기 ({hintLvl + 1}/{item.hints.length})
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setProb1HintsOpen((prev) => {
-                              const next = [...prev];
-                              next[idx] = false;
-                              return next;
-                            })
-                          }
-                          className="text-xs font-bold text-amber-800 hover:underline ml-auto"
-                        >
-                          힌트 접기 ▲
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 grid gap-2">
-                    {item.opts.map((opt, oIdx) => {
-                      const isThisSelected = selected === oIdx;
-                      const isCorrect = oIdx === item.answer;
-                      return (
-                        <button
-                          key={oIdx}
-                          type="button"
-                          onClick={() => {
-                            onUpdate((prev) => {
-                              const nextChoices = [...prev.prob1Choices];
-                              const nextVerified = [...prev.prob1Verified];
-                              nextChoices[idx] = oIdx;
-                              nextVerified[idx] = oIdx === item.answer;
-                              return {
-                                ...prev,
-                                prob1Choices: nextChoices,
-                                prob1Verified: nextVerified,
-                              };
-                            });
-                          }}
-                          className={`w-full rounded-xl border p-3 text-left text-xs sm:text-sm font-semibold leading-relaxed transition-all ${
-                            isThisSelected
-                              ? isCorrect
-                                ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-500'
-                                : 'border-rose-400 bg-rose-50 text-rose-950'
-                              : 'border-slate-200 bg-slate-50/60 text-slate-800 hover:bg-slate-100/70'
-                          }`}
-                        >
-                          <span className="mono mr-2 font-bold">({oIdx + 1})</span>
-                          <MathText text={opt} />
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {selected !== null && (
-                    <div
-                      className={`mt-2.5 text-xs sm:text-sm font-bold flex items-center gap-1.5 ${
-                        isVerified ? 'text-emerald-700' : 'text-rose-700'
-                      }`}
-                    >
-                      {isVerified ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>정확한 추론입니다!</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                          <span>다시 생각해 보세요. 막히면 우측 상단의 [힌트 보기]를 눌러 보세요.</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Written Proof for Problem 1 */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label htmlFor="l6-prob1-proof" className="text-sm sm:text-base font-extrabold text-slate-900">
-                [문제 1] 나의 말로 쓰는 증명 보고서 (등호 성립 조건 필수)
-              </label>
-              <CharCountBadge text={state.prob1ProofText} min={35} />
-            </div>
-            <p className="text-xs text-slate-600">
-              <span className="mono font-semibold">
-                <MathText text="(a + b)/2 − √(ab) = (√a − √b)² / 2 ≥ 0" />
-              </span>
-              임을 보인 뒤 등호 성립 조건을 서술하세요.
-            </p>
-            <textarea
-              id="l6-prob1-proof"
-              rows={4}
-              value={state.prob1ProofText}
-              onChange={(e) => onUpdate((prev) => ({ ...prev, prob1ProofText: e.target.value }))}
-              placeholder=""
-              className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              }
+              done={state.tgVerified}
             />
-            <details className="mt-1.5">
-              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
-                💡 증명 보고서 작성 힌트 보기
-              </summary>
-              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
-                <strong>작성 힌트:</strong> <MathText text="a > 0, b > 0" />일 때 좌변에서 우변을 뺀 식을 <MathText text="(√a − √b)² / 2" />로 변형하여 0 이상임을 보이고, 언제 등호가 성립하는지 적어보세요.
+            <TextbookImage
+              file="image_l7_together.png"
+              alt="함께하기 - 알지오매스를 이용하여 함수 y = k/x의 그래프를 k의 값에 따라 그려 보자. k의 부호에 따른 사분면, k의 절댓값에 따른 모양 변화"
+              maxH="max-h-[340px]"
+            />
+            <p className="text-xs text-slate-600">💻 알지오매스 대신 아래 그래프에서 슬라이더로 k의 값을 바꿔 보세요. (k ≠ 0)</p>
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-4 items-start">
+              <div className="rounded-xl border border-slate-200 bg-white p-2 space-y-2">
+                <RationalGraph
+                  curves={[
+                    { fn: { k: 1, p: 0, q: 0 }, color: RAT_COLORS.base, dashed: true, width: 1.6 },
+                    ...(kVal !== 0 ? [{ fn: { k: kVal, p: 0, q: 0 }, color: RAT_COLORS.main }] : []),
+                  ]}
+                  points={kVal !== 0 ? [{ x: 1, y: kVal, color: '#ea580c', label: `(1, ${kText(kVal)})` }] : []}
+                  range={6}
+                  ariaLabel={`y = ${kText(kVal)}/x의 그래프와 비교용 y = 1/x`}
+                />
+                <GraphLegend
+                  items={[
+                    { color: RAT_COLORS.base, label: 'y = 1/x (비교)', dashed: true },
+                    { color: RAT_COLORS.main, label: `y = ${kText(kVal)}/x` },
+                  ]}
+                />
               </div>
-            </details>
-            <MathPreviewBox text={state.prob1ProofText} />
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => onStepChange(0)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              이전 단계
-            </button>
-            <button
-              type="button"
-              onClick={() => onStepChange(2)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
-            >
-              다음 단계 (역수·조화 탐색)
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 2: 3단계 역수의 합과 조화평균 단서 탐색 */}
-      {step === 2 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-            <div className="text-xs font-bold text-blue-600">
-              STAGE 03 · 심화 단서 탐색 · 역수의 합과 조화평균의 증명 전략
-            </div>
-            <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-slate-900">
-              [문제 2]를 풀기 위한 두 가지 열쇠: <span className="mono">a + 1/a ≥ 2</span>와{' '}
-              <span className="mono">
-                <MathText text="√(ab) ≥ 2ab / (a + b)" />
-              </span>
-            </h3>
-            <p className="mt-1.5 text-sm sm:text-base text-slate-700 leading-relaxed">
-              [문제 1]에서 증명한 산술·기하평균의 관계{' '}
-              <span className="mono font-bold">
-                <MathText text="(A + B)/2 ≥ √(AB)" />
-              </span>{' '}
-              (또는{' '}
-              <span className="mono font-bold">
-                <MathText text="A + B ≥ 2√(AB)" />
-              </span>
-              )를 이용하면 역수의 합과 조화평균 부등식도 손쉽게 증명할 수 있습니다.
-            </p>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-              <div className="text-sm font-bold text-slate-900">
-                [문제 2]의 두 부등식 핵심 아이디어
-              </div>
-
               <div className="space-y-3">
-                <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 space-y-1.5">
-                  <div className="text-xs font-extrabold text-blue-700">
-                    열쇠 1 — 역수의 합: a + 1/a ≥ 2 (단, a &gt; 0)
-                  </div>
-                  <div className="mono text-sm font-bold text-slate-900">
-                    <MathText text="a + 1/a ≥ 2√(a × 1/a) = 2√1 = 2" />
-                  </div>
-                  <p className="text-xs text-slate-600">
-                    <span className="mono font-bold">a &gt; 0</span>이면 <span className="mono font-bold">1/a &gt; 0</span>이므로 산술·기하평균을 적용하면 근호 안의 곱이 <strong>1로 약분</strong>됩니다. 등호는 <span className="mono font-bold">a = 1/a</span>이고 <span className="mono font-bold">a &gt; 0</span>이므로 <strong>a = 1</strong>일 때 성립합니다.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-1.5">
-                  <div className="text-xs font-extrabold text-indigo-700">
-                    <MathText text="열쇠 2 — 기하평균과 조화평균: √(ab) ≥ 2ab / (a + b)" />
-                  </div>
-                  <div className="mono text-sm font-bold text-slate-900">
-                    <MathText text="√(ab) − 2ab/(a+b) = √(ab)(√a − √b)² / (a + b) ≥ 0" />
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    통분하여 완전제곱식으로 묶거나,{' '}
-                    <span className="mono font-bold">
-                      <MathText text="(a + b)/2 ≥ √(ab)" />
-                    </span>
-                    의 양변에 양수{' '}
-                    <span className="mono font-bold">
-                      <MathText text="2√(ab)/(a + b)" />
-                    </span>
-                    를 곱하여 증명할 수 있습니다. 등호는 <strong>a = b</strong>일 때 성립합니다.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-sm font-bold text-slate-900">
-                  산술·기하평균 활용 원리 점검
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (state.step3HintLevel === 0) {
-                      onUpdate((prev) => ({ ...prev, step3HintLevel: 1 }));
-                      setShowStep3Hint(true);
-                    } else {
-                      setShowStep3Hint((prev) => !prev);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100"
-                >
-                  <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
-                  {showStep3Hint && state.step3HintLevel > 0
-                    ? `힌트 숨기기 (${state.step3HintLevel}/${STEP3_HINTS.length})`
-                    : `힌트 보기 (${state.step3HintLevel}/${STEP3_HINTS.length})`}
-                </button>
-              </div>
-
-              {showStep3Hint && state.step3HintLevel > 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 space-y-2 text-xs sm:text-sm text-amber-950">
-                  {STEP3_HINTS.slice(0, state.step3HintLevel).map((h, idx) => (
-                    <div key={idx} className="flex items-start gap-2 leading-relaxed">
-                      <span className="font-extrabold text-amber-700 shrink-0">💡</span>
-                      <span>
-                        <MathText text={h} />
-                      </span>
-                    </div>
-                  ))}
-                  <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
-                    {state.step3HintLevel < STEP3_HINTS.length && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdate((prev) => ({
-                            ...prev,
-                            step3HintLevel: Math.min(STEP3_HINTS.length, prev.step3HintLevel + 1),
-                          }))
-                        }
-                        className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
-                      >
-                        + 다음 힌트 더 보기 ({state.step3HintLevel + 1}/{STEP3_HINTS.length})
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowStep3Hint(false)}
-                      className="text-xs font-bold text-amber-800 hover:underline ml-auto"
-                    >
-                      힌트 접기 ▲
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-600">
-                  Q. a &gt; 0, b &gt; 0일 때 세 평균의 크기 관계를 바르게 나타낸 것은?
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onUpdate((prev) => ({ ...prev, harmonicChecked: true }))}
-                  className={`w-full rounded-xl border p-3 text-left text-xs sm:text-sm font-semibold leading-relaxed transition-all ${
-                    state.harmonicChecked
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-500'
-                      : 'border-slate-200 bg-slate-50/60 text-slate-800 hover:bg-slate-100/70'
-                  }`}
-                >
-                  <MathText text="✓ (a + b)/2 ≥ √(ab) ≥ 2ab/(a + b) 이며, 등호는 모두 a = b일 때 성립한다. (확인 클릭)" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <label htmlFor="l6-harm-reason" className="text-xs sm:text-sm font-bold text-slate-900">
-                    a + 1/a ≥ 2에서 왜 a가 1일 때 등호가 성립하는지 나의 말로 적어 보세요.
-                  </label>
-                  <CharCountBadge text={state.harmonicReason} min={15} />
-                </div>
-                <textarea
-                  id="l6-harm-reason"
-                  rows={3}
-                  value={state.harmonicReason}
-                  onChange={(e) => onUpdate((prev) => ({ ...prev, harmonicReason: e.target.value }))}
-                  placeholder=""
-                  className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs sm:text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                <label htmlFor="l7-k" className="block text-sm font-bold text-slate-800">
+                  <i>k</i> = <span className="text-rose-600">{kText(kVal)}</span>
+                </label>
+                <input
+                  id="l7-k"
+                  type="range"
+                  min={-5}
+                  max={5}
+                  step={0.5}
+                  value={kVal}
+                  onChange={(e) => setKVal(Number(e.target.value))}
+                  className="w-full accent-rose-600"
                 />
-                <details className="mt-1.5">
-                  <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
-                    💡 등호 조건 서술 힌트 보기
-                  </summary>
-                  <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
-                    <strong>작성 힌트:</strong> 산술·기하평균에서 등호는 두 양수 항(<span className="mono font-bold">a</span>와 <span className="mono font-bold">1/a</span>)이 서로 같을 때 성립한다는 점을 이용해 <span className="mono font-bold">a &gt; 0</span>인 해를 구해보세요.
-                  </div>
-                </details>
-                <MathPreviewBox text={state.harmonicReason} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => onStepChange(1)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              이전 단계
-            </button>
-            <button
-              type="button"
-              onClick={() => onStepChange(3)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
-            >
-              다음 단계 (문제 2 증명)
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: 4단계 [문제 2] (교과서 문제 4 (1)·(2)) */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-xs font-extrabold text-indigo-700 uppercase tracking-wider">
-                STAGE 04 · [문제 2] (교과서 문제 4 (1)·(2))
-              </span>
-              <span className="text-xs font-semibold text-indigo-800 bg-white px-2.5 py-1 rounded-full border border-indigo-200">
-                산술·기하평균을 이용한 절대부등식의 증명
-              </span>
-            </div>
-            <h3 className="mt-1.5 text-lg sm:text-xl font-extrabold text-slate-900">
-              [문제 2] <span className="mono">a &gt; 0</span>이고 <span className="mono">b &gt; 0</span>일 때, 다음 부등식이 성립함을 증명하시오.
-            </h3>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 text-xs sm:text-sm font-bold text-indigo-950">
-              <div className="rounded-lg bg-white/90 border border-indigo-200 px-3 py-2 mono">
-                (1) a + 1/a ≥ 2
-              </div>
-              <div className="rounded-lg bg-white/90 border border-indigo-200 px-3 py-2 mono">
-                <MathText text="(2) √(ab) ≥ 2ab / (a + b)" />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {PROOF6_PROB2_STEPS.map((item, idx) => {
-              const selected = state.prob2Choices[idx];
-              const isVerified = state.prob2Verified[idx];
-              const hintLvl = state.prob2Hints[idx] || 0;
-              const isHintOpen = prob2HintsOpen[idx];
-
-              return (
-                <div
-                  key={idx}
-                  className={`rounded-xl border p-4 sm:p-5 transition-all ${
-                    isVerified
-                      ? 'border-emerald-200 bg-emerald-50/35'
-                      : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="text-sm sm:text-base font-extrabold text-slate-900 leading-relaxed">
-                      <span className="mono text-indigo-600 mr-1.5">Step 0{idx + 1}.</span>
-                      <MathText text={item.q} />
-                    </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[-4, -1, -0.5, 0.5, 1, 4].map((k) => (
                     <button
+                      key={k}
                       type="button"
-                      onClick={() => {
-                        if (hintLvl === 0) {
-                          onUpdate((prev) => {
-                            const nextHints = [...prev.prob2Hints];
-                            nextHints[idx] = 1;
-                            return { ...prev, prob2Hints: nextHints };
-                          });
-                          setProb2HintsOpen((prev) => {
-                            const next = [...prev];
-                            next[idx] = true;
-                            return next;
-                          });
-                        } else {
-                          setProb2HintsOpen((prev) => {
-                            const next = [...prev];
-                            next[idx] = !next[idx];
-                            return next;
-                          });
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100 shrink-0"
+                      onClick={() => setKVal(k)}
+                      className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${kVal === k ? 'border-rose-600 bg-rose-50 text-rose-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
                     >
-                      <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
-                      {isHintOpen && hintLvl > 0
-                        ? `힌트 숨기기 (${hintLvl}/${item.hints.length})`
-                        : `힌트 보기 (${hintLvl}/${item.hints.length})`}
+                      k = {kText(k)}
                     </button>
-                  </div>
-
-                  {isHintOpen && hintLvl > 0 && (
-                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/90 p-3 space-y-1.5 text-xs sm:text-sm text-amber-950">
-                      {item.hints.slice(0, hintLvl).map((h, hIdx) => (
-                        <div key={hIdx} className="flex items-start gap-2 leading-relaxed">
-                          <span className="font-bold text-amber-700 shrink-0">힌트 {hIdx + 1}:</span>
-                          <span>
-                            <MathText text={h} />
-                          </span>
-                        </div>
-                      ))}
-                      <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
-                        {hintLvl < item.hints.length && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onUpdate((prev) => {
-                                const nextHints = [...prev.prob2Hints];
-                                nextHints[idx] = Math.min(item.hints.length, (nextHints[idx] || 0) + 1);
-                                return { ...prev, prob2Hints: nextHints };
-                              })
-                            }
-                            className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
-                          >
-                            + 다음 힌트 더 보기 ({hintLvl + 1}/{item.hints.length})
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setProb2HintsOpen((prev) => {
-                              const next = [...prev];
-                              next[idx] = false;
-                              return next;
-                            })
-                          }
-                          className="text-xs font-bold text-amber-800 hover:underline ml-auto"
-                        >
-                          힌트 접기 ▲
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 grid gap-2">
-                    {item.opts.map((opt, oIdx) => {
-                      const isThisSelected = selected === oIdx;
-                      const isCorrect = oIdx === item.answer;
-                      return (
-                        <button
-                          key={oIdx}
-                          type="button"
-                          onClick={() => {
-                            onUpdate((prev) => {
-                              const nextChoices = [...prev.prob2Choices];
-                              const nextVerified = [...prev.prob2Verified];
-                              nextChoices[idx] = oIdx;
-                              nextVerified[idx] = oIdx === item.answer;
-                              return {
-                                ...prev,
-                                prob2Choices: nextChoices,
-                                prob2Verified: nextVerified,
-                              };
-                            });
-                          }}
-                          className={`w-full rounded-xl border p-3 text-left text-xs sm:text-sm font-semibold leading-relaxed transition-all ${
-                            isThisSelected
-                              ? isCorrect
-                                ? 'border-emerald-500 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-500'
-                                : 'border-rose-400 bg-rose-50 text-rose-950'
-                              : 'border-slate-200 bg-slate-50/60 text-slate-800 hover:bg-slate-100/70'
-                          }`}
-                        >
-                          <span className="mono mr-2 font-bold">({oIdx + 1})</span>
-                          <MathText text={opt} />
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {selected !== null && (
-                    <div
-                      className={`mt-2.5 text-xs sm:text-sm font-bold flex items-center gap-1.5 ${
-                        isVerified ? 'text-emerald-700' : 'text-rose-700'
-                      }`}
-                    >
-                      {isVerified ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>정확한 추론입니다!</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                          <span>다시 생각해 보세요. [힌트 보기]를 눌러 단계별 해설을 참고할 수 있습니다.</span>
-                        </>
-                      )}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Written Proof for Problem 2 */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label htmlFor="l6-prob2-proof" className="text-sm sm:text-base font-extrabold text-slate-900">
-                [문제 2] (1)·(2) 나의 말로 쓰는 증명 보고서
-              </label>
-              <CharCountBadge text={state.prob2ProofText} min={40} />
-            </div>
-            <p className="text-xs text-slate-600">
-              (1) <span className="mono">a + 1/a ≥ 2</span>와 (2){' '}
-              <span className="mono">
-                <MathText text="√(ab) ≥ 2ab / (a + b)" />
-              </span>
-              의 증명 과정과 각각의 등호 성립 조건을 서술하세요.
-            </p>
-            <textarea
-              id="l6-prob2-proof"
-              rows={4}
-              value={state.prob2ProofText}
-              onChange={(e) => onUpdate((prev) => ({ ...prev, prob2ProofText: e.target.value }))}
-              placeholder=""
-              className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm sm:text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            />
-            <details className="mt-1.5">
-              <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
-                💡 증명 보고서 작성 힌트 보기
-              </summary>
-              <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
-                <strong>작성 힌트:</strong> (1)번은 <span className="mono font-bold">a</span>와 <span className="mono font-bold">1/a</span>에 산술·기하평균을 적용한 과정과 등호 조건을, (2)번은 기하평균과 조화평균의 차(또는 산술·기하평균 변형)를 이용한 증명과 등호 조건을 서술해 보세요.
+                <div role="status" className={`rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold ${kVal === 0 ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-rose-50 text-rose-950 border border-rose-200'}`}>
+                  {kVal === 0
+                    ? 'k = 0이면 y = 0이 되어 유리함수가 아니에요. k ≠ 0으로 움직여 보세요.'
+                    : `x = 1일 때 y = ${kText(kVal)} → 점 (1, ${kText(kVal)})는 제${kVal > 0 ? 1 : 4}사분면에 있어요.`}
+                </div>
               </div>
-            </details>
-            <MathPreviewBox text={state.prob2ProofText} />
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs sm:text-sm font-bold text-slate-900">① k &gt; 0일 때 그래프가 있는 사분면은?</div>
+              <ChoiceButtons
+                theme="rose"
+                value={state.tgPosQuad}
+                options={[
+                  ['13', '제1사분면과 제3사분면'],
+                  ['24', '제2사분면과 제4사분면'],
+                ] as const}
+                onPick={(v) => setField('tgPosQuad', v)}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs sm:text-sm font-bold text-slate-900">① k &lt; 0일 때 그래프가 있는 사분면은?</div>
+              <ChoiceButtons
+                theme="rose"
+                value={state.tgNegQuad}
+                options={[
+                  ['13', '제1사분면과 제3사분면'],
+                  ['24', '제2사분면과 제4사분면'],
+                ] as const}
+                onPick={(v) => setField('tgNegQuad', v)}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs sm:text-sm font-bold text-slate-900">② |k|가 커짐에 따라 그래프의 모양은 어떻게 변하나요?</div>
+              <ChoiceButtons
+                theme="rose"
+                value={state.tgAbsTrend}
+                cols="sm:grid-cols-3"
+                options={[
+                  ['far', '원점에서 멀어진다'],
+                  ['near', '원점에 가까워진다'],
+                  ['same', '변하지 않는다'],
+                ] as const}
+                onPick={(v) => setField('tgAbsTrend', v)}
+              />
+            </div>
+            <div className="flex justify-end">
+              <HintToggle open={!!hints.tg} onClick={() => toggleHint('tg')} />
+            </div>
+            {hints.tg && (
+              <HintBox>
+                <div>• x &gt; 0일 때 y = k/x의 부호는 k의 부호와 같습니다.</div>
+                <div>• k = 1과 k = 4에서 x = 1일 때의 점 (1, 1)과 (1, 4)를 비교해 보세요.</div>
+              </HintBox>
+            )}
+            <ReasonInput
+              id="l7-tg-reason"
+              theme="rose"
+              label="② 그렇게 생각한 이유를 써 보세요."
+              value={state.tgReason}
+              onChange={(v) => setField('tgReason', v)}
+              min={L7_MIN_REASON}
+            />
+            <FeedbackBanner fb={feedback.together} />
+            <VerifyButton theme="rose" onClick={() => verify('together', 'tgVerified', validateL7Together)}>
+              [함께하기] 정답 확인하기
+            </VerifyButton>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => onStepChange(2)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              이전 단계
-            </button>
-            <button
-              type="button"
-              onClick={() => onStepChange(4)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors"
-            >
-              다음 단계 (절대부등식2 종결)
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
+          {state.tgVerified ? (
+            <div className="rounded-2xl border-2 border-rose-500/70 bg-gradient-to-br from-rose-50/80 via-white to-sky-50/50 p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-rose-900">
+                <BookOpen className="h-4 w-4 text-rose-600 shrink-0" />
+                <span>
+                  핵심 개념 · 유리함수 <MathText text="y = k/x (k ≠ 0)" />의 그래프
+                </span>
+              </div>
+              <ul className="space-y-1.5 text-xs sm:text-sm text-slate-800 leading-relaxed list-disc pl-5">
+                <li>
+                  정의역은 <MathText text="{x | x ≠ 0인 실수}" />, 치역은 <MathText text="{y | y ≠ 0인 실수}" />입니다.
+                </li>
+                <li>
+                  <strong>k &gt; 0</strong>이면 제1사분면과 제3사분면, <strong>k &lt; 0</strong>이면 제2사분면과 제4사분면에 있습니다.
+                </li>
+                <li>
+                  <strong>원점에 대하여 대칭</strong>이고, |k|가 커질수록 원점에서 멀어집니다.
+                </li>
+                <li>
+                  그래프가 한없이 가까워지는 직선을 <strong className="text-rose-800">점근선</strong>이라 합니다. <MathText text="y = k/x" />의 점근선은{' '}
+                  <strong>x축과 y축</strong>입니다.
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
+              <Lock className="h-4 w-4" />
+              <span>[함께하기] 정답을 확인하면 핵심 개념(y = k/x의 그래프와 점근선)이 열립니다.</span>
+            </div>
+          )}
+
+          <NavRow onNext={() => goSection('p4')} nextLabel="다음 단계: 문제 4 · y = k/x 그리기" />
         </div>
       )}
 
-      {/* STEP 4: 5단계 사건 종결 · 성찰 */}
-      {step === 4 && (
+      {/* =====================================================================
+          2단계: [문제 4] y = k/x의 그래프
+      ===================================================================== */}
+      {section === 'p4' && (
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-            <div className="text-xs font-bold text-blue-600">
-              STAGE 05 · 7차시 수사 종결 · 절대부등식2 성찰
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader theme="emerald" kicker="탐구 활동 02 · 교과서" title="[문제 4] 다음 함수의 그래프를 그리시오." done={state.p4Verified} />
+            <TextbookImage file="image_l7_prob4.png" alt="문제 4 - (1) y = 3/x (2) y = -3/x (3) y = 1/(4x) (4) y = -1/(4x)의 그래프를 그리시오." maxH="max-h-[180px]" />
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-bold text-slate-900">그래프를 그리기 전에 지나는 사분면과 x = 1일 때의 점을 찾아보세요.</span>
+              <HintToggle open={!!hints.p4} onClick={() => toggleHint('p4')} />
             </div>
-            <h3 className="mt-1 text-lg sm:text-xl font-extrabold text-slate-900">
-              산술평균과 기하평균을 이용한 절대부등식 수사 완료!
-            </h3>
-            <p className="mt-1.5 text-sm text-slate-700 leading-relaxed">
-              7차시에서 증명한 두 문제(예제 4 변환 및 문제 4)를 되돌아보며 핵심 원리를 정리하고, 마지막 8차시(절댓값을 포함한 절대부등식)로 이동해 봅시다.
-            </p>
-          </div>
-
-          {/* Rubric Check Summary */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-3">
-            <div className="text-sm font-bold text-slate-900">7차시 수사 점검표</div>
-            <div className="grid gap-2 sm:grid-cols-2 text-xs sm:text-sm">
-              {(
-                [
-                  ['1단계: 양수 (a, b) 대입 실험 3개 이상 & 양수 조건 확인', rubric[0]],
-                  ['2단계: [문제 1] ((a+b)/2 ≥ √(ab)) 4단계 추론 & 증명 보고서 작성', rubric[1]],
-                  ['3단계: 역수의 합 & 조화평균 원리 탐색 및 서술', rubric[2]],
-                  ['4단계: [문제 2] (1)·(2) 4단계 추론 & 증명 보고서 작성', rubric[3]],
-                  ['5단계: 절대부등식2 탐구 성찰 작성', done[4]],
-                ] as const
-              ).map(([label, ok], idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-2 rounded-lg border p-2.5 font-semibold ${
-                    ok
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                      : 'border-slate-200 bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  <CheckCircle2
-                    className={`h-4 w-4 shrink-0 ${ok ? 'text-emerald-600' : 'text-slate-400'}`}
+            {hints.p4 && (
+              <HintBox>
+                <div>• k의 부호로 사분면을 정합니다. (3) y = 1/(4x)는 k = 1/4인 y = k/x예요.</div>
+                <div>• x = 1을 대입한 값을 쓰세요. 분수는 1/4처럼 씁니다.</div>
+              </HintBox>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {L7_P4.map((f, i) => (
+                <div key={f.raw} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2.5">
+                  <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    ({i + 1}) <i>y</i> = <Expr raw={f.raw} />
+                  </div>
+                  <ChoiceButtons
+                    theme="emerald"
+                    value={state[L7_P4_QUAD_KEYS[i]]}
+                    options={[
+                      ['13', '제1·3사분면'],
+                      ['24', '제2·4사분면'],
+                    ] as const}
+                    onPick={(v) => setField(L7_P4_QUAD_KEYS[i], v as Quadrants)}
+                    cols="grid-cols-2"
                   />
-                  <span>
-                    <MathText text={label} />
-                  </span>
+                  <label htmlFor={`l7-p4-v${i + 1}`} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <span className="shrink-0">
+                      x = 1일 때 <i>y</i> =
+                    </span>
+                    <input
+                      id={`l7-p4-v${i + 1}`}
+                      type="text"
+                      autoComplete="off"
+                      value={state[L7_P4_VAL_KEYS[i]] || ''}
+                      onChange={(e) => setField(L7_P4_VAL_KEYS[i], e.target.value)}
+                      className={`${inputClass('emerald')} min-w-0`}
+                    />
+                  </label>
                 </div>
               ))}
             </div>
+            <FeedbackBanner fb={feedback.p4} />
+            <VerifyButton theme="emerald" onClick={() => verify('p4', 'p4Verified', validateL7Prob4)}>
+              [문제 4] 정답 확인하기
+            </VerifyButton>
+            {graphReveal(
+              'p4',
+              state.p4Verified,
+              [
+                {
+                  key: 'p4-13',
+                  title: '(1)과 (3) · k > 0',
+                  curves: [
+                    { fn: L7_GRAPH_SETS.p4[0].fn, color: RAT_COLORS.main },
+                    { fn: L7_GRAPH_SETS.p4[2].fn, color: RAT_COLORS.alt },
+                  ],
+                  points: [
+                    { x: 1, y: 3, color: RAT_COLORS.main },
+                    { x: 1, y: 0.25, color: RAT_COLORS.alt },
+                  ],
+                  legend: [
+                    { color: RAT_COLORS.main, label: '(1) y = 3/x' },
+                    { color: RAT_COLORS.alt, label: '(3) y = 1/(4x)' },
+                  ],
+                  ariaLabel: 'y = 3/x와 y = 1/(4x)의 그래프',
+                },
+                {
+                  key: 'p4-24',
+                  title: '(2)와 (4) · k < 0',
+                  curves: [
+                    { fn: L7_GRAPH_SETS.p4[1].fn, color: RAT_COLORS.main },
+                    { fn: L7_GRAPH_SETS.p4[3].fn, color: RAT_COLORS.alt },
+                  ],
+                  points: [
+                    { x: 1, y: -3, color: RAT_COLORS.main },
+                    { x: 1, y: -0.25, color: RAT_COLORS.alt },
+                  ],
+                  legend: [
+                    { color: RAT_COLORS.main, label: '(2) y = −3/x' },
+                    { color: RAT_COLORS.alt, label: '(4) y = −1/(4x)' },
+                  ],
+                  ariaLabel: 'y = -3/x와 y = -1/(4x)의 그래프',
+                },
+              ],
+              '|k|가 작은 (3)·(4)의 그래프가 원점에 더 가까이 있는지 확인해 보세요.'
+            )}
+          </div>
+          <NavRow onPrev={() => goSection('together')} onNext={() => goSection('shift')} nextLabel="다음 단계: 평행이동 · 문제 5" />
+        </div>
+      )}
+
+      {/* =====================================================================
+          3단계: y = k/(x − p) + q — 평행이동, [보기], 생각 톡톡, [문제 5]
+      ===================================================================== */}
+      {section === 'shift' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader
+              theme="violet"
+              kicker="탐구 활동 03-A · 평행이동 실험실"
+              title={
+                <span className="inline-flex items-center gap-1 flex-wrap">
+                  <i>y</i> = <Frac n={<i>k</i>} d={<><i>x</i> − <i>p</i></>} /> + <i>q</i>의 그래프
+                </span>
+              }
+            />
+            <TextbookImage file="image_l7_shift.png" alt="y = k/(x-p) + q에서 p는 x축의 방향으로 p만큼, q는 y축의 방향으로 q만큼 평행이동" maxH="max-h-[200px]" />
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-4 items-start">
+              <div className="rounded-xl border border-slate-200 bg-white p-2 space-y-2">
+                <RationalGraph
+                  curves={[
+                    { fn: { k: sk, p: 0, q: 0 }, color: RAT_COLORS.base, dashed: true, width: 1.8 },
+                    { fn: shiftFn, color: RAT_COLORS.main, asymptotes: true },
+                  ]}
+                  points={[
+                    { x: 0, y: 0, color: RAT_COLORS.base },
+                    { x: sp, y: sq, color: RAT_COLORS.asym, label: `(${sp}, ${sq})` },
+                  ]}
+                  range={7}
+                  ariaLabel={`y = ${sk}/x와 ${rationalLabel(shiftFn)}의 그래프, 점근선 x = ${sp}, y = ${sq}`}
+                />
+                <GraphLegend
+                  items={[
+                    { color: RAT_COLORS.base, label: `y = ${kText(sk)}/x`, dashed: true },
+                    { color: RAT_COLORS.main, label: rationalLabel(shiftFn) },
+                    { color: RAT_COLORS.asym, label: '점근선', dashed: true },
+                  ]}
+                />
+              </div>
+              <div className="space-y-3">
+                {(
+                  [
+                    ['k', sk, setSk, [-4, -3, -2, -1, 1, 2, 3, 4]],
+                    ['p', sp, setSp, SLIDER_VALUES],
+                    ['q', sq, setSq, SLIDER_VALUES],
+                  ] as const
+                ).map(([name, val, set, options]) => (
+                  <div key={name} className="space-y-1">
+                    <label htmlFor={`l7-s${name}`} className="block text-sm font-bold text-slate-800">
+                      <i>{name}</i> = <span className="text-rose-600">{val}</span>
+                      <span className="ml-2 text-[11px] font-semibold text-slate-500">
+                        {name === 'p' ? 'x축 방향 평행이동' : name === 'q' ? 'y축 방향 평행이동' : '(k ≠ 0)'}
+                      </span>
+                    </label>
+                    <input
+                      id={`l7-s${name}`}
+                      type="range"
+                      min={0}
+                      max={options.length - 1}
+                      step={1}
+                      value={options.indexOf(val as never)}
+                      onChange={(e) => set(options[Number(e.target.value)])}
+                      className="w-full accent-violet-600"
+                    />
+                  </div>
+                ))}
+                <div role="status" className="rounded-xl border border-violet-200 bg-violet-50 px-3.5 py-2.5 text-xs sm:text-sm text-violet-950 space-y-1 font-semibold">
+                  <div>
+                    <MathText text={rationalLabel(shiftFn)} />
+                  </div>
+                  <div>
+                    정의역 {'{'}x | x ≠ {sp}인 실수{'}'}, 치역 {'{'}y | y ≠ {sq}인 실수{'}'}
+                  </div>
+                  <div>
+                    점근선 x = {sp}, y = {sq} · 원점 → 점 ({sp}, {sq})
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label htmlFor="l6-ref1" className="text-sm sm:text-base font-bold text-slate-900 leading-relaxed">
-                  <MathText text="성찰 1. 산술평균과 기하평균의 관계 (a + b)/2 ≥ √(ab)를 적용할 때 왜 반드시 두 수가 양수(a > 0, b > 0)인지 먼저 확인해야 하나요?" />
-                </label>
-                <CharCountBadge text={state.reflection1} min={20} />
+          {/* 정리 카드 */}
+          <div className="rounded-2xl border-2 border-violet-600/70 bg-gradient-to-br from-violet-50/80 via-white to-sky-50/50 p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-violet-900">
+                <BookOpen className="h-4 w-4 text-violet-600 shrink-0" />
+                <span>
+                  정리 · 유리함수 <MathText text="y = k/(x − p) + q (k ≠ 0)" />의 그래프
+                </span>
               </div>
-              <textarea
-                id="l6-ref1"
-                rows={3}
-                value={state.reflection1}
-                onChange={(e) => onUpdate((prev) => ({ ...prev, reflection1: e.target.value }))}
-                placeholder=""
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              <ToggleButton
+                on={showSummaryImg}
+                onClick={() => setShowSummaryImg((v) => !v)}
+                onLabel="교과서 그림 닫기"
+                offLabel="교과서 그림 보기"
               />
-              <details className="mt-1.5">
-                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
-                  💡 성찰 1 힌트 보기
-                </summary>
-                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
-                  <strong>작성 힌트:</strong> <MathText text="√a, √b" />가 실수로 정의되기 위한 조건과 완전제곱식 변형 과정을 떠올려 보세요.
-                </div>
-              </details>
-              <MathPreviewBox text={state.reflection1} />
             </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <label htmlFor="l6-ref2" className="text-sm sm:text-base font-bold text-slate-900">
-                  성찰 2. 산술평균, 기하평균, 조화평균 2ab/(a+b)의 대소 관계와 등호 성립 조건을 정리해 보세요.
-                </label>
-                <CharCountBadge text={state.reflection2} min={15} />
-              </div>
-              <textarea
-                id="l6-ref2"
-                rows={3}
-                value={state.reflection2}
-                onChange={(e) => onUpdate((prev) => ({ ...prev, reflection2: e.target.value }))}
-                placeholder=""
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            <ol className="space-y-1.5 text-xs sm:text-sm text-slate-800 leading-relaxed list-decimal pl-5">
+              <li>
+                <MathText text="y = k/x" />의 그래프를 <strong>x축의 방향으로 p만큼, y축의 방향으로 q만큼</strong> 평행이동한 것이다.
+              </li>
+              <li>
+                정의역은 <MathText text="{x | x ≠ p인 실수}" />이고, 치역은 <MathText text="{y | y ≠ q인 실수}" />이다.
+              </li>
+              <li>
+                점근선은 두 직선 <strong>x = p와 y = q</strong>이다.
+              </li>
+            </ol>
+            {showSummaryImg && (
+              <TextbookImage
+                file="image_l7_summary.png"
+                alt="k>0, k<0일 때 y = k/x와 y = k/(x-p)+q의 그래프 비교와 정리"
+                maxH="max-h-[460px]"
               />
-              <details className="mt-1.5">
-                <summary className="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:text-amber-800 select-none">
-                  💡 성찰 2 힌트 보기
-                </summary>
-                <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900 leading-relaxed">
-                  <strong>작성 힌트:</strong> 반원 도형 시뮬레이션에서 확인한 반지름(산술), 높이(기하), 조화 선분의 길이 대소 관계와 두 양수가 같을 때의 변화를 정리해 보세요.
-                </div>
-              </details>
-              <MathPreviewBox text={state.reflection2} />
-            </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <button
-              type="button"
-              onClick={() => onStepChange(3)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              이전 단계
-            </button>
-            <button
-              type="button"
-              onClick={onGoToLesson8}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors shadow-xs"
-            >
-              <Sparkles className="h-4 w-4" />
-              8차시(절대부등식3 · 절댓값 부등식) 수사로 이동
-              <ArrowRight className="h-4 w-4" />
-            </button>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <ActivityHeader theme="violet" kicker="교과서 [보기]" title="y = 1/(x − 2) + 1의 그래프" />
+            <TextbookImage
+              file="image_l7_bogi.png"
+              alt="보기 - y = 1/(x-2) + 1의 그래프는 y = 1/x의 그래프를 x축 방향으로 2만큼, y축 방향으로 1만큼 평행이동. 정의역 x ≠ 2, 치역 y ≠ 1, 점근선 x = 2와 y = 1"
+              maxH="max-h-[260px]"
+            />
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <ActivityHeader theme="sky" kicker="탐구 활동 03-B · 생각 톡톡" title="이 그래프는 어느 점에 대하여 대칭일까?" done={state.thinkVerified} />
+            <TextbookImage file="image_l7_think.png" alt="생각 톡톡 - 함수 y = k/(x-p) + q의 그래프는 어느 점에 대하여 대칭일까?" maxH="max-h-[160px]" />
+            <p className="text-xs text-slate-600">위 실험실에서 회색 점(원점)과 진한 점이 어떻게 옮겨지는지 보세요. 답은 문자 p, q로 씁니다.</p>
+            <div className="flex items-center gap-1.5 flex-wrap text-sm font-bold text-slate-800">
+              <span>점 (</span>
+              <SmallInput id="l7-think-x" label="대칭인 점의 x좌표" value={state.thinkSymX} onChange={(v) => setField('thinkSymX', v)} width="w-14" />
+              <span>,</span>
+              <SmallInput id="l7-think-y" label="대칭인 점의 y좌표" value={state.thinkSymY} onChange={(v) => setField('thinkSymY', v)} width="w-14" />
+              <span>)에 대하여 대칭</span>
+            </div>
+            <FeedbackBanner fb={feedback.think} />
+            <VerifyButton theme="sky" onClick={() => verify('think', 'thinkVerified', validateL7Think)}>
+              [생각 톡톡] 정답 확인하기
+            </VerifyButton>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader theme="violet" kicker="탐구 활동 03-C · 교과서" title="[문제 5] 다음 함수의 그래프를 그리고, 점근선을 구하시오." done={state.p5Verified} />
+            <TextbookImage file="image_l7_prob5.png" alt="문제 5 - (1) y = 2/(x-1) - 5 (2) y = -6/(x+3) - 2의 그래프를 그리고 점근선을 구하시오." maxH="max-h-[150px]" />
+            <div className="flex justify-end">
+              <HintToggle open={!!hints.p5} onClick={() => toggleHint('p5')} />
+            </div>
+            {hints.p5 && (
+              <HintBox>
+                <div>• y = k/(x − p) + q 꼴에서 점근선은 x = p, y = q입니다.</div>
+                <div>• (2) x + 3 = x − (−3)이므로 p = −3이에요.</div>
+              </HintBox>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <AsymptoteInput
+                idPrefix="l7-p5-1"
+                title={
+                  <>
+                    (1) <i>y</i> = <Expr raw="2/(x-1)" /> − 5
+                  </>
+                }
+                x={state.p5_1x}
+                y={state.p5_1y}
+                onX={(v) => setField('p5_1x', v)}
+                onY={(v) => setField('p5_1y', v)}
+              />
+              <AsymptoteInput
+                idPrefix="l7-p5-2"
+                title={
+                  <>
+                    (2) <i>y</i> = −<Expr raw="6/(x+3)" /> − 2
+                  </>
+                }
+                x={state.p5_2x}
+                y={state.p5_2y}
+                onX={(v) => setField('p5_2x', v)}
+                onY={(v) => setField('p5_2y', v)}
+              />
+            </div>
+            <FeedbackBanner fb={feedback.p5} />
+            <VerifyButton theme="violet" onClick={() => verify('p5', 'p5Verified', validateL7Prob5)}>
+              [문제 5] 정답 확인하기
+            </VerifyButton>
+            {graphReveal(
+              'p5',
+              state.p5Verified,
+              L7_P5.map((fn, i) => shiftedPanel(`p5-${i}`, `(${i + 1})`, rationalLabel(fn), fn)),
+              '회색 점선 y = k/x를 평행이동하면 빨간 그래프가 되는지, 두 점근선의 교점에 대하여 대칭인지 확인해 보세요.'
+            )}
+          </div>
+
+          <NavRow onPrev={() => goSection('p4')} onNext={() => goSection('transform')} nextLabel="다음 단계: y = (ax+b)/(cx+d) 변형" />
+        </div>
+      )}
+
+      {/* =====================================================================
+          4단계: y = (ax + b)/(cx + d) → y = k/(x − p) + q — 예제 2, [문제 6]
+      ===================================================================== */}
+      {section === 'transform' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border-2 border-sky-600/70 bg-gradient-to-br from-sky-50/80 via-white to-violet-50/50 p-5 space-y-3">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-sky-900">
+              <BookOpen className="h-4 w-4 text-sky-600 shrink-0" />
+              <span>
+                유리함수 <MathText text="y = (ax + b)/(cx + d)" />의 그래프
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+              유리함수 <MathText text="y = (ax + b)/(cx + d) (ad − bc ≠ 0, c ≠ 0)" />의 그래프는{' '}
+              <MathText text="y = k/(x − p) + q (k ≠ 0)" />의 꼴로 변형하여 그릴 수 있습니다. 분자를 <strong>(분모) × (몫) + (나머지)</strong>로 나타내 보세요.
+            </p>
+            <p className="text-[11px] sm:text-xs text-slate-500">
+              ✏️ 입력 방법: 틀의 빈칸에 숫자를 씁니다. x + 1은 x − (−1)이므로 p 칸에 <span className="mono">-1</span>을 써요. 분수는 <span className="mono">1/2</span>처럼 씁니다.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader
+              theme="sky"
+              kicker="탐구 활동 04-A · 교과서 예제 2를 문제로"
+              title={
+                <span className="inline-flex items-center gap-1 flex-wrap">
+                  함수 <i>y</i> = <Expr raw={L7_EX2.raw} />의 그래프를 그리고, 점근선을 구하시오.
+                </span>
+              }
+              done={state.ex2Verified}
+              extra={
+                <>
+                  <ToggleButton on={showEx2Img} onClick={() => setShowEx2Img((v) => !v)} onLabel="교과서 풀이 닫기" offLabel="교과서 풀이 보기" />
+                  {padButton('ex2')}
+                </>
+              }
+            />
+            {showEx2Img && (
+              <TextbookImage
+                file="image_l7_ex2.png"
+                alt="교과서 예제 2 풀이 - y = (2x-1)/(x+1) = -3/(x+1) + 2이므로 y = -3/x의 그래프를 x축 방향으로 -1만큼, y축 방향으로 2만큼 평행이동, 점근선 x = -1, y = 2"
+                maxH="max-h-[380px]"
+              />
+            )}
+            <div className="flex justify-end">
+              <HintToggle open={!!hints.ex2} onClick={() => toggleHint('ex2')} />
+            </div>
+            {hints.ex2 && (
+              <HintBox>
+                <div>• {L7_EX2.hint}</div>
+                <div>• 그러면 (2x − 1)/(x + 1) = 2(x + 1)/(x + 1) − 3/(x + 1) = −3/(x + 1) + 2</div>
+              </HintBox>
+            )}
+            <TransformInput idPrefix="l7-ex2" {...transformFields(L7_EX2, { k: 'ex2k', p: 'ex2p', q: 'ex2q', ax: 'ex2ax', ay: 'ex2ay' })} />
+            <FeedbackBanner fb={feedback.ex2} />
+            <VerifyButton theme="sky" onClick={() => verify('ex2', 'ex2Verified', validateL7Ex2)}>
+              [예제 2] 정답 확인하기
+            </VerifyButton>
+            {graphReveal('ex2', state.ex2Verified, transformPanels(L7_GRAPH_SETS.ex2))}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+            <ActivityHeader theme="sky" kicker="탐구 활동 04-B · 교과서" title="[문제 6] 다음 함수의 그래프를 그리고, 점근선을 구하시오." done={state.p6Verified} extra={padButton('p6')} />
+            <TextbookImage file="image_l7_prob6.png" alt="문제 6 - (1) y = 2x/(x-3) (2) y = (-3x+1)/(x-1)의 그래프를 그리고 점근선을 구하시오." maxH="max-h-[150px]" />
+            <div className="flex justify-end">
+              <HintToggle open={!!hints.p6} onClick={() => toggleHint('p6')} />
+            </div>
+            {hints.p6 && (
+              <HintBox>
+                {L7_P6.map((t, i) => (
+                  <div key={t.raw}>
+                    • ({i + 1}) {t.hint}
+                  </div>
+                ))}
+              </HintBox>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {L7_P6.map((t, i) => (
+                <div key={t.raw} className="space-y-2">
+                  <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                    ({i + 1}) <i>y</i> = <Expr raw={t.raw} />
+                  </div>
+                  <TransformInput
+                    idPrefix={`l7-p6-${i + 1}`}
+                    {...transformFields(
+                      t,
+                      i === 0
+                        ? { k: 'p6_1k', p: 'p6_1p', q: 'p6_1q', ax: 'p6_1ax', ay: 'p6_1ay' }
+                        : { k: 'p6_2k', p: 'p6_2p', q: 'p6_2q', ax: 'p6_2ax', ay: 'p6_2ay' }
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+            <ReasonInput
+              id="l7-p6-reason"
+              theme="sky"
+              label="y = (ax + b)/(cx + d)를 y = k/(x − p) + q 꼴로 바꾸는 방법을 정리해 보세요."
+              value={state.p6Reason}
+              onChange={(v) => setField('p6Reason', v)}
+              min={L7_MIN_REASON}
+            />
+            <FeedbackBanner fb={feedback.p6} />
+            <VerifyButton theme="sky" onClick={() => verify('p6', 'p6Verified', validateL7Prob6)}>
+              [문제 6] 정답 확인하기
+            </VerifyButton>
+            {graphReveal('p6', state.p6Verified, transformPanels(L7_GRAPH_SETS.p6))}
+          </div>
+
+          <NavRow onPrev={() => goSection('shift')} onNext={() => goSection('reflect')} nextLabel="다음 단계: 성찰" />
+        </div>
+      )}
+
+      {/* =====================================================================
+          5단계: 성찰
+      ===================================================================== */}
+      {section === 'reflect' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-xs font-extrabold text-rose-600">7차시 마무리 성찰</span>
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">유리함수의 그래프와 점근선 정리하기</h4>
+              </div>
+              <HintToggle open={!!hints.reflection} onClick={() => toggleHint('reflection')} label="💡 성찰 힌트 보기" />
+            </div>
+            {hints.reflection && (
+              <HintBox>
+                <div>
+                  • <strong>성찰 1 예시</strong>: “y = k/(x − p) + q의 그래프는 y = k/x의 그래프를 x축 방향으로 p, y축 방향으로 q만큼 평행이동한 것이고, 점근선은 x = p, y = q이다.”
+                </div>
+                <div>
+                  • <strong>성찰 2 예시</strong>: “분수식의 분자를 분모로 나누면 y = (ax + b)/(cx + d)도 평행이동한 그래프라는 것을 알았다.”
+                </div>
+              </HintBox>
+            )}
+            <HelpSourcePicker idPrefix="l7" value={state.rgHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, rgHelpSource: v }))} />
+            <ReasonInput
+              id="l7-reflection1"
+              theme="rose"
+              label="1. y = k/(x − p) + q의 그래프를 그리는 방법과 점근선을 정리해 보세요."
+              value={state.rgReflection1}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, rgReflection1: v }))}
+              min={L7_MIN_REFLECTION}
+            />
+            <ReasonInput
+              id="l7-reflection2"
+              theme="rose"
+              label="2. 오늘 새롭게 알게 된 점이나 어려웠던 점을 적어 보세요."
+              value={state.rgReflection2}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, rgReflection2: v }))}
+              min={L7_MIN_REFLECTION}
+            />
+            <div className="pt-3 border-t border-slate-100">
+              <NavRow onPrev={() => goSection('transform')} onNext={onGoToLesson8} nextLabel="다음 차시: 08차시로 이동" nextDark />
+            </div>
           </div>
         </div>
+      )}
+
+      {/* 문제별 연습장 (변형 단계에서만) */}
+      {openPad && section === 'transform' && (
+        <ScratchPadWindow
+          key={openPad}
+          title={openPad === 'ex2' ? '[예제 2] y = (2x − 1)/(x + 1) 변형' : '[문제 6] 변형과 점근선'}
+          strokes={pads[openPad] || []}
+          onChange={(next) => setPads((prev) => ({ ...prev, [openPad]: next }))}
+          onClose={() => setOpenPad(null)}
+          onRequestConfirm={onRequestConfirm}
+          fileName={`7차시_연습장_${openPad}`}
+        />
       )}
     </div>
   );

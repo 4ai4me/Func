@@ -14,7 +14,8 @@ import {
   validateL6Prob2,
   validateL6Prob3,
 } from '../utils/lesson6Logic';
-import { parseRat, evalRat, stripParen, type RatNode } from '../utils/ratExpr';
+import { parseRat, evalRat } from '../utils/ratExpr';
+import { Frac, RatView, Expr } from './RatMath';
 import { MathText } from './MathText';
 import { ScratchPadButton, ScratchPadWindow, PadStroke } from './ScratchPad';
 import { HelpSourcePicker } from './HelpSourcePicker';
@@ -136,79 +137,6 @@ export const LESSON6_RESET: Partial<Lesson5State> = {
   ratReflection2: '',
   ratHelpSource: '',
 };
-
-// ─────────────────────────────────────────────
-// 분수 모양 수식
-// ─────────────────────────────────────────────
-function Frac({ n, d }: { n: React.ReactNode; d: React.ReactNode }) {
-  return (
-    <span className="inline-flex flex-col items-center align-middle mx-0.5 leading-tight" role="math">
-      <span className="px-1 pb-0.5">{n}</span>
-      <span className="px-1 pt-0.5 border-t-[1.5px] border-current w-full text-center">{d}</span>
-    </span>
-  );
-}
-
-const V = () => <i className="font-serif">x</i>;
-
-/** 계산 나무를 분수 모양으로 그립니다 */
-function RatView({ node }: { node: RatNode }): React.ReactElement {
-  switch (node.k) {
-    case 'num':
-      return <>{Number.isInteger(node.v) ? node.v : Number(node.v.toFixed(6))}</>;
-    case 'var':
-      return <V />;
-    case 'add':
-    case 'sub':
-      return (
-        <>
-          <RatView node={node.a} />
-          <span className="mx-1">{node.k === 'add' ? '+' : '−'}</span>
-          <RatView node={node.b} />
-        </>
-      );
-    case 'mul':
-      return (
-        <>
-          <RatView node={node.a} />
-          {!node.implicit && <span className="mx-1">×</span>}
-          <RatView node={node.b} />
-        </>
-      );
-    case 'div':
-      return <Frac n={<RatView node={stripParen(node.a)} />} d={<RatView node={stripParen(node.b)} />} />;
-    case 'neg':
-      return (
-        <>
-          −<RatView node={node.a} />
-        </>
-      );
-    case 'pow':
-      return (
-        <>
-          <RatView node={node.a} />
-          <sup className="text-[0.7em]">{node.n}</sup>
-        </>
-      );
-    case 'paren':
-      return (
-        <>
-          (<RatView node={node.a} />)
-        </>
-      );
-  }
-}
-
-/** 문항 식(계산용 글자)을 분수 모양으로 */
-function Expr({ raw, className = '' }: { raw: string; className?: string }) {
-  const node = parseRat(raw);
-  if (!node) return <span className={className}>{raw}</span>;
-  return (
-    <span className={`inline-flex items-center flex-wrap ${className}`}>
-      <RatView node={node} />
-    </span>
-  );
-}
 
 // ─────────────────────────────────────────────
 // 작은 화면 조각 (4차시와 같은 모양)
@@ -1263,7 +1191,7 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({ state, step, onStepCha
               min={L6_MIN_REFLECTION}
             />
             <div className="pt-3 border-t border-slate-100">
-              <NavRow onPrev={() => goSection('domain')} onNext={onGoToLesson7} nextLabel="다음 차시: 07차시로 이동" nextDark />
+              <NavRow onPrev={() => goSection('domain')} onNext={onGoToLesson7} nextLabel="다음 차시: 07차시 유리함수의 그래프로 이동" nextDark />
             </div>
           </div>
         </div>

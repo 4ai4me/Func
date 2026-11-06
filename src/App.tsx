@@ -61,6 +61,7 @@ import { Lesson3View } from './components/Lesson3View';
 import { Lesson4View } from './components/Lesson4View';
 import { summarizeL4 } from './utils/lesson4Logic';
 import { summarizeL6 } from './utils/lesson6Logic';
+import { summarizeL7 } from './utils/lesson7Logic';
 import { summarizeCoupon } from './utils/lesson3Coupon';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
@@ -1249,7 +1250,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/5 · 8차시 {done8.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/{STAGE_TITLES[7].length} · 8차시 {done8.filter(Boolean).length}/5
                     </span>
                   </div>
 
@@ -1473,7 +1474,7 @@ export default function App() {
                       {displayLessonTab === 4 && '04차시 · 역함수의 뜻과 구하기 (역함수의 존재 조건과 역함수 구하는 방법)'}
                       {displayLessonTab === 5 && '05차시 · 역함수의 성질과 그래프 ((g∘f)⁻¹ = f⁻¹∘g⁻¹과 y = f⁻¹(x)의 그래프)'}
                       {displayLessonTab === 6 && '06차시 · 유리식과 유리함수의 정의역'}
-                      {displayLessonTab === 7 && '07차시 · 유리함수2 (유리함수 y = k/(x−p)+q의 점근선과 대칭성)'}
+                      {displayLessonTab === 7 && '07차시 · 유리함수의 그래프'}
                       {displayLessonTab === 8 && '08차시 · 무리함수 탐구 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
                     </span>
                     <span className="font-semibold mono text-slate-600">
@@ -2038,26 +2039,17 @@ export default function App() {
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>7차시 절대부등식2 [문제 1·산술·기하평균]:</strong>{' '}
-              <MathText text={printingStudent.l6?.prob1ProofText || '미작성'} />
+              <strong><MathText text="7차시 유리함수의 그래프 [함께하기·문제 4·평행이동·문제 5·예제 2·문제 6]:" /></strong>{' '}
+              <MathText text={summarizeL7(printingStudent.l6) || '미작성'} />
             </div>
-            {printingStudent.l6?.harmonicReason && (
+            {printingStudent.l6?.rgReflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 [조화평균 유도 이유]:</strong> {printingStudent.l6.harmonicReason}
+                <strong>7차시 성찰 1:</strong> {printingStudent.l6.rgReflection1}
               </div>
             )}
-            <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong>7차시 절대부등식2 [문제 2·역수·조화평균]:</strong>{' '}
-              <MathText text={printingStudent.l6?.prob2ProofText || '미작성'} />
-            </div>
-            {printingStudent.l6?.reflection1 && (
+            {printingStudent.l6?.rgReflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 성찰 1:</strong> {printingStudent.l6.reflection1}
-              </div>
-            )}
-            {printingStudent.l6?.reflection2 && (
-              <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>7차시 성찰 2:</strong> {printingStudent.l6.reflection2}
+                <strong>7차시 성찰 2:</strong> {printingStudent.l6.rgReflection2}
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">

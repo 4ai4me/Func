@@ -38,6 +38,7 @@ import {
   type Lesson3State,
   type Lesson4State,
   type Lesson5State,
+  type Lesson6State,
 } from './mathLogic';
 import { validateL1RealLifeQuiz } from './lesson1Quiz';
 import { validateCouponM1, validateCouponM2, validateCouponM3, validateCouponM4 } from './lesson3Coupon';
@@ -54,10 +55,19 @@ import {
   validateL4Tool,
 } from './lesson4Logic';
 import { L6_MIN_REASON, validateL6Open, validateL6Prob1, validateL6Ex1, validateL6Prob2, validateL6Prob3 } from './lesson6Logic';
+import {
+  L7_MIN_REASON,
+  validateL7Together,
+  validateL7Prob4,
+  validateL7Think,
+  validateL7Prob5,
+  validateL7Ex2,
+  validateL7Prob6,
+} from './lesson7Logic';
 
 export type QuestionStatus = 'done' | 'unchecked' | 'wrong' | 'empty';
-/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'는 6차시) */
-export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5';
+/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'은 6·7차시) */
+export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5' | 'l6';
 
 export interface QuestionStatusResult {
   status: QuestionStatus;
@@ -144,6 +154,14 @@ export const QUESTION_RULES: Record<StatusLessonKey, Record<string, QuestionRule
     p2Verified: { validate: as<Lesson5State>(validateL6Prob2), reasons: { p2Reason: L6_MIN_REASON } },
     p3Verified: { validate: as<Lesson5State>(validateL6Prob3), reasons: { p3Reason: L6_MIN_REASON } },
   },
+  l6: {
+    tgVerified: { validate: as<Lesson6State>(validateL7Together), reasons: { tgReason: L7_MIN_REASON } },
+    p4Verified: { validate: as<Lesson6State>(validateL7Prob4) },
+    thinkVerified: { validate: as<Lesson6State>(validateL7Think) },
+    p5Verified: { validate: as<Lesson6State>(validateL7Prob5) },
+    ex2Verified: { validate: as<Lesson6State>(validateL7Ex2) },
+    p6Verified: { validate: as<Lesson6State>(validateL7Prob6), reasons: { p6Reason: L7_MIN_REASON } },
+  },
 };
 
 /** 이유 칸을 '충분히 쓴 것'으로 가정할 때 넣는 글 (숫자를 넣어 두어 '원소 번호 포함' 같은 조건도 통과) */
@@ -184,7 +202,7 @@ function findQuestion(lesson: StatusLessonKey, verifiedKey: string): QuestionInf
 }
 
 export function isStatusLesson(lesson: string): lesson is StatusLessonKey {
-  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5';
+  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5' || lesson === 'l6';
 }
 
 /** 한 문항의 상태. 규칙이 없는 확인 항목이면 undefined (예전처럼 확인/미확인으로 표시) */
