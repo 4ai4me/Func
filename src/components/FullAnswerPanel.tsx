@@ -117,6 +117,11 @@ function AnswerValue({ value, format }: { value: unknown; format?: AnswerFormat 
         </ul>
       );
     }
+    case 'picks': {
+      const arr = Array.isArray(value) ? value : [];
+      const labels = format && 'labels' in format ? format.labels : [];
+      return <span className="font-semibold">{arr.map((v) => labels[Number(v)] ?? String(v)).join(', ')}</span>;
+    }
     case 'list': {
       const arr = Array.isArray(value) ? value : [];
       const itemLabel = format && 'itemLabel' in format ? format.itemLabel : '';

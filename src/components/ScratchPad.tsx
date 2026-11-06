@@ -6,7 +6,7 @@ import { Download, Eraser, GripHorizontal, Maximize2, Minimize2, PenLine, Rotate
  * 문제별 연습장 — 펜(마우스·손가락·태블릿 펜)으로 그림이나 글씨를 쓰는 떠 있는 창
  * ------------------------------------------------------------------
  * - 그린 내용은 선(획) 목록으로 화면 안에서만 보관합니다(서버에 저장하지 않음).
- *   4차시 화면을 떠나거나 새로고침하면 사라지므로, 남기려면 [그림 저장]으로 PNG 파일을 내려받습니다.
+ *   차시 화면을 떠나거나 새로고침하면 사라지므로, 남기려면 [그림 저장]으로 PNG 파일을 내려받습니다.
  *   (Firestore 쓰기 한도·문서 크기 제한 때문에 그림을 저장 데이터에 넣지 않음)
  * - 좌표는 창 크기와 상관없는 고정 크기(1000 × 620)로 기록하므로 [크게] 보기로 바꿔도 그림이 그대로 커집니다.
  * - 태블릿 펜을 한 번 쓰면 그 창에서는 손바닥·손가락 터치를 무시합니다(손바닥이 닿아 선이 그어지는 것 방지).
@@ -353,7 +353,7 @@ export function ScratchPadWindow({ title, strokes, onChange, onClose, onRequestC
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-3 py-2">
         <p className="text-[11px] text-slate-500">
-          이 연습장은 기기 화면에만 있고 선생님께 제출되지 않아요. 4차시 화면을 떠나거나 새로고침하면 지워집니다.
+          이 연습장은 기기 화면에만 있고 선생님께 제출되지 않아요. 이 차시 화면을 떠나거나 새로고침하면 지워집니다.
         </p>
         <button
           type="button"

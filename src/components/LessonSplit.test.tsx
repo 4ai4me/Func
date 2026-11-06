@@ -87,7 +87,8 @@ test('교사 전체 답안: 4·5차시가 따로 보이고, 서로의 항목이 
   assert.deepEqual(findUnlabeledFields('l4', rec.l4), []);
   assert.deepEqual(findUnlabeledFields('l4b', rec.l4), []);
   const html = renderToStaticMarkup(<FullAnswerPanel record={rec} initiallyOpen />);
-  for (const t of ['4차시 · 역함수의 뜻과 구하기', '5차시 · 역함수의 성질과 그래프', '6차시 · 절대부등식', '7차시 · 절대부등식', '8차시 · 절대부등식']) {
+  // 6차시는 2026-11-06 유리식·유리함수의 정의역으로 교체
+  for (const t of ['4차시 · 역함수의 뜻과 구하기', '5차시 · 역함수의 성질과 그래프', '6차시 · 유리식과 유리함수의 정의역', '7차시 · 절대부등식', '8차시 · 절대부등식']) {
     assert.ok(html.includes(t), t);
   }
   assert.ok(!html.includes('기타 기록'));

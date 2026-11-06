@@ -1,5 +1,6 @@
 import type { LessonKey } from './lessonMerge';
 import { HELP_SOURCE_OPTIONS, type LessonTabNumber } from './mathLogic';
+import { L6_P1_EXPRS } from './lesson6Logic';
 
 /**
  * 교사 [전체 답안 보기]에 표시할 문항 이름표 (Func — 함수와 그래프)
@@ -56,6 +57,8 @@ export type AnswerFormat =
   | { kind: 'points' }
   | { kind: 'map'; valueLabels?: Record<string, string> }
   | { kind: 'list'; itemLabel?: string }
+  /** 보기 번호(0부터) 목록 → 보기 이름 (예: 6차시 문제 1에서 고른 식) */
+  | { kind: 'picks'; labels: readonly string[] }
   | { kind: 'table'; columns?: Record<string, string> }
   | { kind: 'json' };
 
@@ -655,7 +658,74 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
   },
   ...COMMON_L4_TO_L7,
   // Func에서는 예전 5·6·7차시(저장 칸 l5·l6·l7)가 6·7·8차시 (2026-11-05)
-  l5: { ...COMMON_L4_TO_L7.l5, title: COMMON_L4_TO_L7.l5.title.replace('5차시', '6차시') },
+  // 6차시(저장 칸 l5)는 유리식·유리함수의 정의역 수업 (2026-11-06~). 예전 절대부등식 항목은 hidden(보존만).
+  l5: {
+    title: '6차시 · 유리식과 유리함수의 정의역',
+    groups: [
+      {
+        title: '[생각 열기] 전력과 저항 · 유기의 구리 비율',
+        fields: [
+          { key: 'openP4', label: '① R = 4 Ω일 때 P (W)' },
+          { key: 'openP8', label: '② R = 8 Ω일 때 P (W)' },
+          {
+            key: 'openTrend',
+            label: '③ 저항이 커지면 전력은?',
+            format: { kind: 'choice', options: { down: '작아진다', up: '커진다', same: '변하지 않는다' } },
+          },
+          { key: 'openCopper', label: '④ 구리의 비율 (x에 대한 식)' },
+          {
+            key: 'openCopperKind',
+            label: '⑤ ④의 식은 다항식인가?',
+            format: { kind: 'choice', options: { poly: '다항식이다', notPoly: '다항식이 아니다' } },
+          },
+          { key: 'openVerified', label: '생각 열기 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[문제 1] 다항식이 아닌 유리식 찾기',
+        fields: [
+          { key: 'p1Picks', label: '고른 식', format: { kind: 'picks', labels: L6_P1_EXPRS.map((e) => e.label) } },
+          { key: 'p1Reason', label: '고르지 않은 식이 다항식인 이유' },
+          { key: 'p1Verified', label: '문제 1 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[유리식의 계산] 예제 1 · 문제 2',
+        fields: [
+          { key: 'ex1_1', label: '예제 (1) 2/x + 1/(x − 1)' },
+          { key: 'ex1_2', label: '예제 (2) (x − 1)/(x² + x) ÷ (x² − 1)/x' },
+          { key: 'ex1Verified', label: '예제 1 확인', format: CHECK },
+          { key: 'p2_1', label: '문제 2 (1) 3x/(x² − 1) − 2/(x + 1)' },
+          { key: 'p2_2', label: '문제 2 (2) (x + 2)/(x² + 3x) × (x + 3)/(x² − 4)' },
+          { key: 'p2Reason', label: '문제 2 계산할 때 먼저 한 일·주의한 점' },
+          { key: 'p2Verified', label: '문제 2 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[유리함수와 정의역] 문제 3',
+        fields: [
+          { key: 'p3_1', label: '(1) y = (4x + 3)/(x − 5) 정의역에서 빠지는 x' },
+          { key: 'p3_2', label: '(2) y = (2 − x)/(3x + 1) 정의역에서 빠지는 x' },
+          { key: 'p3Reason', label: '정의역을 구한 방법' },
+          { key: 'p3Verified', label: '문제 3 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '성찰',
+        fields: [
+          helpSourceField('ratHelpSource'),
+          { key: 'ratReflection1', label: '6차시 성찰 1. 유리식의 계산 방법 (분수의 계산과 비교)' },
+          { key: 'ratReflection2', label: '6차시 성찰 2. 유리함수의 정의역 / 새롭게 알게 된 점' },
+        ],
+      },
+    ],
+    // 예전 절대부등식(명제 수업) 항목 — 지우지 않고 보존만, 표시하지 않음
+    hidden: [
+      'examples', 'squareConceptChoice', 'step1HintLevel', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+      'equalityConditionChecked', 'equalityReason', 'step3HintLevel', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+      'reflection1', 'reflection2',
+    ],
+  },
   l6: { ...COMMON_L4_TO_L7.l6, title: COMMON_L4_TO_L7.l6.title.replace('6차시', '7차시') },
   l7: { ...COMMON_L4_TO_L7.l7, title: COMMON_L4_TO_L7.l7.title.replace('7차시', '8차시') },
   // Func 4·5차시는 역함수 수업 (2026-10-30~, 2026-11-05 두 차시로 나눔). 공통 4차시(귀류법) 이름표 대신 사용.

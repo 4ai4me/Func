@@ -299,9 +299,12 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   assert.deepEqual(evaluateLevel4Completion(s.l4), [true, false, false, true]);
 
   // 6·7·8차시 = 예전 5·6·7차시 (저장 칸 l5·l6·l7 그대로)
+  // 6차시는 2026-11-06 유리식·유리함수의 정의역으로 교체 — 예전 절대부등식 기록으로는 완료되지 않음
   assert.deepEqual(evaluateLevel6Completion(s.l5), [false, false, false, false, false]);
   s.l5.examples = [calc5Inequality(0, 0), calc5Inequality(1, 2), calc5Inequality(-1, 1)];
   s.l5.squareConceptChoice = 'nonnegative';
+  assert.equal(evaluateLevel6Completion(s.l5)[0], false);
+  s.l5.openVerified = true;
   assert.equal(evaluateLevel6Completion(s.l5)[0], true);
 
   assert.deepEqual(evaluateLevel7Completion(s.l6), [false, false, false, false, false]);

@@ -18,7 +18,7 @@
   - 함수 기호(`f(x)`, `g(x)`, `(g∘f)(x)`, `f⁻¹(x)`, `∘`, `↦`, `→`), 부등호·등호(`≥`, `≤`, `≠`, `±`), 제곱·근호(`²`, `³`, `√(□)`), 논리·집합 기호(`∴`, `∵`, `⇒`, `⇔`, `∈`, `∉`, `⊂`, `∪`, `∩`)를 원클릭 버튼 및 키보드 단축어로 입력할 수 있습니다.
   - 벡터 SVG 근호 갈고리와 윗줄(Vinculum)이 결합된 `<MathText />` 렌더러를 통해 루트 수식을 명확하게 표시합니다.
 - **성찰 단계 「이번 차시 문제를 어떻게 해결했나요?」 (2026-11-04, 1~4차시)**: 성찰 칸 위에 [AI의 도움을 받았어요] [힌트의 도움을 받았어요] [스스로 해결했어요] 중 하나를 고르는 버튼과 "도움을 받아도 혼내지 않아요. 솔직히 답변해 주세요." 안내를 표시합니다. 같은 버튼을 다시 누르면 선택이 풀립니다. 저장 항목은 차시별 `helpSource`(`'ai' | 'hint' | 'self'`)이며 **완료 조건·평가·자동 루브릭에는 쓰지 않습니다**. 교사 [전체 답안 보기]·CSV에 `해결 방법 (도움 받은 정도)`로 표시되고, 고르지 않았으면 회색 `미선택`(작성 개수에서 제외). 예전 기록을 불러올 때 빈 값을 붙이지 않아 불필요한 재저장이 생기지 않습니다 (`src/components/HelpSourcePicker.tsx`, 테스트 `HelpSourcePicker.test.tsx`).
-- **서술 칸 글자 수 표시 (2026-11-05)**: 1~7차시의 모든 서술 칸에 `CharCountBadge`(현재 n자 / 최소 m자)와 테두리 색을 표시합니다. 최소 글자 수는 채점 함수와 같은 상수(`L3_MIN_REASON`·`L3_MIN_REFLECTION`·`L3_COUPON_MIN_FINAL`, `lesson4Logic`의 `MIN_REASON`·`L4_MIN_REFLECTION`)를 씁니다. `CharCountCoverage.test.tsx`가 모든 `Lesson{N}View.tsx`의 각 단계를 그려 빠진 칸을 찾아냅니다(새 차시도 자동 검사).
+- **서술 칸 글자 수 표시 (2026-11-05)**: 모든 차시의 서술 칸에 `CharCountBadge`(현재 n자 / 최소 m자)와 테두리 색을 표시합니다. 최소 글자 수는 채점 함수와 같은 상수(`L3_MIN_REASON`·`L3_MIN_REFLECTION`·`L3_COUPON_MIN_FINAL`, `lesson4Logic`의 `MIN_REASON`·`L4_MIN_REFLECTION`)를 씁니다. `CharCountCoverage.test.tsx`가 모든 `Lesson{N}View.tsx`의 각 단계를 그려 빠진 칸을 찾아냅니다(새 차시도 자동 검사).
 - **학생용 「평가 결과」 모달 (`StudentEvaluationModal`)**:
   - 차시별 완료 현황, 자동 루브릭 분석, 교수자 역량 평정 점수(0~3점) 및 맞춤 피드백을 실시간으로 확인하고 인쇄할 수 있습니다.
 - **교사용 수사 기록실 (`TeacherView`)**:
@@ -108,7 +108,7 @@
 
 - **4차시 · 역함수의 뜻과 구하기** = 생각 열기 · 문제 1 · 역함수 구하기(예제 1·문제 2·문제 5) · **성찰(새로 추가)**
 - **5차시 · 역함수의 성질과 그래프** = 함께하기 · 문제 3 → 그래프와 y = x 대칭 · 문제 4 · 공학 도구 · 성찰(나누기 전 4차시 성찰 그대로)
-- 기존 5·6·7차시 화면(현재 내용은 명제 수업의 절대부등식, 유리·무리함수로 교체 예정)은 **6·7·8차시**로 이름과 순서만 이동. 파일도 `Lesson6View`~`Lesson8View`로 바뀜
+- 기존 5·6·7차시 화면(명제 수업의 절대부등식, 유리·무리함수로 교체 예정 — 6차시는 2026-11-06 교체, 아래 4-2)은 **6·7·8차시**로 이름과 순서만 이동. 파일도 `Lesson6View`~`Lesson8View`로 바뀜
 - **학생 기록은 옮기지 않았습니다** — 표시 차시와 저장 칸을 분리했습니다(`mathLogic.ts`의 `LESSON_STORAGE_KEY`).
 
 | 표시 차시 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
@@ -142,6 +142,22 @@
 - **문항 자료·채점·교사용 요약**: `src/utils/lesson4Logic.ts` / 좌표평면 그리기: `src/components/LinearGraph.tsx` / 교과서 그림: `public/assets/aistudio/image_l4_*.png`
 - **저장 데이터**: `Lesson4State`에 항목을 **추가만** 했습니다. 예전 귀류법 항목(`fractionExamples`, `prob1ProofText` 등)은 지우지 않고 보존하며 [전체 답안 보기]에서는 숨깁니다. 4차시 완료(단계 표시·루브릭)는 새 항목의 [정답 확인] 통과로만 판정합니다.
 - **교사 화면**: 대시보드(4차시 완성·1~4차시 완료 분포·문항별 확인 현황), 학생 목록 4차시 열·필터, CSV 4차시 열(답안 이름표 기준), 상세 비교, 학생 평가 창, 인쇄 평가서를 역함수 기준으로 변경
+
+## 4-2. 6차시: 유리식과 유리함수의 정의역 (`Lesson6View`, 2026-11-06)
+
+교과서 유리함수 단원 앞부분(`학습 목표`, `[생각 열기]`, `유리식`, `[보기]`, `[문제 1]`, `[예제 1]`, `[문제 2]`, 유리함수와 정의역 `[보기]`, `[문제 3]`)을 4차시와 같은 형식(교과서 그림 + 인터랙티브 + 단계별 입력·[정답 확인] + 힌트 + 성찰)으로 5단계 활동지로 만들었습니다. 이전 6차시 화면(명제 수업의 절대부등식1)을 대체합니다.
+
+1. **생각 열기 · 유리식**: 전력 P = V²/R 그래프(저항 슬라이더 1~20 Ω, V = 12 V 고정, 점이 따라 움직임) → ① R = 4일 때 36 W ② R = 8일 때 18 W ③ 저항이 커지면 전력은 작아진다 / 교과서 유기 그림 → ④ 구리의 비율 x/(x + 3) ⑤ 다항식이 아니다. **정답 확인을 통과하면** 핵심 개념(유리식의 뜻, 다항식도 유리식)과 [보기]가 열림(⑤의 답이 드러나지 않도록)
+2. **문제 1**: 다섯 식을 눌러 고르기(다시 누르면 해제) — 정답 2/(x + 5), 1/4 − 1/x, (2x − 1)/(x² + x) + 다항식인 이유
+3. **유리식의 계산**: 계산 방법 안내 → 예제 1을 문제로((1) (3x − 2)/(x(x − 1)) (2) 1/(x + 1)², 교과서 풀이는 버튼) → 문제 2((1) (x + 2)/(x² − 1) (2) 1/(x(x − 2))) + 계산할 때 먼저 한 일. 두 문제에 [연습장]
+4. **유리함수와 정의역**: 핵심 개념(유리함수·다항함수, 정의역 약속) → [보기] y = (x − 1)/(x + 2) 그래프와 x 슬라이더(x = −2에서 '분모가 0 → 값 없음', 빨간 점선) → 문제 3(빠지는 값 5, −1/3) + 정의역을 구한 방법
+5. **성찰**: 도움 받은 정도 + 성찰 2칸(성찰 1, 10자 이상이 완료 조건) → [다음 차시: 07차시]
+
+- **식 채점 (`src/utils/ratExpr.ts`)**: 학생이 쓴 식을 읽어 여러 x 값(14개)에서 계산해 정답 식과 비교합니다. 전개·인수분해·순서를 바꿔 써도 값이 같으면 정답입니다. **약분이 덜 된 식**은 약분되어 사라지는 인수의 근(예: 문제 2 (2)의 x = −2, −3)에서 분모가 0이 되는 것으로 알아내 "값은 맞지만 약분이 덜 되었어요"라고 안내합니다. 입력: `/`, `^2` 또는 `²`, 괄호 `( ) [ ]`, 곱셈 기호 생략 가능. **곱셈 기호를 생략한 곱은 나눗셈보다 먼저** 계산합니다(`1/x(x-1)` = 1/(x(x − 1)), `1/3x` = 1/(3x)). 입력칸 아래에 읽은 식을 **분수 모양**으로 보여 주므로 학생이 확인할 수 있습니다. 정의역 칸은 `5`, `-1/3`, `x≠-1/3` 모두 인정
+- **문항 자료·채점·교사용 요약**: `src/utils/lesson6Logic.ts` / 교과서 그림: `public/assets/aistudio/image_l6_*.png`(7장)
+- **저장 데이터**: 저장 칸은 그대로 `func_lessons/l5`(형식 `Lesson5State`). 새 항목을 **추가만** 했습니다(`openP4`·`openCopper`·`p1Picks`·`ex1_1`·`p2_1`·`p3_1`·`ratReflection1`·`ratHelpSource` 등). 예전 절대부등식 항목(`examples`·`prob1ProofText`·`reflection1` 등)은 지우지 않고 보존하며 [전체 답안 보기]에서는 숨깁니다. 6차시 완료(단계 표시·루브릭)는 새 항목 기준. 성찰은 예전 `reflection1·2` 대신 새 `ratReflection1·2`(예전 답이 새 질문 아래 보이지 않도록). [6차시 초기화]는 새 항목만 지웁니다
+- **교사 화면**: KPI·완료 분포(0~6개 차시)·문항별 확인 현황, 학생 목록 6차시 열·필터, CSV 6차시 열(답안 이름표 기준 — 예전 절대부등식 6차시 열은 뺌), 상세 비교 두 곳(문항 상태 점검·오답·미작성 포함), 전체 답안 보기(고른 식은 식 이름으로 표시), AI 피드백(6차시 '도움 받은 정도'는 보내지 않음), 학생 평가 창, 인쇄 평가서. 평가 항목 이름 `유리식과 유리함수의 정의역 (6차시)`
+- 7·8차시는 아직 예전 화면(절대부등식) — 같은 방식(저장 칸 l6·l7에 항목 추가)으로 교체 예정
 
 ## 5. 시스템 아키텍처
 
@@ -238,7 +254,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx src/utils/lesson6Logic.test.ts
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

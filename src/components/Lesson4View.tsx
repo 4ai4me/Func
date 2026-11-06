@@ -1960,7 +1960,7 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
               <NavRow
                 onPrev={() => goSection('together')}
                 onNext={onGoToLesson6}
-                nextLabel="다음 차시: 06차시 유리함수1로 이동"
+                nextLabel="다음 차시: 06차시 유리식과 유리함수로 이동"
                 nextDark
               />
             </div>

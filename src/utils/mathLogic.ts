@@ -409,6 +409,43 @@ export interface Lesson5State {
   prob2ProofText: string;
   reflection1: string;
   reflection2: string;
+
+  // --- Func 6차시: 유리식과 유리함수의 정의역 (2026-11-06 추가, 저장 칸 l5) ---
+  // 위의 항목(examples ~ reflection2)은 예전 절대부등식 화면의 항목 — 지우지 않고 보존만 함(화면·완료 판정에 쓰지 않음).
+  // 문항 자료·채점: src/utils/lesson6Logic.ts
+
+  // 1단계 생각 열기 · 전력 P = V²/R, 유기의 구리 비율
+  openP4?: string;
+  openP8?: string;
+  openTrend?: '' | 'down' | 'up' | 'same';
+  openCopper?: string;
+  openCopperKind?: '' | 'poly' | 'notPoly';
+  openVerified?: boolean;
+
+  // 2단계 [문제 1] 다항식이 아닌 유리식 고르기 (L6_P1_EXPRS의 번호, 0부터)
+  p1Picks?: number[];
+  p1Reason?: string;
+  p1Verified?: boolean;
+
+  // 3단계 유리식의 계산 — 예제 1을 문제로, [문제 2]
+  ex1_1?: string;
+  ex1_2?: string;
+  ex1Verified?: boolean;
+  p2_1?: string;
+  p2_2?: string;
+  p2Reason?: string;
+  p2Verified?: boolean;
+
+  // 4단계 유리함수와 정의역 — [문제 3] (정의역에서 빠지는 x의 값)
+  p3_1?: string;
+  p3_2?: string;
+  p3Reason?: string;
+  p3Verified?: boolean;
+
+  // 5단계 성찰 (완료 조건: 성찰 1 — lesson6Logic L6_MIN_REFLECTION)
+  ratReflection1?: string;
+  ratReflection2?: string;
+  ratHelpSource?: HelpSource;
 }
 
 export interface L6MeanExample {
@@ -1241,7 +1278,7 @@ export const STAGE_TITLES = {
   3: ['생각 열기 · 합성함수의 뜻', '문제 1 · 함숫값 구하기', '문제 · 합성함수 식과 교환법칙', '생각 넓히기 · 결합법칙', '도전!! 실생활 합성함수'],
   4: ['생각 열기 · 역함수의 뜻', '문제 1 · 역함수의 함숫값', '역함수 구하기', '성찰'],
   5: ['함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
-  6: ['완전제곱 단서', '문제 1 (예제 3)', '등호 조건 탐색', '문제 2 (문제 3)', '절대부등식1 종결'],
+  6: ['생각 열기 · 유리식', '문제 1 · 유리식과 다항식', '유리식의 계산', '유리함수와 정의역', '성찰'],
   7: ['산술·기하 단서', '문제 1 (예제 4)', '역수·조화 탐색', '문제 2 (문제 4)', '절대부등식2 종결'],
   8: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
 } as const;
@@ -1255,7 +1292,7 @@ export const EVAL_CRITERIA = [
   '합성함수 탐구 (3차시)',
   '역함수의 뜻과 구하기 (4차시)',
   '역함수의 성질과 그래프 (5차시)',
-  '유리함수1 탐구 (6차시)',
+  '유리식과 유리함수의 정의역 (6차시)',
   '유리함수2 탐구 (7차시)',
   '무리함수 탐구 (8차시)',
 ] as const;
@@ -1266,7 +1303,7 @@ export const EVAL_DESCRIPTIONS = [
   '합성함수의 정의 조건과 성질(교환·결합법칙)을 추론하고 설명하는 능력',
   '역함수의 존재 조건(일대일대응)을 이해하고 역함수의 함숫값과 식을 구하는 능력',
   '(g∘f)⁻¹ = f⁻¹∘g⁻¹ 성질을 추론하고 함수와 역함수 그래프의 y = x 대칭성을 탐구하는 능력',
-  '유리식과 유리함수 y=k/x의 정의역·치역 및 그래프 개형을 분석하는 능력',
+  '유리식과 다항식을 구분하고 유리식을 계산하며, 유리함수의 정의역을 구하는 능력',
   '유리함수 y=k/(x-p)+q의 점근선과 대칭성을 유도하고 정당화하는 능력',
   '무리함수 y=√(a(x-p))+q의 정의역·치역과 그래프를 탐구하는 능력',
 ] as const;
@@ -1997,13 +2034,17 @@ export function evaluateLevel5Completion(p: Lesson4State): boolean[] {
   ];
 }
 
+/**
+ * 6차시(유리식과 유리함수의 정의역) 단계 완료 — 학생 화면의 [정답 확인] 통과 표시와 성찰 1만 사용합니다.
+ * 예전 절대부등식 항목(examples·prob1ProofText 등)은 판정에 쓰지 않습니다(2026-11-06~).
+ */
 export function evaluateLevel6Completion(p: Lesson5State): boolean[] {
   return [
-    p.examples.length >= 3 && p.squareConceptChoice === 'nonnegative',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.equalityConditionChecked && p.equalityReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15,
+    Boolean(p.openVerified),
+    Boolean(p.p1Verified),
+    Boolean(p.ex1Verified && p.p2Verified),
+    Boolean(p.p3Verified),
+    (p.ratReflection1 || '').trim().length >= 10, // = lesson6Logic L6_MIN_REFLECTION
   ];
 }
 
@@ -2957,14 +2998,9 @@ export function evaluateRubricL5(p: Lesson4State): boolean[] {
   return evaluateLevel5Completion(p);
 }
 
+/** 6차시(유리식·유리함수의 정의역) 루브릭 = 학생 화면 5단계 */
 export function evaluateRubricL6(p: Lesson5State): boolean[] {
-  return [
-    p.examples.length >= 3 && p.squareConceptChoice === 'nonnegative',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.equalityConditionChecked && p.equalityReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20,
-  ];
+  return evaluateLevel6Completion(p);
 }
 
 export function evaluateRubricL7(p: Lesson6State): boolean[] {
@@ -3065,6 +3101,20 @@ function sanitizeStringMap(v: unknown): Record<string, string> | undefined {
     if (typeof val === 'string') out[k] = val;
   }
   return out;
+}
+
+/**
+ * 고른 번호 목록(0 ≤ 번호 < size, 중복 없음, 작은 순)만 남깁니다.
+ * 값이 아예 없으면 undefined 그대로 — 빈 배열을 새로 붙이면 예전 기록까지 다시 저장되기 때문(cleanHelpSource와 같은 이유).
+ */
+function sanitizePickList(v: unknown, size: number): number[] | undefined {
+  if (v === undefined) return undefined;
+  if (!Array.isArray(v)) return [];
+  const set = new Set<number>();
+  for (const n of v) {
+    if (typeof n === 'number' && Number.isInteger(n) && n >= 0 && n < size) set.add(n);
+  }
+  return [...set].sort((a, b) => a - b);
 }
 
 export function cleanStudentState(raw: unknown): StudentRecord {
@@ -3187,6 +3237,8 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL5.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL5.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL5.prob2Hints, 4),
+      p1Picks: sanitizePickList(rawL5.p1Picks, 5),
+      ratHelpSource: cleanHelpSource(rawL5.ratHelpSource),
     },
     l6: {
       ...base.l6,
@@ -3517,7 +3569,27 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.equalityReason ||
           l.examples?.length ||
           l.reflection1 ||
-          l.reflection2
+          l.reflection2 ||
+          // 유리식·유리함수 6차시 (2026-11-06~)
+          l.openVerified ||
+          l.p1Verified ||
+          l.ex1Verified ||
+          l.p2Verified ||
+          l.p3Verified ||
+          l.openP4 ||
+          l.openCopper ||
+          l.p1Picks?.length ||
+          l.p1Reason ||
+          l.ex1_1 ||
+          l.ex1_2 ||
+          l.p2_1 ||
+          l.p2_2 ||
+          l.p2Reason ||
+          l.p3_1 ||
+          l.p3_2 ||
+          l.p3Reason ||
+          l.ratReflection1 ||
+          l.ratReflection2
       )
   );
   result.l6 = pickNewerOrFilled(
@@ -3642,13 +3714,13 @@ export function studentKey(x: { group?: string; code?: string }): string {
 }
 
 /**
- * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~4차시 답안.
+ * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~6차시 답안 (5차시는 4차시와 같은 저장 칸 l4, 6차시는 l5).
  * 정답은 각 문항의 채점 함수(validateL1Prob1 등)와 일치하는 값만 사용합니다.
- * - complete: 1~4차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만
+ * - complete: 1~6차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만(6차시 없음)
  */
 export function createFuncSampleLessons(
   variant: 'complete' | 'partial'
-): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4'> {
+): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4' | 'l5'> {
   const base = createInitialStudentState();
   const full = variant === 'complete';
 
@@ -3865,7 +3937,38 @@ export function createFuncSampleLessons(
       : {}),
   };
 
-  return { l1, l2, l3, l4 };
+  // 6차시 유리식·유리함수의 정의역 (저장 칸 l5) — 정답은 lesson6Logic.ts의 채점 함수와 일치하는 값만 사용
+  const l5: Lesson5State = {
+    ...base.l5,
+    ...(full
+      ? {
+          openP4: '36',
+          openP8: '18',
+          openTrend: 'down' as const,
+          openCopper: 'x/(x+3)',
+          openCopperKind: 'notPoly' as const,
+          openVerified: true,
+          p1Picks: [0, 2, 3],
+          p1Reason: '(x-2)/3과 x²+1/2은 분모에 문자가 없어서 다항식이다.',
+          p1Verified: true,
+          ex1_1: '(3x-2)/(x(x-1))',
+          ex1_2: '1/(x+1)^2',
+          ex1Verified: true,
+          p2_1: '(x+2)/(x^2-1)',
+          p2_2: '1/(x(x-2))',
+          p2Reason: '분모를 인수분해해서 통분하고, 곱셈은 공통인수를 약분했다.',
+          p2Verified: true,
+          p3_1: '5',
+          p3_2: '-1/3',
+          p3Reason: '분모가 0이 되는 x의 값을 빼고 나머지 실수 전체가 정의역이다.',
+          p3Verified: true,
+          ratReflection1: '유리식은 분수처럼 통분과 약분으로 계산하고, 유리함수의 정의역은 분모를 0으로 하는 값을 뺀다.',
+          ratReflection2: '저항과 전력처럼 반비례하는 관계도 유리함수로 나타낼 수 있다는 것을 알았다.',
+        }
+      : {}),
+  };
+
+  return { l1, l2, l3, l4, l5 };
 }
 
 export function createSampleTeacherDataset(): StudentRecord[] {

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { summarizeL4 } from '../utils/lesson4Logic';
+import { summarizeL6 } from '../utils/lesson6Logic';
 import {
   Award,
   CheckCircle2,
@@ -396,28 +397,20 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       )}
                     </div>
 
-                    {/* 6차시 */}
+                    {/* 6차시 (저장 칸 l5 — 유리식·유리함수의 정의역, 2026-11-06~) */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-cyan-700">6차시 · 절대부등식1 (완전제곱식)</div>
+                      <div className="font-bold text-cyan-700">6차시 · 유리식과 유리함수의 정의역</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 1 (a²+b² ≥ ab):</strong> {student.l5?.prob1ProofText || '(미작성)'}
+                        <strong>[생각 열기·문제 1·유리식의 계산·문제 3]:</strong> {summarizeL6(student.l5) || '(미작성)'}
                       </div>
-                      {student.l5?.equalityReason && (
+                      {student.l5?.ratReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>등호 조건 이유:</strong> {student.l5.equalityReason}
+                          <strong>성찰 1:</strong> {student.l5.ratReflection1}
                         </div>
                       )}
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 2 ((a+b)² ≥ 4ab 외):</strong> {student.l5?.prob2ProofText || '(미작성)'}
-                      </div>
-                      {student.l5?.reflection1 && (
+                      {student.l5?.ratReflection2 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 1:</strong> {student.l5.reflection1}
-                        </div>
-                      )}
-                      {student.l5?.reflection2 && (
-                        <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 2:</strong> {student.l5.reflection2}
+                          <strong>성찰 2:</strong> {student.l5.ratReflection2}
                         </div>
                       )}
                     </div>
