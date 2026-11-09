@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import {
   doc,
@@ -55,6 +55,18 @@ import {
   formatDeviceHashAsMac,
   isAuthorizedAdminEmail,
 } from './utils/authLogic';
+import {
+  FUNC_CLASS_LESSON_ACCESS_DOC,
+  MAX_CLASS_LESSON_ACCESS,
+  STORAGE_KEY_CLASS_LESSON_ACCESS,
+  buildClassLessonAccessFirestoreClasses,
+  classKeyLabel,
+  makeClassKey,
+  normalizeClassLessonAccess,
+  resolveStudentLessonAccess,
+  withClassLessonAccess,
+  type ClassLessonAccessMap,
+} from './utils/classLessonAccess';
 import { Lesson1View } from './components/Lesson1View';
 import { Lesson2View } from './components/Lesson2View';
 import { Lesson3View } from './components/Lesson3View';
@@ -198,6 +210,33 @@ export default function App() {
   useEffect(() => {
     lessonAccessRef.current = lessonAccess;
   }, [lessonAccess]);
+
+  // 반별 차시 잠금 (2026-11-09~): 학생의 반 설정이 있으면 반 설정, 없으면 위 전체 설정을 따름
+  const [classLessonAccess, setClassLessonAccess] = useState<ClassLessonAccessMap>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_CLASS_LESSON_ACCESS);
+      if (raw) return normalizeClassLessonAccess(JSON.parse(raw)).map;
+    } catch {
+      // 브라우저에 기억한 값이 깨졌으면 서버 값을 기다림
+    }
+    return {};
+  });
+  const classLessonAccessRef = useRef<ClassLessonAccessMap>(classLessonAccess);
+  const [isClassLessonAccessChecked, setIsClassLessonAccessChecked] = useState<boolean>(false);
+  const [classLessonAccessSyncStatus, setClassLessonAccessSyncStatus] = useState<
+    'checking' | 'saving' | 'synced' | 'error'
+  >('checking');
+  const studentClassKey = sessionMode === 'student' ? makeClassKey(approvedProfile) : null;
+  // 학생 화면에 실제로 적용하는 잠금 (교사 화면에서는 전체 설정과 같음)
+  const effectiveLessonAccess = useMemo(
+    () => resolveStudentLessonAccess(lessonAccess, classLessonAccess, studentClassKey).config,
+    [lessonAccess, classLessonAccess, studentClassKey]
+  );
+  const effectiveLessonAccessRef = useRef<LessonAccessConfig>(effectiveLessonAccess);
+  effectiveLessonAccessRef.current = effectiveLessonAccess;
+  // 학생은 전체·반별 두 설정을 모두 받은 뒤에 차시를 보여 줌 (반 설정이 늦게 와서 잘못 이동되지 않도록)
+  const isStudentAccessChecked =
+    isLessonAccessServerChecked && (sessionMode !== 'student' || isClassLessonAccessChecked);
 
   const [activeLessonTab, setActiveLessonTab] = useState<LessonTabNumber>(() => {
     let initialLesson: LessonTabNumber = 1;
@@ -750,10 +789,10 @@ export default function App() {
         const params = new URLSearchParams(window.location.search);
         const l = Number(params.get('lesson'));
         if (isLessonTabNumber(l)) {
-          if (isLessonEnabled(lessonAccessRef.current, l)) {
+          if (isLessonEnabled(effectiveLessonAccessRef.current, l)) {
             setActiveLessonTab(l);
           } else {
-            const firstOpen = getFirstEnabledLesson(lessonAccessRef.current);
+            const firstOpen = getFirstEnabledLesson(effectiveLessonAccessRef.current);
             if (firstOpen !== null) setActiveLessonTab(firstOpen);
           }
         }
@@ -782,9 +821,9 @@ export default function App() {
   // Redirect student away from a locked lesson and sanitize URL ?lesson= query param
   useEffect(() => {
     if (sessionMode !== 'student') return;
-    if (!isLessonAccessServerChecked) return;
-    if (!isLessonEnabled(lessonAccess, activeLessonTab)) {
-      const firstOpen = getFirstEnabledLesson(lessonAccess);
+    if (!isStudentAccessChecked) return;
+    if (!isLessonEnabled(effectiveLessonAccess, activeLessonTab)) {
+      const firstOpen = getFirstEnabledLesson(effectiveLessonAccess);
       const lockedMeta = LESSON_TAB_METADATA.find((m) => m.num === activeLessonTab);
       if (firstOpen !== null && firstOpen !== activeLessonTab) {
         setActiveLessonTab(firstOpen);
@@ -811,13 +850,94 @@ export default function App() {
         // ignore
       }
     }
-  }, [sessionMode, isLessonAccessServerChecked, lessonAccess, activeLessonTab]);
+  }, [sessionMode, isStudentAccessChecked, effectiveLessonAccess, activeLessonTab]);
 
   const handleUpdateLessonAccess = useCallback(
     async (nextConfig: LessonAccessConfig, reasonLabel?: string): Promise<boolean> => {
       return persistLessonAccessToCloud(nextConfig, reasonLabel);
     },
     [persistLessonAccessToCloud]
+  );
+
+  // 반별 차시 잠금: 서버 문서 실시간 구독 (학생·교사 모두)
+  useEffect(() => {
+    let isMounted = true;
+    // 2.5초 안에 응답이 없으면 브라우저에 기억한 값으로 진행 (전체 설정의 대기 시간과 같음)
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setIsClassLessonAccessChecked(true);
+    }, 2500);
+    const unsub = onSnapshot(
+      doc(db, 'app_settings', FUNC_CLASS_LESSON_ACCESS_DOC),
+      (snap) => {
+        const { map, skipped } = snap.exists()
+          ? normalizeClassLessonAccess(snap.data())
+          : { map: {} as ClassLessonAccessMap, skipped: [] as string[] };
+        if (skipped.length > 0) {
+          console.warn('반별 차시 잠금: 형식이 맞지 않아 전체 설정을 따르는 반', skipped);
+        }
+        classLessonAccessRef.current = map;
+        setClassLessonAccess(map);
+        setIsClassLessonAccessChecked(true);
+        setClassLessonAccessSyncStatus('synced');
+        try {
+          localStorage.setItem(
+            STORAGE_KEY_CLASS_LESSON_ACCESS,
+            JSON.stringify({ classes: buildClassLessonAccessFirestoreClasses(map) })
+          );
+        } catch {
+          // 저장 공간이 없어도 화면 값은 그대로 사용
+        }
+      },
+      (err) => {
+        console.error('Class lesson access listener error:', err);
+        setIsClassLessonAccessChecked(true);
+        setClassLessonAccessSyncStatus('error');
+      }
+    );
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+      unsub();
+    };
+  }, []);
+
+  // 반별 차시 잠금 저장: config가 null이면 그 반을 '전체 설정 따름'으로 되돌림
+  const handleUpdateClassLessonAccess = useCallback(
+    async (classKey: string, config: LessonAccessConfig | null, reasonLabel?: string): Promise<boolean> => {
+      const prev = classLessonAccessRef.current;
+      const next = withClassLessonAccess(prev, classKey, config);
+      if (Object.keys(next).length > MAX_CLASS_LESSON_ACCESS) {
+        showToast(`반별 잠금은 ${MAX_CLASS_LESSON_ACCESS}개 반까지 저장할 수 있습니다. 쓰지 않는 반을 전체 설정으로 되돌린 뒤 다시 시도해 주세요.`, 'warn');
+        return false;
+      }
+      classLessonAccessRef.current = next;
+      setClassLessonAccess(next);
+      setClassLessonAccessSyncStatus('saving');
+      try {
+        await setDoc(doc(db, 'app_settings', FUNC_CLASS_LESSON_ACCESS_DOC), {
+          classes: buildClassLessonAccessFirestoreClasses(next),
+          updatedBy: (firebaseUser?.email || ADMIN_TEACHER_EMAIL).slice(0, 120),
+          updatedAt: serverTimestamp(),
+        });
+        setClassLessonAccessSyncStatus('synced');
+        if (reasonLabel) {
+          showToast(`서버 저장 완료: ${classKeyLabel(classKey)} ${reasonLabel} (그 반 학생 화면에 바로 적용됨)`, 'good');
+        }
+        return true;
+      } catch (err) {
+        console.error(`Failed to save ${FUNC_CLASS_LESSON_ACCESS_DOC}:`, err);
+        // 저장되지 않았으므로 화면도 저장 전 값으로 되돌림
+        classLessonAccessRef.current = prev;
+        setClassLessonAccess(prev);
+        setClassLessonAccessSyncStatus('error');
+        showToast(
+          `${classKeyLabel(classKey)} 반별 잠금을 서버에 저장하지 못했습니다. 인터넷 연결과 보안 규칙 게시 여부를 확인해 주세요.`,
+          'warn'
+        );
+        return false;
+      }
+    },
+    [firebaseUser, showToast]
   );
 
   const handleForceSyncLessonAccessToServer = useCallback(async (): Promise<boolean> => {
@@ -829,7 +949,7 @@ export default function App() {
 
   const handleSelectStudentLesson = useCallback(
     (targetTab: LessonTabNumber, resetStepToZero = false) => {
-      if (sessionMode === 'student' && !isLessonEnabled(lessonAccess, targetTab)) {
+      if (sessionMode === 'student' && !isLessonEnabled(effectiveLessonAccess, targetTab)) {
         const meta = LESSON_TAB_METADATA.find((m) => m.num === targetTab);
         showToast(
           `현재 선생님이 ${meta ? meta.fullTitle : `${targetTab}차시`}를 비활성(잠금) 상태로 설정하여 선행 학습할 수 없습니다.`,
@@ -843,7 +963,7 @@ export default function App() {
       setActiveLessonTab(targetTab);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [sessionMode, lessonAccess, showToast]
+    [sessionMode, effectiveLessonAccess, showToast]
   );
 
   const handleManualForceSave = async () => {
@@ -1049,9 +1169,9 @@ export default function App() {
     8: done8,
   } as const;
   const studentRenderGate = evaluateStudentLessonRenderGate(
-    lessonAccess,
+    effectiveLessonAccess,
     activeLessonTab,
-    isLessonAccessServerChecked
+    isStudentAccessChecked
   );
   const displayLessonTab: LessonTabNumber =
     sessionMode === 'student' ? studentRenderGate.effectiveLesson : activeLessonTab;
@@ -1197,7 +1317,7 @@ export default function App() {
                 {/* Top Row: Lesson 1 ~ 8 Tabs */}
                 <div className="flex flex-wrap items-center gap-2">
                   {LESSON_TAB_METADATA.map(({ num: tabNum, badge, fullTitle: label }) => {
-                    const isUnlocked = isLessonEnabled(lessonAccess, tabNum);
+                    const isUnlocked = isLessonEnabled(effectiveLessonAccess, tabNum);
                     const isSelected = activeLessonTab === tabNum && isUnlocked;
                     return (
                       <button
@@ -1537,7 +1657,7 @@ export default function App() {
                         type="button"
                         aria-current={isCurrent ? 'step' : undefined}
                         onClick={() => {
-                          if (!isLessonEnabled(lessonAccess, displayLessonTab)) return;
+                          if (!isLessonEnabled(effectiveLessonAccess, displayLessonTab)) return;
                           setSteps((prev) => ({ ...prev, [displayLessonTab]: idx }));
                         }}
                         className={`min-h-[68px] sm:min-h-[76px] rounded-xl border p-2 sm:p-3 flex flex-col items-center justify-center text-center transition-all ${
@@ -1639,7 +1759,7 @@ export default function App() {
                   </div>
                 ) : (
                   <>
-                    {activeLessonTab === 1 && isLessonEnabled(lessonAccess, 1) && (
+                    {activeLessonTab === 1 && isLessonEnabled(effectiveLessonAccess, 1) && (
                       <Lesson1View
                         state={student.l1}
                         step={steps[1]}
@@ -1649,7 +1769,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 1)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 1)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1662,7 +1782,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 2 && isLessonEnabled(lessonAccess, 2) && (
+                    {activeLessonTab === 2 && isLessonEnabled(effectiveLessonAccess, 2) && (
                       <Lesson2View
                         state={student.l2}
                         step={steps[2]}
@@ -1672,7 +1792,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 2)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 2)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1686,7 +1806,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 3 && isLessonEnabled(lessonAccess, 3) && (
+                    {activeLessonTab === 3 && isLessonEnabled(effectiveLessonAccess, 3) && (
                       <Lesson3View
                         state={student.l3}
                         step={steps[3]}
@@ -1696,7 +1816,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 3)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 3)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1709,7 +1829,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 4 && isLessonEnabled(lessonAccess, 4) && (
+                    {activeLessonTab === 4 && isLessonEnabled(effectiveLessonAccess, 4) && (
                       <Lesson4View
                         state={student.l4}
                         step={steps[4]}
@@ -1719,7 +1839,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 4)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 4)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1733,7 +1853,7 @@ export default function App() {
                     )}
 
                     {/* 5차시는 4차시와 같은 저장 칸(l4), 6·7·8차시는 l5·l6·l7 — mathLogic LESSON_STORAGE_KEY */}
-                    {activeLessonTab === 5 && isLessonEnabled(lessonAccess, 5) && (
+                    {activeLessonTab === 5 && isLessonEnabled(effectiveLessonAccess, 5) && (
                       <Lesson5View
                         state={student.l4}
                         step={steps[5]}
@@ -1743,7 +1863,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 5)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 5)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1756,7 +1876,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 6 && isLessonEnabled(lessonAccess, 6) && (
+                    {activeLessonTab === 6 && isLessonEnabled(effectiveLessonAccess, 6) && (
                       <Lesson6View
                         state={student.l5}
                         step={steps[6]}
@@ -1766,7 +1886,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 6)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 6)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1779,7 +1899,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 7 && isLessonEnabled(lessonAccess, 7) && (
+                    {activeLessonTab === 7 && isLessonEnabled(effectiveLessonAccess, 7) && (
                       <Lesson7View
                         state={student.l6}
                         step={steps[7]}
@@ -1789,7 +1909,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 7)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 7)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1802,7 +1922,7 @@ export default function App() {
                       />
                     )}
 
-                    {activeLessonTab === 8 && isLessonEnabled(lessonAccess, 8) && (
+                    {activeLessonTab === 8 && isLessonEnabled(effectiveLessonAccess, 8) && (
                       <Lesson8View
                         state={student.l7}
                         step={steps[8]}
@@ -1812,7 +1932,7 @@ export default function App() {
                         }}
                         onUpdate={(updater) =>
                           setStudent((prev) => {
-                            if (!isLessonEnabled(lessonAccessRef.current, 8)) return prev;
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 8)) return prev;
                             return {
                               ...prev,
                               updatedAt: new Date().toISOString(),
@@ -1845,6 +1965,9 @@ export default function App() {
                 onUpdateLessonAccess={handleUpdateLessonAccess}
                 onForceSyncLessonAccessToServer={handleForceSyncLessonAccessToServer}
                 onRefreshLessonAccessFromServer={refreshLessonAccessFromServer}
+                classLessonAccess={classLessonAccess}
+                classLessonAccessSyncStatus={classLessonAccessSyncStatus}
+                onUpdateClassLessonAccess={handleUpdateClassLessonAccess}
               />
             </section>
           )}
@@ -1914,7 +2037,7 @@ export default function App() {
           isOpen={isEvalModalOpen}
           onClose={() => setIsEvalModalOpen(false)}
           student={student}
-          lessonAccess={lessonAccess}
+          lessonAccess={effectiveLessonAccess}
           onPrintReport={handlePrintStudentReport}
           onGoToLesson={(lesson) => {
             handleSelectStudentLesson(lesson);

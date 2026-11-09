@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   doc,
@@ -83,6 +83,14 @@ import {
   STAGE_TITLES,
 } from '../utils/mathLogic';
 import { formatDeviceHashAsMac } from '../utils/authLogic';
+import {
+  classKeyLabel,
+  collectClassKeys,
+  compareClassKeys,
+  makeClassKey,
+  type ClassLessonAccessMap,
+} from '../utils/classLessonAccess';
+import { ACCESS_TARGET_ALL, ClassLessonAccessPanel } from './ClassLessonAccessPanel';
 import { FirestoreStudentRegistrationDoc } from './AuthGateView';
 import {
   Upload,
@@ -182,7 +190,17 @@ interface TeacherViewProps {
   onUpdateLessonAccess: (nextConfig: LessonAccessConfig, reasonLabel?: string) => Promise<boolean> | void;
   onForceSyncLessonAccessToServer?: () => Promise<boolean> | void;
   onRefreshLessonAccessFromServer?: () => Promise<void> | void;
+  /** 반별 차시 잠금 (2026-11-09~) */
+  classLessonAccess?: ClassLessonAccessMap;
+  classLessonAccessSyncStatus?: 'checking' | 'saving' | 'synced' | 'error';
+  onUpdateClassLessonAccess?: (
+    classKey: string,
+    config: LessonAccessConfig | null,
+    reasonLabel?: string
+  ) => Promise<boolean>;
 }
+
+const EMPTY_CLASS_LESSON_ACCESS: ClassLessonAccessMap = {};
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
   adminEmail,
@@ -198,6 +216,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onUpdateLessonAccess,
   onForceSyncLessonAccessToServer,
   onRefreshLessonAccessFromServer,
+  classLessonAccess = EMPTY_CLASS_LESSON_ACCESS,
+  classLessonAccessSyncStatus = 'synced',
+  onUpdateClassLessonAccess,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -1077,10 +1098,57 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const enabledLessonCount = ALL_LESSON_NUMBERS.filter((n) => lessonAccess[n]).length;
   const lockedLessonNumbers = ALL_LESSON_NUMBERS.filter((n) => !lessonAccess[n]);
 
+  // 반별 차시 잠금 (2026-11-09~): 차시 카드·일괄 버튼은 '적용 대상'(전체 또는 한 반)에 적용
+  const [accessTarget, setAccessTarget] = useState<string>(ACCESS_TARGET_ALL);
+  const { lessonClassKeys, studentCountByClass } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of cloudRegistrations) {
+      if (r.status !== 'approved') continue;
+      const key = makeClassKey(r);
+      if (key) counts[key] = (counts[key] ?? 0) + 1;
+    }
+    // 학생이 없어도 반별 설정이 남아 있는 반은 보여 줌 (되돌릴 수 있도록)
+    const keys = new Set([...collectClassKeys(cloudRegistrations), ...Object.keys(classLessonAccess)]);
+    return { lessonClassKeys: Array.from(keys).sort(compareClassKeys), studentCountByClass: counts };
+  }, [cloudRegistrations, classLessonAccess]);
+  // 고른 반이 목록에서 사라지면(학생 없음 + 반별 설정 되돌림) 전체로 돌아감
+  useEffect(() => {
+    if (accessTarget !== ACCESS_TARGET_ALL && !lessonClassKeys.includes(accessTarget)) {
+      setAccessTarget(ACCESS_TARGET_ALL);
+    }
+  }, [accessTarget, lessonClassKeys]);
+  const isClassTarget = accessTarget !== ACCESS_TARGET_ALL && Boolean(onUpdateClassLessonAccess);
+  const targetLessonAccess: LessonAccessConfig =
+    isClassTarget && Object.prototype.hasOwnProperty.call(classLessonAccess, accessTarget)
+      ? classLessonAccess[accessTarget]
+      : lessonAccess;
+  const targetEnabledLessonCount = ALL_LESSON_NUMBERS.filter((n) => targetLessonAccess[n]).length;
+  const targetPrefix = isClassTarget ? `[${classKeyLabel(accessTarget)}] ` : '';
+
+  // 고른 대상에 저장: 반이면 반별 설정, 아니면 전체 설정
+  const saveTargetLessonAccess = async (nextConfig: LessonAccessConfig, label: string) => {
+    if (isClassTarget && onUpdateClassLessonAccess) {
+      return onUpdateClassLessonAccess(accessTarget, nextConfig, label);
+    }
+    return onUpdateLessonAccess(nextConfig, label);
+  };
+
+  const handleResetClassTarget = async () => {
+    if (!isClassTarget || !onUpdateClassLessonAccess) return;
+    const ok = await onUpdateClassLessonAccess(accessTarget, null, '전체 설정으로 되돌림');
+    setNotice({
+      text:
+        ok === false
+          ? `[반별 차시 잠금] ${classKeyLabel(accessTarget)}을 전체 설정으로 되돌리지 못했습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.`
+          : `[반별 차시 잠금] ${classKeyLabel(accessTarget)}은 이제 전체 설정을 따릅니다.`,
+      type: ok === false ? 'warn' : 'good',
+    });
+  };
+
   const handleToggleSingleLesson = async (lessonNum: LessonTabNumber) => {
-    const nextVal = !lessonAccess[lessonNum];
+    const nextVal = !targetLessonAccess[lessonNum];
     const nextConfig: LessonAccessConfig = {
-      ...lessonAccess,
+      ...targetLessonAccess,
       [lessonNum]: nextVal,
       updatedAt: new Date().toISOString(),
       updatedBy: adminEmail,
@@ -1089,24 +1157,32 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     const label = `${meta ? meta.fullTitle : `${lessonNum}차시`} ${
       nextVal ? '활성화(열림)' : '비활성화(선행 잠금)'
     }`;
-    const ok = await onUpdateLessonAccess(nextConfig, label);
+    const ok = await saveTargetLessonAccess(nextConfig, label);
     setNotice({
       text:
         ok === false
-          ? `[차시 접근 설정] ${label} — 현재 브라우저에는 반영되었으나 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
-          : `[차시 접근 서버 저장 완료] ${label} 설정이 클라우드 서버에 저장되어 모든 PC·브라우저의 학생 화면에 즉시 반영되었습니다.`,
+          ? isClassTarget
+            ? `[반별 차시 잠금] ${targetPrefix}${label} — 서버에 저장하지 못해 바뀌지 않았습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.`
+            : `[차시 접근 설정] ${label} — 현재 브라우저에는 반영되었으나 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
+          : isClassTarget
+          ? `[반별 차시 잠금 저장 완료] ${targetPrefix}${label} — 이 반 학생 화면에만 바로 반영되었습니다.`
+          : `[차시 접근 서버 저장 완료] ${label} 설정이 클라우드 서버에 저장되어 반별 설정이 없는 반의 학생 화면에 즉시 반영되었습니다.`,
       type: ok === false ? 'warn' : nextVal ? 'good' : 'info',
     });
   };
 
   const handleApplyLessonPreset = async (preset: LessonAccessPreset, presetLabel: string) => {
     const nextConfig = createLessonAccessPreset(preset, adminEmail);
-    const ok = await onUpdateLessonAccess(nextConfig, presetLabel);
+    const ok = await saveTargetLessonAccess(nextConfig, presetLabel);
     setNotice({
       text:
         ok === false
-          ? `[차시 일괄 설정] '${presetLabel}' — 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
-          : `[차시 일괄 서버 저장 완료] '${presetLabel}' 설정이 클라우드 서버에 저장되어 모든 PC·브라우저의 학생 화면에 즉시 반영되었습니다.`,
+          ? isClassTarget
+            ? `[반별 차시 잠금] ${targetPrefix}'${presetLabel}' — 서버에 저장하지 못해 바뀌지 않았습니다. 인터넷 연결을 확인한 뒤 다시 눌러 주세요.`
+            : `[차시 일괄 설정] '${presetLabel}' — 서버 동기화 확인이 필요합니다. [서버 저장] 버튼을 눌러주세요.`
+          : isClassTarget
+          ? `[반별 차시 잠금 저장 완료] ${targetPrefix}'${presetLabel}' — 이 반 학생 화면에만 바로 반영되었습니다.`
+          : `[차시 일괄 서버 저장 완료] '${presetLabel}' 설정이 클라우드 서버에 저장되어 반별 설정이 없는 반의 학생 화면에 즉시 반영되었습니다.`,
       type: ok === false ? 'warn' : 'good',
     });
   };
@@ -1170,14 +1246,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 차시별 학습 활성(ON) / 비활성(OFF) 관리
                 <span
                   className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${
-                    enabledLessonCount === 7
+                    targetEnabledLessonCount === ALL_LESSON_NUMBERS.length
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : enabledLessonCount === 0
+                      : targetEnabledLessonCount === 0
                       ? 'bg-rose-50 text-rose-800 border-rose-200'
                       : 'bg-indigo-50 text-indigo-800 border-indigo-200'
                   }`}
                 >
-                  현재 열림 {enabledLessonCount}개 / 전체 8차시
+                  {isClassTarget ? `${classKeyLabel(accessTarget)} ` : '현재 '}열림 {targetEnabledLessonCount}개 / 전체 8차시
                 </span>
               </h2>
             </div>
@@ -1276,14 +1352,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             <div className="text-[11px] sm:text-xs text-slate-600">
               {lockedLessonNumbers.length > 0 ? (
                 <span>
-                  현재 잠금(OFF) 차시:{' '}
+                  전체 설정 잠금(OFF) 차시:{' '}
                   <strong className="text-rose-700">
                     {lockedLessonNumbers.map((n) => `${n}차시`).join(', ')}
                   </strong>{' '}
                   (학습자 진입·URL 우회·선행 입력 완전 차단 중)
                 </span>
               ) : (
-                <span>현재 1~8차시가 모두 열려 있습니다 (선행 제한 없음)</span>
+                <span>전체 설정: 1~8차시가 모두 열려 있습니다 (선행 제한 없음)</span>
               )}
               {lessonAccessLastSyncedAt && (
                 <span className="ml-2 mono text-slate-500">
@@ -1323,6 +1399,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           </div>
         </div>
 
+        {onUpdateClassLessonAccess && (
+          <ClassLessonAccessPanel
+            classKeys={lessonClassKeys}
+            studentCountByClass={studentCountByClass}
+            classMap={classLessonAccess}
+            globalConfig={lessonAccess}
+            target={accessTarget}
+            onChangeTarget={setAccessTarget}
+            onResetTarget={handleResetClassTarget}
+            syncStatus={classLessonAccessSyncStatus}
+          />
+        )}
+
         {isLessonAccessOpen && (
           <div className="mt-4 pt-4 border-t border-slate-100 space-y-4">
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -1332,7 +1421,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {LESSON_TAB_METADATA.map((item) => {
-                const isEnabled = Boolean(lessonAccess[item.num]);
+                const isEnabled = Boolean(targetLessonAccess[item.num]);
                 return (
                   <div
                     key={item.num}
