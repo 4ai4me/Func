@@ -131,6 +131,7 @@ import {
   LessonProgress,
   completedLessonDistribution,
   funcLessonProgress,
+  lessonProgress,
   lessonAnswerCsvColumns,
 } from '../utils/funcTeacherMetrics';
 import { summarizeL4 } from '../utils/lesson4Logic';
@@ -146,6 +147,26 @@ import { FullAnswerPanel } from './FullAnswerPanel';
 import { TeacherSaveBar, TeacherSaveStatus, serializeRuns } from './TeacherSaveBar';
 import { AnswerWithStatus } from './QuestionStatusBadge';
 import { AiDraftMap, AiFeedbackPanel } from './AiFeedbackPanel';
+
+/**
+ * 탐정별 사건 기록 표의 차시 열 (표시 차시 1~8 — 4·5차시는 저장 칸 l4, 6·7·8차시는 l5·l6·l7)
+ * 칸에는 루브릭 충족 수와 진행 상태(완료·진행 중·시작 전)만 짧게 보여 주고, 자세한 답은 [상세 비교 · 평가]에서 본다.
+ */
+const RECORD_LESSON_COLUMNS: { n: number; short: string; title: string; rubric: (x: StudentRecord) => boolean[] }[] = [
+  { n: 1, short: '함수의 뜻', title: '함수의 뜻과 그래프', rubric: (x) => evaluateRubricL1(x.l1) },
+  { n: 2, short: '여러 가지 함수', title: '여러 가지 함수', rubric: (x) => evaluateRubricL2(x.l2) },
+  { n: 3, short: '합성함수', title: '합성함수', rubric: (x) => (x.l3 ? evaluateRubricL3(x.l3) : []) },
+  { n: 4, short: '역함수1', title: '역함수의 뜻과 구하기', rubric: (x) => (x.l4 ? evaluateRubricL4(x.l4) : []) },
+  { n: 5, short: '역함수2', title: '역함수의 성질과 그래프', rubric: (x) => (x.l4 ? evaluateRubricL5(x.l4) : []) },
+  { n: 6, short: '유리식·정의역', title: '유리식과 유리함수의 정의역', rubric: (x) => (x.l5 ? evaluateRubricL6(x.l5) : []) },
+  { n: 7, short: '유리함수 그래프', title: '유리함수의 그래프', rubric: (x) => (x.l6 ? evaluateRubricL7(x.l6) : []) },
+  { n: 8, short: '교체 예정', title: '8차시 (교체 예정)', rubric: (x) => (x.l7 ? evaluateRubricL8(x.l7) : []) },
+];
+const LESSON_CHIP_CLASS: Record<LessonProgress, string> = {
+  done: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  progress: 'border-amber-200 bg-amber-50 text-amber-800',
+  none: 'border-slate-200 bg-slate-50 text-slate-500',
+};
 
 interface TeacherViewProps {
   adminEmail: string;
@@ -2549,21 +2570,19 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
             {/* Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-              <table className="w-full min-w-[1080px] border-collapse text-sm">
+              {/* 2026-11-09: 차시 열을 짧은 상태 칸으로 줄여 교사 화면 폭(약 1,050px) 안에 들어가게 함. 좁은 화면에서는 이 상자 안에서만 가로로 밀림 */}
+              <table className="w-full min-w-[880px] border-collapse text-sm">
                 <thead>
                   <tr className="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-200">
-                    <th className="py-3 px-3.5 text-left">학급</th>
-                    <th className="py-3 px-3.5 text-left">식별코드(학번·이름)</th>
-                     <th className="py-3 px-3.5 text-left">1차시 함수의 뜻과 그래프</th>
-                    <th className="py-3 px-3.5 text-left">2차시 여러 가지 함수</th>
-                    <th className="py-3 px-3.5 text-left">3차시 합성함수</th>
-                    <th className="py-3 px-3.5 text-left">4차시 역함수1</th>
-                    <th className="py-3 px-3.5 text-left">5차시 역함수2</th>
-                    <th className="py-3 px-3.5 text-left">6차시 유리식·정의역</th>
-                    <th className="py-3 px-3.5 text-left">7차시 유리함수 그래프</th>
-                    <th className="py-3 px-3.5 text-left">8차시 (교체 예정)</th>
-                    <th className="py-3 px-3.5 text-left">교수자 평가 현황 (진행율)</th>
-                    <th className="py-3 px-3.5 text-left">평가 및 비교</th>
+                    <th className="py-3 px-3 text-left">학급 · 학번·이름</th>
+                    {RECORD_LESSON_COLUMNS.map((c) => (
+                      <th key={c.n} className="py-2 px-1 text-center align-bottom">
+                        <div>{c.n}차시</div>
+                        <div className="text-[10px] font-semibold text-slate-500 leading-tight">{c.short}</div>
+                      </th>
+                    ))}
+                    <th className="py-3 px-3 text-left">교수자 평가 현황 (진행율)</th>
+                    <th className="py-3 px-2 text-left">평가 및 비교</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -2582,74 +2601,29 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               : 'hover:bg-slate-50/80 transition-colors'
                           }
                         >
-                          <td className="py-3 px-3.5 text-slate-700">{x.group || '—'}</td>
-                          <td className="py-3 px-3.5 font-bold mono text-slate-900">{x.code || '미입력'}</td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            루브릭 {evaluateRubricL1(x.l1).filter(Boolean).length}/5 ·{' '}
-                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 1)]}
+                          <td className="py-3 px-3 text-slate-700">
+                            <div className="text-[11px] text-slate-500 leading-tight">{x.group || '—'}</div>
+                            <div className="font-bold mono text-slate-900 text-xs sm:text-sm break-all">{x.code || '미입력'}</div>
                           </td>
-                          <td className="py-3 px-3.5 text-slate-700">
-                            {x.l2.bogiVerified ||
-                            x.l2.prob6Verified ||
-                            x.l2.prob7Verified ||
-                            x.l2.think1Verified ||
-                            x.l2.think2Verified ? (
-                              <span className="mono">
-                                루브릭 {evaluateRubricL2(x.l2).filter(Boolean).length}/5 ·{' '}
-                                <strong className="text-emerald-700">
-                                  {[
-                                    x.l2.bogiVerified ? '보기' : '',
-                                    x.l2.prob6Verified ? '문6' : '',
-                                    x.l2.prob7Verified ? '문7' : '',
-                                    x.l2.think1Verified || x.l2.think2Verified ? '생각' : '',
-                                  ]
-                                    .filter(Boolean)
-                                    .join('·')}
-                                </strong>
-                              </span>
-                            ) : (
-                              <UnwrittenMark text="시작 전" />
-                            )}
-                          </td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l3 ? evaluateRubricL3(x.l3).filter(Boolean).length : 0}/5
-                          </td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l4 ? evaluateRubricL4(x.l4).filter(Boolean).length : 0}/{STAGE_TITLES[4].length} ·{' '}
-                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 4)]}
-                          </td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l4 ? evaluateRubricL5(x.l4).filter(Boolean).length : 0}/{STAGE_TITLES[5].length} ·{' '}
-                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 5)]}
-                          </td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l5 ? evaluateRubricL6(x.l5).filter(Boolean).length : 0}/{STAGE_TITLES[6].length} ·{' '}
-                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 6)]}
-                          </td>
-                          <td className="py-3 px-3.5 mono text-slate-700">
-                            {x.l6 ? evaluateRubricL7(x.l6).filter(Boolean).length : 0}/{STAGE_TITLES[7].length} ·{' '}
-                            {LESSON_PROGRESS_LABEL[funcLessonProgress(x, 7)]}
-                          </td>
-                          <td className="py-3 px-3.5 text-xs text-slate-700 min-w-[140px]">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1 flex-wrap">
+                          {RECORD_LESSON_COLUMNS.map((c) => {
+                            const rubric = c.rubric(x);
+                            const prog = lessonProgress(rubric.length ? rubric : [false]);
+                            return (
+                              <td key={c.n} className="py-3 px-1 text-center">
                                 <span
-                                  className={`rounded px-1.5 py-0.5 font-bold text-[11px] border ${
-                                    x.l7 && (x.l7.prob1ProofText || x.l7.examples.length > 0)
-                                      ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                      : 'bg-slate-100 text-slate-500 border-slate-200'
-                                  }`}
-                                  title="8차시 절댓값 부등식: 사례 수, Step 4단계 확인, 증명 서술"
+                                  data-lesson-chip={c.n}
+                                  title={`${c.n}차시 ${c.title}: 루브릭 ${rubric.filter(Boolean).length}/${rubric.length} · ${LESSON_PROGRESS_LABEL[prog]}`}
+                                  className={`inline-flex flex-col items-center rounded-lg border px-1.5 py-1 min-w-[52px] leading-tight ${LESSON_CHIP_CLASS[prog]}`}
                                 >
-                                  8차 {x.l7?.examples?.length ?? 0}개·{x.l7?.prob1Verified?.filter(Boolean).length ?? 0}/4·{x.l7?.prob1ProofText ? '서술' : <UnwrittenMark />}
+                                  <span className="mono text-xs font-extrabold">
+                                    {rubric.filter(Boolean).length}/{rubric.length}
+                                  </span>
+                                  <span className="text-[10px] font-bold">{LESSON_PROGRESS_LABEL[prog]}</span>
                                 </span>
-                              </div>
-                              <div className="text-[10px] text-slate-500 font-medium">
-                                루브릭 8차 {x.l7 ? evaluateRubricL8(x.l7).filter(Boolean).length : 0}/5
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-3.5 min-w-[200px]">
+                              </td>
+                            );
+                          })}
+                          <td className="py-3 px-3 min-w-[170px]">
                             <div className="space-y-1.5">
                               <div className="flex items-center justify-between gap-2">
                                 <span
@@ -2698,7 +2672,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               )}
                             </div>
                           </td>
-                          <td className="py-3 px-3.5">
+                          <td className="py-3 px-2">
                             <button
                               type="button"
                               onClick={() => {
@@ -2706,7 +2680,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                                 setIsModelessOpen(true);
                                 setIsModelessMinimized(false);
                               }}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors leading-snug ${
                                 isSel && isModelessOpen
                                   ? 'bg-blue-600 text-white shadow-xs'
                                   : 'border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
@@ -2720,7 +2694,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={10} className="py-8 px-4 text-center text-slate-500">
+                      <td colSpan={RECORD_LESSON_COLUMNS.length + 3} className="py-8 px-4 text-center text-slate-500">
                         {isAnyRecordsFilterActive
                           ? '선택한 검색 및 필터 조건에 해당하는 학생 기록이 없습니다.'
                           : '불러온 학생 자료가 없습니다.'}
