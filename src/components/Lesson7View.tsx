@@ -941,6 +941,74 @@ export const Lesson7View: React.FC<Lesson7ViewProps> = ({ state, step, onStepCha
               '|k|가 작은 (3)·(4)의 그래프가 원점에 더 가까이 있는지 확인해 보세요.'
             )}
           </div>
+
+          {/* 2단계 마무리 정리 — 문제 4의 사분면 답이 드러나므로 정답 확인 뒤에 열림 (2026-11-09) */}
+          {state.p4Verified ? (
+            <div data-summary="p4" className="rounded-2xl border-2 border-emerald-600/70 bg-gradient-to-br from-emerald-50/80 via-white to-sky-50/50 p-5 space-y-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-emerald-900">
+                <BookOpen className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="inline-flex items-center gap-1 flex-wrap">
+                  정리 · 유리함수 <i>y</i> = <Frac n={<i>k</i>} d={<i>x</i>} /> (<i>k</i> ≠ 0)의 그래프
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm text-slate-800">
+                {(
+                  [
+                    ['정의역', <MathText key="d" text="{x | x ≠ 0인 실수}" />, '분모 x가 0이 되면 안 되므로 x = 0만 빠집니다.'],
+                    ['치역', <MathText key="r" text="{y | y ≠ 0인 실수}" />, 'k ≠ 0이므로 k/x는 0이 될 수 없습니다.'],
+                    ['점근선', <>x축(y = 0)과 y축(x = 0)</>, '그래프가 한없이 가까워지지만 만나지 않는 직선입니다.'],
+                    ['대칭', <>원점에 대하여 대칭</>, '점 (a, b)가 그래프 위에 있으면 점 (−a, −b)도 그래프 위에 있습니다.'],
+                    ['k의 부호', <>k &gt; 0 → 제1·3사분면, k &lt; 0 → 제2·4사분면</>, 'x > 0일 때 y의 부호가 k의 부호와 같습니다.'],
+                    ['|k|의 크기', <>|k|가 클수록 원점에서 멀어짐</>, '점 (1, k)를 비교해 보세요.'],
+                  ] as const
+                ).map(([title, body, note]) => (
+                  <div key={title} className="rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 space-y-0.5">
+                    <div className="text-[11px] font-extrabold text-emerald-700">{title}</div>
+                    <div className="font-bold text-slate-900">{body}</div>
+                    <div className="text-[11px] text-slate-500">{note}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full min-w-[420px] border-collapse text-xs sm:text-sm">
+                  <caption className="text-left px-3 pt-2.5 pb-1 text-[11px] font-extrabold text-slate-600">[문제 4]의 네 함수 한눈에 보기</caption>
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600">
+                      {['함수', 'k', '사분면', '지나는 점', '정의역·치역', '점근선'].map((h) => (
+                        <th key={h} className="border-t border-slate-200 px-2.5 py-1.5 text-left font-bold">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {L7_P4.map((f, i) => (
+                      <tr key={f.raw} className="border-t border-slate-100">
+                        <td className="px-2.5 py-1.5 font-bold text-slate-900 whitespace-nowrap">
+                          ({i + 1}) <i>y</i> = <Expr raw={f.raw} />
+                        </td>
+                        <td className="px-2.5 py-1.5 mono">{kText(f.k)}</td>
+                        <td className="px-2.5 py-1.5 whitespace-nowrap">제{f.k > 0 ? '1·3' : '2·4'}사분면</td>
+                        <td className="px-2.5 py-1.5 mono whitespace-nowrap">(1, {kText(f.k)})</td>
+                        <td className="px-2.5 py-1.5 whitespace-nowrap">x ≠ 0, y ≠ 0</td>
+                        <td className="px-2.5 py-1.5 whitespace-nowrap">x축, y축</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                💡 네 함수 모두 정의역·치역·점근선은 같고, <strong>k의 부호</strong>에 따라 사분면이, <strong>|k|</strong>에 따라 원점과의 거리가 달라집니다. 다음 단계에서는 이 그래프를
+                평행이동해 봅니다.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
+              <Lock className="h-4 w-4" />
+              <span>[문제 4] 정답을 확인하면 y = k/x 그래프의 정리(정의역·치역·점근선)가 열립니다.</span>
+            </div>
+          )}
+
           <NavRow onPrev={() => goSection('together')} onNext={() => goSection('shift')} nextLabel="다음 단계: 평행이동 · 문제 5" />
         </div>
       )}
