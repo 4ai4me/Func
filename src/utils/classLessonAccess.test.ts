@@ -81,3 +81,13 @@ test('반 목록: 승인된 학생만, 중복 없이 학년·반 순서', () => 
   ]);
   assert.deepEqual(keys, ['수일고|1|2', '수일고|1|10']);
 });
+
+test('저장 실패 이유: Firebase 오류 코드별 안내', async () => {
+  const { describeClassLessonAccessError } = await import('./classLessonAccess');
+  const denied = describeClassLessonAccessError({ code: 'permission-denied', message: 'Missing or insufficient permissions.' });
+  assert.ok(denied.includes('permission-denied') && denied.includes('ai-studio-526dd59d') && denied.includes('규칙'));
+  assert.ok(describeClassLessonAccessError({ code: 'firestore/unavailable' }).includes('인터넷'));
+  const other = describeClassLessonAccessError(new Error('boom'));
+  assert.ok(other.includes('오류 코드 없음') && other.includes('boom'));
+  assert.ok(describeClassLessonAccessError({ code: 'invalid-argument', message: 'bad field' }).includes('bad field'));
+});

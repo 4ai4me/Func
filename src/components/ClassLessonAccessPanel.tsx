@@ -17,6 +17,8 @@ interface ClassLessonAccessPanelProps {
   onChangeTarget: (target: string) => void;
   onResetTarget: () => void;
   syncStatus: 'checking' | 'saving' | 'synced' | 'error';
+  /** 마지막 저장·읽기 실패 이유 (있으면 빨간 상자로 표시) */
+  errorText?: string | null;
 }
 
 /**
@@ -32,6 +34,7 @@ export const ClassLessonAccessPanel: React.FC<ClassLessonAccessPanelProps> = ({
   onChangeTarget,
   onResetTarget,
   syncStatus,
+  errorText = null,
 }) => {
   const isAll = target === ACCESS_TARGET_ALL;
   const targetHasOwn = !isAll && Object.prototype.hasOwnProperty.call(classMap, target);
@@ -108,6 +111,16 @@ export const ClassLessonAccessPanel: React.FC<ClassLessonAccessPanelProps> = ({
           <span className="ml-1 text-rose-700 font-bold">· 반별 설정을 서버와 맞추지 못했습니다 (인터넷 연결·보안 규칙 확인)</span>
         )}
       </p>
+
+      {errorText && (
+        <div
+          role="alert"
+          data-testid="class-lesson-access-error"
+          className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs sm:text-sm font-bold text-rose-800 leading-relaxed break-words"
+        >
+          {errorText}
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <table className="w-full min-w-[560px] text-xs" data-testid="class-lesson-access-table">

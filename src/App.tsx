@@ -61,6 +61,7 @@ import {
   STORAGE_KEY_CLASS_LESSON_ACCESS,
   buildClassLessonAccessFirestoreClasses,
   classKeyLabel,
+  describeClassLessonAccessError,
   makeClassKey,
   normalizeClassLessonAccess,
   resolveStudentLessonAccess,
@@ -226,6 +227,8 @@ export default function App() {
   const [classLessonAccessSyncStatus, setClassLessonAccessSyncStatus] = useState<
     'checking' | 'saving' | 'synced' | 'error'
   >('checking');
+  // 마지막 저장·읽기 실패 이유 (교사 화면에 그대로 표시, 성공하면 지움)
+  const [classLessonAccessError, setClassLessonAccessError] = useState<string | null>(null);
   const studentClassKey = sessionMode === 'student' ? makeClassKey(approvedProfile) : null;
   // 학생 화면에 실제로 적용하는 잠금 (교사 화면에서는 전체 설정과 같음)
   const effectiveLessonAccess = useMemo(
@@ -892,6 +895,7 @@ export default function App() {
         console.error('Class lesson access listener error:', err);
         setIsClassLessonAccessChecked(true);
         setClassLessonAccessSyncStatus('error');
+        setClassLessonAccessError(`반별 설정을 읽지 못했습니다 — ${describeClassLessonAccessError(err)}`);
       }
     );
     return () => {
@@ -920,6 +924,7 @@ export default function App() {
           updatedAt: serverTimestamp(),
         });
         setClassLessonAccessSyncStatus('synced');
+        setClassLessonAccessError(null);
         if (reasonLabel) {
           showToast(`서버 저장 완료: ${classKeyLabel(classKey)} ${reasonLabel} (그 반 학생 화면에 바로 적용됨)`, 'good');
         }
@@ -930,10 +935,9 @@ export default function App() {
         classLessonAccessRef.current = prev;
         setClassLessonAccess(prev);
         setClassLessonAccessSyncStatus('error');
-        showToast(
-          `${classKeyLabel(classKey)} 반별 잠금을 서버에 저장하지 못했습니다. 인터넷 연결과 보안 규칙 게시 여부를 확인해 주세요.`,
-          'warn'
-        );
+        const reason = describeClassLessonAccessError(err);
+        setClassLessonAccessError(reason);
+        showToast(`${classKeyLabel(classKey)} 반별 잠금 저장 실패 — ${reason}`, 'warn');
         return false;
       }
     },
@@ -1967,6 +1971,7 @@ export default function App() {
                 onRefreshLessonAccessFromServer={refreshLessonAccessFromServer}
                 classLessonAccess={classLessonAccess}
                 classLessonAccessSyncStatus={classLessonAccessSyncStatus}
+                classLessonAccessError={classLessonAccessError}
                 onUpdateClassLessonAccess={handleUpdateClassLessonAccess}
               />
             </section>

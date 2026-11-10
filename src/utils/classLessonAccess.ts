@@ -148,3 +148,29 @@ export function collectClassKeys(regs: Array<ClassIdentity & { status?: string }
   }
   return Array.from(set).sort(compareClassKeys);
 }
+
+/**
+ * 반별 잠금 저장·읽기 실패 이유를 교사가 알 수 있는 말로 (2026-11-10)
+ * Firebase 오류 코드를 함께 보여 주어 원인(규칙 미게시·연결·사용량)을 구분할 수 있게 함
+ */
+export function describeClassLessonAccessError(err: unknown): string {
+  const e = (err ?? {}) as { code?: unknown; message?: unknown };
+  const rawCode = typeof e.code === 'string' ? e.code : '';
+  const code = rawCode.replace(/^firestore\//, '');
+  const message = typeof e.message === 'string' ? e.message.slice(0, 160) : String(err ?? '').slice(0, 160);
+  switch (code) {
+    case 'permission-denied':
+      return '서버가 저장을 거부했습니다 (permission-denied). 새 보안 규칙이 아직 게시되지 않았거나 다른 데이터베이스에 게시된 것 같습니다. Firebase 콘솔 → Firestore 맨 위에서 데이터베이스 ai-studio-526dd59d-…를 고른 뒤 규칙 탭에 새 firestore.rules를 게시해 주세요.';
+    case 'unavailable':
+    case 'deadline-exceeded':
+      return `서버에 연결하지 못했습니다 (${code}). 인터넷 연결을 확인한 뒤 다시 눌러 주세요.`;
+    case 'resource-exhausted':
+      return 'Firebase 사용량 한도에 걸렸습니다 (resource-exhausted). 잠시 뒤 다시 시도하거나 Firebase 사용량을 확인해 주세요.';
+    case 'unauthenticated':
+      return '교사 로그인이 풀렸습니다 (unauthenticated). 로그아웃 후 교사 계정으로 다시 로그인해 주세요.';
+    case 'invalid-argument':
+      return `저장 형식 오류입니다 (invalid-argument: ${message}). 이 문구를 그대로 알려 주세요.`;
+    default:
+      return `저장하지 못했습니다 (${code || '오류 코드 없음'}: ${message}). 이 문구를 그대로 알려 주세요.`;
+  }
+}

@@ -937,3 +937,19 @@
 - 다음 세션 인계: 학생별 예외가 필요해지면 같은 방식으로 `resolveStudentLessonAccess`에 학생 단계를 앞에 추가(반보다 우선)
 - 배포(2026-11-09 16:5x): 선생님이 사이트에서 반별 잠금이 안 보인다고 알려 줌 → 원인은 작업 브랜치에만 있고 main에 합치지 않았던 것. `class-lesson-access`를 main에 fast-forward로 합쳐 push(Func `fc93d77`, Props `a9e06b9`). 배포된 사이트는 작업 환경에서 열 수 없어 확인 못 함
 - 배포 후 선생님 화면에 여전히 안 보임 → `index.html`의 배포 파일 주소 버전(`?v=20261030-…`)이 그대로라 브라우저·GitHub Pages 캐시가 예전 파일을 줄 수 있어 `?v=20261109-class-lesson-access`로 바꿈(다음부터 화면을 바꿔 배포할 때마다 버전도 바꿀 것)
+
+
+---
+
+## [2026-11-10] 반별 잠금 저장 실패 이유 표시 (Tier 1)
+
+**시작**
+- Tier: 1 (교사 화면 안내 문구만, 저장 데이터·규칙 변경 없음)
+- 증상(선생님): 반을 고르고 잠그면 다시 열림, 전체 설정이 그대로 남는 것 같음 → 반별 저장이 서버에서 거부되어 저장 전 값(=전체 설정)으로 되돌아가는 동작과 일치. 작업 환경에서 Firestore에 접속할 수 없어(프록시 차단) 원인을 직접 확인할 수 없음
+- 완료 기준: 저장 실패 시 교사 화면 보라색 칸에 Firebase 오류 코드와 해야 할 일이 빨간 상자로 계속 보임, 다시 성공하면 사라짐
+
+**완료**
+- 변경 파일: `src/utils/classLessonAccess.ts`(`describeClassLessonAccessError` — permission-denied면 규칙 게시·데이터베이스 선택 안내, unavailable·resource-exhausted·unauthenticated·invalid-argument 구분, 그 밖은 코드와 메시지 그대로), `App.tsx`(마지막 실패 이유 상태·알림 문구), `TeacherView.tsx`·`ClassLessonAccessPanel.tsx`(빨간 상자), 테스트 1건, `index.html` 버전 `?v=20261110-class-access-error`, 빌드 파일
+- 확인한 것: `tsc --noEmit` 통과, 단위 테스트 185/185, 빌드 통과(번들에 안내 문구 포함), 검사 환경 Chrome 23/23(저장 실패 → 빨간 상자에 permission-denied·데이터베이스 이름, 다시 성공하면 상자 사라짐 포함)
+- 확인하지 못한 것: 실제 서버가 거부하는 이유(선생님 화면의 빨간 상자 문구로 확인 예정), 실제 규칙 게시 상태
+- 남은 위험·후속 작업: 원인이 permission-denied면 선생님이 규칙을 올바른 데이터베이스에 게시해야 함

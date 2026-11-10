@@ -193,6 +193,7 @@ interface TeacherViewProps {
   /** 반별 차시 잠금 (2026-11-09~) */
   classLessonAccess?: ClassLessonAccessMap;
   classLessonAccessSyncStatus?: 'checking' | 'saving' | 'synced' | 'error';
+  classLessonAccessError?: string | null;
   onUpdateClassLessonAccess?: (
     classKey: string,
     config: LessonAccessConfig | null,
@@ -218,6 +219,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onRefreshLessonAccessFromServer,
   classLessonAccess = EMPTY_CLASS_LESSON_ACCESS,
   classLessonAccessSyncStatus = 'synced',
+  classLessonAccessError = null,
   onUpdateClassLessonAccess,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1409,6 +1411,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             onChangeTarget={setAccessTarget}
             onResetTarget={handleResetClassTarget}
             syncStatus={classLessonAccessSyncStatus}
+            errorText={classLessonAccessError}
           />
         )}
 
