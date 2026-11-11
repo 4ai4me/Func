@@ -974,3 +974,4 @@
 - 확인한 것: `tsc --noEmit` 통과, 전체 단위 테스트 189/189(새 4건 포함, 글자 수 표시 검사 포함), `npm run build` 통과 / 실제 `Lesson6View` 2단계를 빌드된 CSS로 그려 Chrome으로 1280px·390px 캡처: 벤다이어그램 3개, 가로 넘침 0, 페이지 오류 0, 분수 모양 확인
 - 확인하지 못한 것: 배포된 사이트, 실제 로그인 학생 화면, 패드 터치 화면
 - 남은 위험·후속 작업: 없음 (main 합치기·배포는 선생님 확인 후)
+- 배포(2026-11-11 10:35): 선생님 요청으로 `lesson6-poly-rational-venn`을 main에 fast-forward로 합쳐 push(`0cfbeed`). GitHub Pages 배포 작업 성공(`pages-build-deployment` success). 배포된 사이트 화면은 작업 환경에서 열 수 없어 확인 못 함
