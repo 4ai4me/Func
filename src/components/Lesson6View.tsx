@@ -19,6 +19,7 @@ import { Frac, RatView, Expr } from './RatMath';
 import { MathText } from './MathText';
 import { ScratchPadButton, ScratchPadWindow, PadStroke } from './ScratchPad';
 import { HelpSourcePicker } from './HelpSourcePicker';
+import { RationalSetVenn } from './RationalSetVenn';
 import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { CheckCircle2, AlertTriangle, Lightbulb, ArrowRight, ArrowLeft, RotateCcw, BookOpen, Eye, EyeOff, Zap, Lock } from 'lucide-react';
 
@@ -830,6 +831,46 @@ export const Lesson6View: React.FC<Lesson6ViewProps> = ({ state, step, onStepCha
       ===================================================================== */}
       {section === 'p1' && (
         <div className="space-y-6">
+          {/* 핵심 개념 정리: 다항식·유리식의 뜻과 포함 관계 (예시는 [문제 1]의 식과 겹치지 않게 — RationalSetVenn.tsx) */}
+          <div className="rounded-2xl border-2 border-emerald-600/70 bg-gradient-to-br from-emerald-50/80 via-white to-sky-50/50 p-5 space-y-4">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-emerald-900">
+              <BookOpen className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>핵심 개념 정리 · 다항식과 유리식</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 space-y-1.5">
+                <div className="text-xs sm:text-sm font-extrabold text-emerald-800">다항식</div>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                  단항식이거나 단항식의 합으로 이루어진 식입니다. 예: 3<i>x</i> + 1, <i>x</i>² − 2<i>x</i> + 5, 5
+                </p>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                  → 분모에 <strong className="text-emerald-800">문자가 없습니다</strong>. 0이 아닌 상수로 나눈 식(예: <Expr raw="(x^2-1)/2" />)도
+                  다항식입니다.
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 space-y-1.5">
+                <div className="text-xs sm:text-sm font-extrabold text-emerald-800">유리식</div>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                  두 다항식 <i>A</i>, <i>B</i> (<i>B</i> ≠ 0)에 대하여 <Frac n={<i>A</i>} d={<i>B</i>} /> 꼴로 나타내어지는 식입니다.
+                </p>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                  → <i>B</i>가 0이 아닌 상수이면 다항식, <i>B</i>에 <strong className="text-emerald-800">문자가 있으면 다항식이 아닌 유리식</strong>입니다.
+                </p>
+                <p className="text-xs sm:text-sm text-slate-800 leading-relaxed inline-flex items-center gap-2 flex-wrap">
+                  <span>예:</span> <Expr raw="1/x" /> <span className="-ml-1.5">,</span> <Expr raw="(4x+2)/(x-3)" />
+                </p>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+              정수가 분모가 1인 유리수인 것처럼, 다항식은 분모가 상수인 유리식입니다. 그래서{' '}
+              <strong className="text-emerald-800">다항식은 모두 유리식</strong>이지만, 유리식이 모두 다항식인 것은 아닙니다. 함수에서도 같은
+              관계가 있습니다(유리함수와 다항함수는 4단계에서 자세히 배워요).
+            </p>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+              <RationalSetVenn />
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-5">
             <ActivityHeader theme="emerald" kicker="탐구 활동 02 · 교과서" title="[문제 1] 다항식이 아닌 유리식을 모두 찾으시오." done={state.p1Verified} />
             <TextbookImage file="image_l6_prob1.png" alt="문제 1 - 다음에서 다항식이 아닌 유리식을 모두 찾으시오. 2/(x+5), (x-2)/3, 1/4 - 1/x, (2x-1)/(x²+x), x² + 1/2" maxH="max-h-[180px]" />
