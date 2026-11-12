@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen, hintLevelKey } from '../utils/hintLog';
 import {
   Lesson7State,
   PROOF7_PROB1_STEPS,
@@ -252,10 +253,12 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
                     if (state.step1HintLevel === 0) {
-                      onUpdate((prev) => ({ ...prev, step1HintLevel: 1 }));
+                      onUpdate((prev) => addHintOpen({ ...prev, step1HintLevel: 1 }, 'step1'));
                       setShowStep1Hint(true);
                     } else {
+                      if (!showStep1Hint) onUpdate((prev) => addHintOpen(prev, 'step1'));
                       setShowStep1Hint((prev) => !prev);
                     }
                   }}
@@ -288,10 +291,10 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                       <button
                         type="button"
                         onClick={() =>
-                          onUpdate((prev) => ({
-                            ...prev,
-                            step1HintLevel: Math.min(STEP1_HINTS.length, prev.step1HintLevel + 1),
-                          }))
+                          onUpdate((prev) => {
+                            const level = Math.min(STEP1_HINTS.length, prev.step1HintLevel + 1);
+                            return addHintOpen({ ...prev, step1HintLevel: level }, hintLevelKey('step1', level));
+                          })
                         }
                         className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
                       >
@@ -431,11 +434,12 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
+                        // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
                         if (hintLvl === 0) {
                           onUpdate((prev) => {
                             const nextHints = [...prev.prob1Hints];
                             nextHints[idx] = 1;
-                            return { ...prev, prob1Hints: nextHints };
+                            return addHintOpen({ ...prev, prob1Hints: nextHints }, `prob1_s${idx + 1}`);
                           });
                           setProb1HintsOpen((prev) => {
                             const next = [...prev];
@@ -443,6 +447,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                             return next;
                           });
                         } else {
+                          if (!isHintOpen) onUpdate((prev) => addHintOpen(prev, `prob1_s${idx + 1}`));
                           setProb1HintsOpen((prev) => {
                             const next = [...prev];
                             next[idx] = !next[idx];
@@ -475,7 +480,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                               onUpdate((prev) => {
                                 const nextHints = [...prev.prob1Hints];
                                 nextHints[idx] = Math.min(item.hints.length, (nextHints[idx] || 0) + 1);
-                                return { ...prev, prob1Hints: nextHints };
+                                return addHintOpen({ ...prev, prob1Hints: nextHints }, hintLevelKey(`prob1_s${idx + 1}`, nextHints[idx]));
                               })
                             }
                             className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
@@ -673,10 +678,12 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
                     if (state.step3HintLevel === 0) {
-                      onUpdate((prev) => ({ ...prev, step3HintLevel: 1 }));
+                      onUpdate((prev) => addHintOpen({ ...prev, step3HintLevel: 1 }, 'step3'));
                       setShowStep3Hint(true);
                     } else {
+                      if (!showStep3Hint) onUpdate((prev) => addHintOpen(prev, 'step3'));
                       setShowStep3Hint((prev) => !prev);
                     }
                   }}
@@ -702,10 +709,10 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                       <button
                         type="button"
                         onClick={() =>
-                          onUpdate((prev) => ({
-                            ...prev,
-                            step3HintLevel: Math.min(STEP3_HINTS.length, prev.step3HintLevel + 1),
-                          }))
+                          onUpdate((prev) => {
+                            const level = Math.min(STEP3_HINTS.length, prev.step3HintLevel + 1);
+                            return addHintOpen({ ...prev, step3HintLevel: level }, hintLevelKey('step3', level));
+                          })
                         }
                         className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"
                       >
@@ -837,11 +844,12 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
+                        // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
                         if (hintLvl === 0) {
                           onUpdate((prev) => {
                             const nextHints = [...prev.prob2Hints];
                             nextHints[idx] = 1;
-                            return { ...prev, prob2Hints: nextHints };
+                            return addHintOpen({ ...prev, prob2Hints: nextHints }, `prob2_s${idx + 1}`);
                           });
                           setProb2HintsOpen((prev) => {
                             const next = [...prev];
@@ -849,6 +857,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                             return next;
                           });
                         } else {
+                          if (!isHintOpen) onUpdate((prev) => addHintOpen(prev, `prob2_s${idx + 1}`));
                           setProb2HintsOpen((prev) => {
                             const next = [...prev];
                             next[idx] = !next[idx];
@@ -881,7 +890,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({
                               onUpdate((prev) => {
                                 const nextHints = [...prev.prob2Hints];
                                 nextHints[idx] = Math.min(item.hints.length, (nextHints[idx] || 0) + 1);
-                                return { ...prev, prob2Hints: nextHints };
+                                return addHintOpen({ ...prev, prob2Hints: nextHints }, hintLevelKey(`prob2_s${idx + 1}`, nextHints[idx]));
                               })
                             }
                             className="rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-amber-700"

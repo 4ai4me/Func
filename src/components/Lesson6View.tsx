@@ -1,4 +1,5 @@
 import React, { useId, useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import type { Lesson5State } from '../utils/mathLogic';
 import {
   type L6Feedback,
@@ -579,7 +580,11 @@ const roundText = (v: number) => {
 export const Lesson6View: React.FC<Lesson6ViewProps> = ({ state, step, onStepChange, onUpdate, onGoToLesson7, onRequestConfirm }) => {
   const section: Section = LESSON6_SECTIONS[step] ?? LESSON6_SECTIONS[0];
   const [hints, setHints] = useState<Record<string, boolean>>({});
-  const toggleHint = (k: string) => setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  const toggleHint = (k: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts, 교사 화면 '힌트 사용 현황')
+    if (!hints[k]) onUpdate((prev) => addHintOpen(prev, k));
+    setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  };
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L6Feedback | null>>>({});
   const [resistance, setResistance] = useState(4);
   const [exX, setExX] = useState(1);

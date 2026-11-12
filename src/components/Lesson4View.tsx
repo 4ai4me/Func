@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import type { Lesson4State } from '../utils/mathLogic';
 import {
   L4Feedback,
@@ -622,7 +623,11 @@ export const Lesson4View: React.FC<Lesson4ViewProps> = ({
   const section: Section = sections[step] ?? sections[0];
   const lessonNo = part === 1 ? 4 : 5;
   const [hints, setHints] = useState<Record<string, boolean>>({});
-  const toggleHint = (k: string) => setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  const toggleHint = (k: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts, 교사 화면 '힌트 사용 현황')
+    if (!hints[k]) onUpdate((prev) => addHintOpen(prev, k));
+    setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  };
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L4Feedback | null>>>({});
 
   // 1단계: 화살표 방향, 뒤집은 대응에서 고르는 중인 화학식, 역함수가 없는 예

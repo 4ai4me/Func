@@ -25,6 +25,7 @@ git config user.name && git config user.email   # 위 두 값이 나오는지 �
 
 - **서술 칸(textarea)에는 반드시 글자 수 표시를 붙입니다.** `CharCountBadge`(+ 테두리 색 `getCharCountBorderClass`)를 쓰고, 최소 글자 수는 채점 함수가 쓰는 상수와 같은 값을 씁니다(예: `L3_MIN_REASON`, `lesson4Logic`의 `MIN_REASON`). 4차시처럼 공용 입력칸(`ReasonInput`)을 쓰면 `min`을 넘깁니다.
   - `src/components/CharCountCoverage.test.tsx`가 모든 `Lesson{N}View.tsx`의 각 단계를 그려서 빠진 칸을 찾아냅니다. 새 차시를 만들거나 바꾸면 이 테스트를 꼭 실행합니다.
+- **힌트 버튼은 열 때 `addHintOpen`으로 횟수를 기록**하고(`src/utils/hintLog.ts`), 새 힌트는 `src/utils/hintCatalog.ts`에 이름·위치를 추가합니다. `hintCatalog.test.ts`가 화면 코드의 `toggleHint('이름')`과 대조합니다.
 - 성찰 단계에는 `HelpSourcePicker`(도움 받은 정도 선택)를 넣고, 교사 [전체 답안 보기]용 `answerLabels.ts`에 `HELP_SOURCE_FIELD`를 추가합니다.
 
 ## 차시 번호와 저장 칸 (2026-11-05~)

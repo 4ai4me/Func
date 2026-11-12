@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import type { Lesson6State } from '../utils/mathLogic';
 import {
   type L7Feedback,
@@ -592,7 +593,11 @@ const SLIDER_VALUES = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 export const Lesson7View: React.FC<Lesson7ViewProps> = ({ state, step, onStepChange, onUpdate, onGoToLesson8, onRequestConfirm }) => {
   const section: Section = LESSON7_SECTIONS[step] ?? LESSON7_SECTIONS[0];
   const [hints, setHints] = useState<Record<string, boolean>>({});
-  const toggleHint = (k: string) => setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  const toggleHint = (k: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts, 교사 화면 '힌트 사용 현황')
+    if (!hints[k]) onUpdate((prev) => addHintOpen(prev, k));
+    setHints((prev) => ({ ...prev, [k]: !prev[k] }));
+  };
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L7Feedback | null>>>({});
   const [graphOpen, setGraphOpen] = useState<Partial<Record<GraphKey, boolean>>>({});
   const toggleGraph = (k: GraphKey) => setGraphOpen((prev) => ({ ...prev, [k]: !prev[k] }));

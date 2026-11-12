@@ -152,6 +152,7 @@ import {
   useStudentAuthPolicy,
 } from '../utils/studentPassword';
 import { FullAnswerPanel } from './FullAnswerPanel';
+import { HintUsageSection, StudentHintPanel } from './HintUsagePanel';
 import { TeacherSaveBar, TeacherSaveStatus, serializeRuns } from './TeacherSaveBar';
 import { AnswerWithStatus } from './QuestionStatusBadge';
 import { AiDraftMap, AiFeedbackPanel } from './AiFeedbackPanel';
@@ -2410,6 +2411,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         )}
       </div>
 
+      {/* SECTION 3-B: 힌트 사용 현황 (2026-11-12~, HintUsagePanel.tsx) — 학생 목록의 검색·반·진행 필터를 따름 */}
+      <HintUsageSection records={filteredSortedRecords} totalCount={records.length} />
+
       {/* SECTION 4: Student Records Table & Detail View */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-7 shadow-xs">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -3078,6 +3082,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 {/* 전체 답안 보기: 학생이 입력한 모든 문항 */}
                 <FullAnswerPanel record={selectedStudent} />
 
+                {/* 힌트 사용 기록 (학생 한 명) */}
+                <StudentHintPanel record={selectedStudent} />
+
                 {/* Inline Teacher Evaluation & Feedback Section */}
                 {(() => {
                   const inlineEvalProg = getTeacherEvaluationProgress(selectedStudent);
@@ -3600,6 +3607,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
                 {/* 전체 답안 보기: 학생이 입력한 모든 문항 */}
                 <FullAnswerPanel record={selectedStudent} />
+
+                {/* 힌트 사용 기록 (학생 한 명) */}
+                <StudentHintPanel record={selectedStudent} />
 
                 {/* Teacher Memo and Rubric Section */}
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-6 space-y-5">

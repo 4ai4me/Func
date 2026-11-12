@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import { L3_COUPON_MIN_FINAL, L3_MIN_REASON, type Lesson3State } from '../utils/mathLogic';
 import {
   COUPON_DEFAULT,
@@ -297,7 +298,11 @@ export function Lesson3CouponStep({ state, onUpdate, onPrev, onGoToLesson4 }: Le
   const [setting, setSetting] = useState<CouponSetting>(COUPON_DEFAULT);
   const [feedback, setFeedback] = useState<Partial<Record<MissionKey, CouponFeedback | null>>>({});
   const [hints, setHints] = useState<Record<string, boolean>>({});
-  const toggleHint = (k: string) => setHints((p) => ({ ...p, [k]: !p[k] }));
+  const toggleHint = (k: string) => {
+    // 힌트를 '열 때'만 횟수 기록 — 3차시 다른 힌트와 구분되도록 coupon_ 을 붙임 (hintCatalog.ts)
+    if (!hints[k]) onUpdate((prev) => addHintOpen(prev, `coupon_${k}`));
+    setHints((p) => ({ ...p, [k]: !p[k] }));
+  };
 
   const setField = <K extends keyof Lesson3State>(key: K, value: Lesson3State[K]) => {
     const flag = FIELD_FLAG[key];

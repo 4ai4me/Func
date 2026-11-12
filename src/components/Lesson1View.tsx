@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import {
   Lesson1State,
   L1_COUNTRIES,
@@ -143,6 +144,8 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
   };
 
   const toggleHint = (id: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts, 교사 화면 '힌트 사용 현황')
+    if (!showHints[id]) onUpdate((prev) => addHintOpen(prev, id));
     setShowHints((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -1977,7 +1980,10 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowProb2Graph1Hint((v) => !v)}
+                    onClick={() => {
+                      if (!showProb2Graph1Hint) onUpdate((prev) => addHintOpen(prev, 'prob2_1_graph'));
+                      setShowProb2Graph1Hint((v) => !v);
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100"
                   >
                     <LineChart className="h-3.5 w-3.5" />
@@ -2071,7 +2077,10 @@ export const Lesson1View: React.FC<Lesson1ViewProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setShowProb2Graph2Hint((v) => !v)}
+                    onClick={() => {
+                      if (!showProb2Graph2Hint) onUpdate((prev) => addHintOpen(prev, 'prob2_2_graph'));
+                      setShowProb2Graph2Hint((v) => !v);
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
                   >
                     <LineChart className="h-3.5 w-3.5" />

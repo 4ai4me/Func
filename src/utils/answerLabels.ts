@@ -939,3 +939,9 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
     hidden: [...L4_LEGACY_HIDDEN, ...L4_PART1_KEYS],
   },
 };
+
+/**
+ * 학생 답안이 아닌 화면 진행용 기록 — [전체 답안 보기]·'기타 기록'에 보이지 않음
+ * (힌트 단계 prob1Hints·step1HintLevel 등, 힌트 열람 횟수 hintOpens는 교사 화면 '힌트 사용 기록'에서 따로 보여 줌)
+ */
+export const BOOKKEEPING_FIELD_PATTERN = /(Hints?|HintLevel|hintLevel|^hintOpens)$/;

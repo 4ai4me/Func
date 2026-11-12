@@ -1129,6 +1129,7 @@ export default function App() {
               topic: nextTopic,
               customStatement: prev.l2.customStatement,
               customScope: prev.l2.customScope,
+              hintOpens: prev.l2.hintOpens, // 힌트 열람 횟수는 교사용 기록이라 유지
             },
           }));
         }

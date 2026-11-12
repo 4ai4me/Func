@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import {
   Lesson3State,
   validateL3Open,
@@ -97,6 +98,8 @@ export const Lesson3View: React.FC<Lesson3ViewProps> = ({
   // Collapsible hint states (Strict Zero-Placeholder Policy: all hints outside inputs)
   const [hints, setHints] = useState<Record<string, boolean>>({});
   const toggleHint = (key: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
+    if (!hints[key]) onUpdate((prev) => addHintOpen(prev, key));
     setHints((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 

@@ -4,7 +4,7 @@ import { StudentRecord } from '../utils/mathLogic';
 import { ANSWER_LESSON_KEYS, LESSON_ANSWER_CONFIG, answerStorageKey, type AnswerLessonKey } from '../utils/answerLabels';
 import type { AnswerField, AnswerFormat } from '../utils/answerLabels';
 import { AnswerText, UnwrittenMark } from './AnswerText';
-import { isEmptyAnswer } from '../utils/answerLabels';
+import { isEmptyAnswer, BOOKKEEPING_FIELD_PATTERN } from '../utils/answerLabels';
 import { QuestionStatusResult, getQuestionStatus } from '../utils/questionStatus';
 import { QuestionStatusBadge } from './QuestionStatusBadge';
 
@@ -18,8 +18,8 @@ export { isEmptyAnswer };
  * - 비어 있는 항목은 빨간 '미작성'으로 표시합니다.
  */
 
-/** 학생 답안이 아닌 화면 진행용 기록 (힌트 열람 횟수 등) — 표시하지 않음 */
-const BOOKKEEPING_PATTERN = /(Hints?|HintLevel|hintLevel)$/;
+/** 학생 답안이 아닌 화면 진행용 기록 — 표시하지 않음 (answerLabels.ts, 힌트 횟수는 StudentHintPanel) */
+const BOOKKEEPING_PATTERN = BOOKKEEPING_FIELD_PATTERN;
 
 
 /** 이름표가 없지만 학생이 입력한 값이 있는 항목 (누락 방지용) */

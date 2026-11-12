@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { LESSON_ANSWER_CONFIG } from './answerLabels';
+import { LESSON_ANSWER_CONFIG, BOOKKEEPING_FIELD_PATTERN } from './answerLabels';
 import { LESSON_KEYS } from './lessonMerge';
 
 // 학생 답안이 아닌 화면 진행용 기록 (힌트 열람 횟수 등) — 표시 대상 아님
-const BOOKKEEPING = /(Hints?|HintLevel|hintLevel)$/;
+const BOOKKEEPING = BOOKKEEPING_FIELD_PATTERN;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mathSource = readFileSync(join(here, 'mathLogic.ts'), 'utf8');

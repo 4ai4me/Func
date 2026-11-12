@@ -1,3 +1,5 @@
+import { cleanHintOpens, mergeHintOpens, type HintOpens } from './hintLog';
+
 export interface L1Example {
   n: number;
   sq: number;
@@ -60,6 +62,8 @@ function cleanHelpSource(v: unknown): HelpSource | undefined {
 }
 
 export interface Lesson1State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
   helpSource?: HelpSource;
   examples: L1Example[];
@@ -135,6 +139,8 @@ export interface Lesson1State {
 }
 
 export interface Lesson2State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
   helpSource?: HelpSource;
   topic: '' | 'a' | 'b' | 'c' | 'd';
@@ -206,6 +212,8 @@ export interface L3Mod3Example {
 }
 
 export interface Lesson3State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
   helpSource?: HelpSource;
   parityExamples: L3ParityExample[];
@@ -301,6 +309,8 @@ export interface L4FractionExample {
 }
 
 export interface Lesson4State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   /** 성찰 단계 '도움 받은 정도' (예전 기록에는 없음) */
   helpSource?: HelpSource;
   fractionExamples: L4FractionExample[];
@@ -395,6 +405,8 @@ export interface L5InequalityExample {
 }
 
 export interface Lesson5State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   examples: L5InequalityExample[];
   squareConceptChoice: '' | 'nonnegative' | 'alwayspositive' | 'negative';
   step1HintLevel: number;
@@ -461,6 +473,8 @@ export interface L6MeanExample {
 }
 
 export interface Lesson6State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   examples: L6MeanExample[];
   amgmConceptChoice: '' | 'positive' | 'anyreal' | 'negative';
   step1HintLevel: number;
@@ -546,6 +560,8 @@ export interface L7AbsExample {
 }
 
 export interface Lesson7State {
+  /** 힌트를 연 횟수 { 힌트 이름: 횟수 } (2026-11-12~, hintLog.ts — 초기화해도 유지) */
+  hintOpens?: HintOpens;
   examples: L7AbsExample[];
   absSquareConceptChoice: '' | 'square_diff' | 'direct_sub' | 'cube';
   step1HintLevel: number;
@@ -3175,6 +3191,9 @@ function sanitizePickList(v: unknown, size: number): number[] | undefined {
   return [...set].sort((a, b) => a - b);
 }
 
+/** 힌트 횟수를 담는 차시 기록 칸 */
+const HINT_LESSON_STATE_KEYS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'] as const;
+
 export function cleanStudentState(raw: unknown): StudentRecord {
   if (!raw || typeof raw !== 'object') {
     throw new Error('이 통합 활동지의 결과 파일이 아닙니다.');
@@ -3322,6 +3341,14 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Hints: sanitizeNumbersArray(rawL7.prob2Hints, 4),
     },
   };
+
+  // 힌트 열람 횟수: 올바른 값만 남김 (hintLog.ts)
+  for (const k of HINT_LESSON_STATE_KEYS) {
+    const lessonState = cleanedResult[k] as { hintOpens?: HintOpens };
+    const opens = cleanHintOpens(lessonState.hintOpens);
+    if (opens) lessonState.hintOpens = opens;
+    else delete lessonState.hintOpens;
+  }
 
   if (x.evaluation && typeof x.evaluation === 'object') {
     ensureTeacherEval(cleanedResult);
@@ -3697,6 +3724,15 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.reflection2
       )
   );
+
+  // 힌트 열람 횟수는 어느 기기 기록을 고르든 힌트마다 큰 값으로 합침 (다른 기기에서 센 횟수가 사라지지 않도록)
+  for (const k of HINT_LESSON_STATE_KEYS) {
+    const opens = mergeHintOpens(remote[k]?.hintOpens, local[k]?.hintOpens);
+    const picked = { ...(result[k] as object) } as { hintOpens?: HintOpens };
+    if (opens) picked.hintOpens = opens;
+    else delete picked.hintOpens;
+    (result as unknown as Record<string, unknown>)[k] = picked;
+  }
 
   result.updatedAt =
     localIsNewer && local.updatedAt ? local.updatedAt : remote.updatedAt || new Date().toISOString();

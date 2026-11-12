@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { addHintOpen } from '../utils/hintLog';
 import {
   Lesson2State,
   TopicId,
@@ -92,6 +93,8 @@ export const Lesson2View: React.FC<Lesson2ViewProps> = ({
   };
 
   const toggleHint = (id: string) => {
+    // 힌트를 '열 때'만 횟수 기록 (hintLog.ts)
+    if (!showHints[id]) onUpdate((prev) => addHintOpen(prev, id));
     setShowHints((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
