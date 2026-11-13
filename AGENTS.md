@@ -30,8 +30,8 @@ git config user.name && git config user.email   # 위 두 값이 나오는지 �
 
 ## 차시 번호와 저장 칸 (2026-11-05~)
 
-- 화면의 차시 번호(1~8)와 학생 기록 저장 칸(Firestore `func_lessons/l1~l7`)은 다릅니다. **4·5차시는 같은 칸 `l4`**, 6·7·8차시는 `l5`·`l6`·`l7`입니다. 표는 `src/utils/mathLogic.ts`의 `LESSON_STORAGE_KEY` 한 곳에만 둡니다.
+- 화면의 차시 번호(1~9)와 학생 기록 저장 칸(Firestore `func_lessons/l1~l7`)은 다릅니다. **4·5차시는 같은 칸 `l4`**, 6·7차시는 `l5`·`l6`, **8·9차시는 같은 칸 `l7`**(2026-11-13~)입니다. 표는 `src/utils/mathLogic.ts`의 `LESSON_STORAGE_KEY` 한 곳에만 둡니다.
 - 저장 칸 이름(`l1`~`l7`)과 형식(`Lesson5State` 등)은 기존 학생 기록과 보안 규칙의 계약이므로 바꾸지 않습니다. 차시를 다시 나누거나 합칠 때도 기록을 옮기지 말고 표시 쪽에서 매핑합니다(옮기려면 Tier 3로 따로 계획).
-- 교사 화면의 답안 묶음은 `answerLabels.ts`의 `ANSWER_LESSON_KEYS`(`l4b` = 5차시)를 쓰고, 학생 기록은 `answerStorageKey`로 꺼냅니다.
-- 차시 잠금은 Func 전용 `app_settings/func_lesson_access`(l1~l8)만 씁니다. Props와 함께 쓰는 `app_settings/lesson_access`에는 쓰지 않습니다.
+- 교사 화면의 답안 묶음은 `answerLabels.ts`의 `ANSWER_LESSON_KEYS`(`l4b` = 5차시, `l7b` = 9차시)를 쓰고, 학생 기록은 `answerStorageKey`로 꺼냅니다. 같은 칸을 쓰는 두 차시는 항목·힌트 이름이 겹치지 않게 하고, 서로 상대 차시 항목을 `hidden`에 넣습니다.
+- 차시 잠금은 Func 전용 `app_settings/func_lesson_access`(l1~l8 필수, l9는 2026-11-13 추가된 선택 칸 — 없으면 8차시 값을 따름)만 씁니다. Props와 함께 쓰는 `app_settings/lesson_access`에는 쓰지 않습니다.
 - 반별 차시 잠금(2026-11-09~)은 `app_settings/func_lesson_access_classes`에 둡니다. 학생 화면의 잠금 판단은 반드시 `effectiveLessonAccess`(반 설정 → 없으면 전체 설정)로 하고, 전체 설정 `lessonAccess`를 직접 쓰지 않습니다.

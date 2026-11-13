@@ -51,7 +51,7 @@ test('수용 기준 ③: 전체 설정으로 되돌리면 그 반만 빠지고 �
 test('서버 형식: 저장값 그대로 읽힘, 칸이 빠지거나 틀린 반은 버리고 전체 설정을 따름', () => {
   const map = withClassLessonAccess({}, '수일고|2|5', createLessonAccessPreset('upTo2', 'liha1634@gmail.com'));
   const classes = buildClassLessonAccessFirestoreClasses(map);
-  assert.deepEqual(Object.keys(classes['수일고|2|5']), ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8']);
+  assert.deepEqual(Object.keys(classes['수일고|2|5']), ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9']);
   const back = normalizeClassLessonAccess({ classes, updatedBy: 'x' });
   assert.deepEqual(back.skipped, []);
   assert.deepEqual(open(back.map['수일고|2|5']), [1, 2]);
@@ -62,11 +62,16 @@ test('서버 형식: 저장값 그대로 읽힘, 칸이 빠지거나 틀린 반�
       '수일고|1|1': { l1: true, l2: false }, // 칸 부족 → 열림으로 채우지 않음
       '수일고|1|2': 'oops',
       '이상한키': { l1: true, l2: true, l3: true, l4: true, l5: true, l6: true, l7: true, l8: true },
+      // 9차시 칸이 없는 예전(8칸) 값은 인정하고 9차시는 8차시와 같게 (2026-11-13)
       '수일고|1|3': { l1: true, l2: true, l3: false, l4: false, l5: false, l6: false, l7: false, l8: false },
+      '수일고|1|4': { l1: true, l2: true, l3: true, l4: true, l5: true, l6: true, l7: true, l8: true },
+      '수일고|1|5': { l1: true, l2: true, l3: true, l4: true, l5: true, l6: true, l7: true, l8: true, l9: 'yes' }, // 9차시 칸이 틀림
     },
   });
-  assert.deepEqual(Object.keys(broken.map), ['수일고|1|3']);
-  assert.deepEqual(broken.skipped.sort(), ['수일고|1|1', '수일고|1|2', '이상한키'].sort());
+  assert.deepEqual(Object.keys(broken.map).sort(), ['수일고|1|3', '수일고|1|4']);
+  assert.equal(broken.map['수일고|1|3'][9], false);
+  assert.equal(broken.map['수일고|1|4'][9], true);
+  assert.deepEqual(broken.skipped.sort(), ['수일고|1|1', '수일고|1|2', '수일고|1|5', '이상한키'].sort());
   assert.deepEqual(normalizeClassLessonAccess(null).map, {});
   assert.deepEqual(normalizeClassLessonAccess({ classes: 3 }).map, {});
 });

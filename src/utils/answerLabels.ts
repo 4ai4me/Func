@@ -18,9 +18,10 @@ import { L8_OPEN_EXPR_OPTIONS, L8_P4, L8_P4_QUAD_KEYS, L8_P4_SYM_KEYS, L8_P5, L8
 /**
  * 교사 화면의 답안 묶음 = 표시 차시 (2026-11-05 역함수를 4·5차시로 나눔)
  * - 'l4b' = 5차시 (저장 칸은 4차시와 같은 l4) / l5·l6·l7 = 6·7·8차시
+ * - 'l7b' = 9차시 (저장 칸은 8차시와 같은 l7, 2026-11-13 무리함수를 두 차시로 나눔)
  * - 학생 기록을 꺼낼 때는 answerStorageKey로 저장 칸을 찾습니다.
  */
-export const ANSWER_LESSON_KEYS = ['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7'] as const;
+export const ANSWER_LESSON_KEYS = ['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7', 'l7b'] as const;
 export type AnswerLessonKey = (typeof ANSWER_LESSON_KEYS)[number];
 export const ANSWER_LESSON_NO: Record<AnswerLessonKey, LessonTabNumber> = {
   l1: 1,
@@ -31,9 +32,10 @@ export const ANSWER_LESSON_NO: Record<AnswerLessonKey, LessonTabNumber> = {
   l5: 6,
   l6: 7,
   l7: 8,
+  l7b: 9,
 };
 export function answerStorageKey(k: AnswerLessonKey): LessonKey {
-  return k === 'l4b' ? 'l4' : k;
+  return k === 'l4b' ? 'l4' : k === 'l7b' ? 'l7' : k;
 }
 
 /** 학생이 아무것도 입력하지 않은 값인지 (빈 글자, 빈 목록, 모든 칸이 빈 표·대응 포함) */
@@ -812,6 +814,7 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
     ],
   },
   // 8차시(저장 칸 l7)는 무리식과 무리함수 수업 (2026-11-13~). 예전 절대부등식3 항목은 hidden(보존만).
+  // 같은 날 두 차시로 나눔: 8차시 = 생각 열기~y = √ax, 9차시(l7b) = 평행이동·변형 — 서로 상대 차시 항목을 hidden에 넣음
   l7: {
     title: '8차시 · 무리식과 무리함수',
     groups: [
@@ -873,6 +876,31 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
         ],
       },
       {
+        title: '성찰',
+        fields: [
+          helpSourceField('ieHelpSource'),
+          { key: 'ieReflection1', label: '8차시 성찰 1. 무리식의 값이 실수가 되는 조건과 정의역 구하기 정리' },
+          { key: 'ieReflection2', label: '8차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
+        ],
+      },
+    ],
+    // 예전 절대부등식3(명제 수업) 항목 — 지우지 않고 보존만, 표시하지 않음
+    hidden: [
+      'examples', 'absSquareConceptChoice', 'step1HintLevel', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+      'absDiffChecked', 'absDiffReason', 'step3HintLevel', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+      'reflection1', 'reflection2',
+      // 9차시(l7b) 항목 — 8차시 묶음에 섞이지 않게
+      ...L8_P6_KEYS.flatMap((k) => [k.p, k.q, k.d, k.r]),
+      'p6Verified',
+      ...['ex2', 'p7_1', 'p7_2'].flatMap((pre) => ['s', 'a', 'p', 'q', 'd', 'r'].map((x) => `${pre}${x}`)),
+      'ex2Verified', 'p7Reason', 'p7Verified', 'irReflection1', 'irReflection2', 'irHelpSource',
+    ],
+  },
+  // 9차시(저장 칸 l7 — 8차시와 함께 씀): 무리함수의 그래프와 평행이동 (2026-11-13~)
+  l7b: {
+    title: '9차시 · 무리함수의 그래프와 평행이동',
+    groups: [
+      {
         title: '[평행이동] 문제 6',
         fields: [
           ...L8_P6.flatMap((it, i): AnswerField[] => {
@@ -914,16 +942,20 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
         title: '성찰',
         fields: [
           helpSourceField('irHelpSource'),
-          { key: 'irReflection1', label: '8차시 성찰 1. y = √(a(x − p)) + q의 그래프·정의역·치역 정리' },
-          { key: 'irReflection2', label: '8차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
+          { key: 'irReflection1', label: '9차시 성찰 1. y = √(a(x − p)) + q의 그래프·정의역·치역 정리' },
+          { key: 'irReflection2', label: '9차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
         ],
       },
     ],
-    // 예전 절대부등식3(명제 수업) 항목 — 지우지 않고 보존만, 표시하지 않음
     hidden: [
       'examples', 'absSquareConceptChoice', 'step1HintLevel', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
       'absDiffChecked', 'absDiffReason', 'step3HintLevel', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
       'reflection1', 'reflection2',
+      // 8차시(l7) 항목 — 9차시 묶음에 섞이지 않게
+      'opExpr', 'opSpeed', 'opRange', 'opReason', 'openVerified', 'p1a', 'p1b', 'p1Verified',
+      'ex1a', 'ex1b', 'ex1Verified', 'p2a', 'p2b', 'p2Reason', 'p2Verified', 'p3a', 'p3b', 'p3Verified',
+      'sqDomain', 'sqRange', 'sqTrend', 'sqVerified', ...L8_P4_QUAD_KEYS, ...L8_P4_SYM_KEYS, 'p4Verified',
+      ...L8_P5_DOMAIN_KEYS, ...L8_P5_RANGE_KEYS, 'p5Verified', 'ieReflection1', 'ieReflection2', 'ieHelpSource',
     ],
   },
   // Func 4·5차시는 역함수 수업 (2026-10-30~, 2026-11-05 두 차시로 나눔). 공통 4차시(귀류법) 이름표 대신 사용.

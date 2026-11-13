@@ -36,6 +36,7 @@ import {
   evaluateLevel6Completion,
   evaluateLevel7Completion,
   evaluateLevel8Completion,
+  evaluateLevel9Completion,
   isLessonTabNumber,
   lessonAccessFromLegacy,
   FUNC_LESSON_ACCESS_DOC,
@@ -75,12 +76,13 @@ import { Lesson4View } from './components/Lesson4View';
 import { summarizeL4 } from './utils/lesson4Logic';
 import { summarizeL6 } from './utils/lesson6Logic';
 import { summarizeL7 } from './utils/lesson7Logic';
-import { summarizeL8 } from './utils/lesson8Logic';
+import { summarizeL8, summarizeL9 } from './utils/lesson8Logic';
 import { summarizeCoupon } from './utils/lesson3Coupon';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
 import { Lesson7View } from './components/Lesson7View';
 import { Lesson8View } from './components/Lesson8View';
+import { Lesson9View } from './components/Lesson9View';
 import { TeacherView } from './components/TeacherView';
 import { AuthGateView, FirestoreStudentRegistrationDoc } from './components/AuthGateView';
 import { StudentEvaluationModal } from './components/StudentEvaluationModal';
@@ -272,6 +274,7 @@ export default function App() {
     6: number;
     7: number;
     8: number;
+    9: number;
   }>(() => {
     let initialStep = 0;
     try {
@@ -290,6 +293,7 @@ export default function App() {
       6: initialStep,
       7: initialStep,
       8: initialStep,
+      9: initialStep,
     };
   });
   const [selectedTeacherKey, setSelectedTeacherKey] = useState<string>('');
@@ -650,10 +654,28 @@ export default function App() {
         );
         // Func 전용 잠금 문서에만 저장 (Props와 함께 쓰던 lesson_access는 건드리지 않음)
         const targetRef = doc(db, 'app_settings', FUNC_LESSON_ACCESS_DOC);
-        await setDoc(targetRef, {
-          ...fields,
-          updatedAt: serverTimestamp(),
-        });
+        let l9Rejected = false;
+        try {
+          await setDoc(targetRef, {
+            ...fields,
+            updatedAt: serverTimestamp(),
+          });
+        } catch (firstErr) {
+          // 9차시 칸(l9)을 허용하는 새 보안 규칙(2026-11-13)이 아직 게시되지 않았으면 거부됨 →
+          // 1~8차시만 저장하고, 9차시는 읽을 때 8차시를 따르게 함(normalizeLessonAccess). 교사에게 알림.
+          const code = String((firstErr as { code?: unknown })?.code ?? '');
+          if (!code.includes('permission-denied')) throw firstErr;
+          l9Rejected = true;
+          const { l9: _l9, ...withoutL9 } = fields;
+          await setDoc(targetRef, {
+            ...withoutL9,
+            updatedAt: serverTimestamp(),
+          });
+          showToast(
+            '1~8차시 잠금은 저장했지만 9차시 칸은 서버가 거부했습니다. 새 보안 규칙(9차시 칸)을 Firebase 콘솔에 게시하기 전까지 9차시는 8차시와 같이 열리고 잠깁니다.',
+            'warn'
+          );
+        }
 
         // Verify directly from the Firestore server to guarantee cross-browser persistence
         try {
@@ -671,7 +693,7 @@ export default function App() {
           setLessonAccessLastSyncedAt(new Date());
         }
 
-        if (reasonLabel) {
+        if (reasonLabel && !l9Rejected) {
           showToast(
             `클라우드 서버 저장 완료: ${reasonLabel} (모든 PC·브라우저 학생에게 즉시 적용됨)`,
             'good'
@@ -1163,7 +1185,9 @@ export default function App() {
   const done5 = evaluateLevel5Completion(student.l4);
   const done6 = evaluateLevel6Completion(student.l5);
   const done7 = evaluateLevel7Completion(student.l6);
+  // 8·9차시는 같은 저장 칸(l7) — 2026-11-13 무리함수를 두 차시로 나눔
   const done8 = evaluateLevel8Completion(student.l7);
+  const done9 = evaluateLevel9Completion(student.l7);
   const doneMap = {
     1: done1,
     2: done2,
@@ -1173,6 +1197,7 @@ export default function App() {
     6: done6,
     7: done7,
     8: done8,
+    9: done9,
   } as const;
   const studentRenderGate = evaluateStudentLessonRenderGate(
     effectiveLessonAccess,
@@ -1265,7 +1290,7 @@ export default function App() {
               {/* Hero Copy */}
               <div>
                 <div className="flex items-center gap-2 text-xs font-semibold text-sky-400 flex-wrap">
-                  <span>01 — 08차시 통합 탐구 프로젝트</span>
+                  <span>01 — 09차시 통합 탐구 프로젝트</span>
                   <span aria-hidden="true" className="text-slate-600">/</span>
                   <span className="text-slate-300">함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 역함수 · 유리함수 · 무리함수</span>
                 </div>
@@ -1280,7 +1305,7 @@ export default function App() {
                   수학 탐정단의 함수 개념 추리 및 그래프 탐구 프로젝트
                 </p>
                 <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed">
-                  정의역에서 공역으로의 대응 단서를 수집하고, 일대일대응·항등함수·상수함수(1·2차시)부터 합성함수(3차시), 역함수(4·5차시), 그리고 유리함수와 무리함수의 그래프 탐구(6·7·8차시)까지 단계별 힌트와 함께 완성해 보세요.
+                  정의역에서 공역으로의 대응 단서를 수집하고, 일대일대응·항등함수·상수함수(1·2차시)부터 합성함수(3차시), 역함수(4·5차시), 그리고 유리함수와 무리함수의 그래프 탐구(6~9차시)까지 단계별 힌트와 함께 완성해 보세요.
                 </p>
               </div>
 
@@ -1289,7 +1314,7 @@ export default function App() {
                 <div className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xs">
                   <div className="flex items-center justify-between text-xs text-slate-400 pb-3 border-b border-white/10">
                     <span className="font-semibold text-slate-200">핵심 함수 탐구 기법</span>
-                    <span className="mono text-sky-300">01 — 08차시</span>
+                    <span className="mono text-sky-300">01 — 09차시</span>
                   </div>
                   <div className="py-3 space-y-2 mono text-xs">
                     <div className="flex items-center justify-between gap-3 text-slate-300 whitespace-nowrap">
@@ -1313,14 +1338,14 @@ export default function App() {
               </div>
             </div>
 
-            {/* In Student Mode: Show Lesson 1~8 Tabs on Left, Progress & Print Feature on Right */}
+            {/* In Student Mode: Show Lesson 1~9 Tabs on Left, Progress & Print Feature on Right */}
             {sessionMode === 'student' && (
               <div
                 role="tablist"
                 aria-label="학생 차시 선택 및 수사 진행 현황"
                 className="no-print mt-7 pt-5 border-t border-white/10 flex flex-col gap-4"
               >
-                {/* Top Row: Lesson 1 ~ 8 Tabs */}
+                {/* Top Row: Lesson 1 ~ 9 Tabs */}
                 <div className="flex flex-wrap items-center gap-2">
                   {LESSON_TAB_METADATA.map(({ num: tabNum, badge, fullTitle: label }) => {
                     const isUnlocked = isLessonEnabled(effectiveLessonAccess, tabNum);
@@ -1376,7 +1401,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/{STAGE_TITLES[7].length} · 8차시 {done8.filter(Boolean).length}/{STAGE_TITLES[8].length}
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/{STAGE_TITLES[7].length} · 8차시 {done8.filter(Boolean).length}/{STAGE_TITLES[8].length} · 9차시 {done9.filter(Boolean).length}/{STAGE_TITLES[9].length}
                     </span>
                   </div>
 
@@ -1601,7 +1626,8 @@ export default function App() {
                       {displayLessonTab === 5 && '05차시 · 역함수의 성질과 그래프 ((g∘f)⁻¹ = f⁻¹∘g⁻¹과 y = f⁻¹(x)의 그래프)'}
                       {displayLessonTab === 6 && '06차시 · 유리식과 유리함수의 정의역'}
                       {displayLessonTab === 7 && '07차시 · 유리함수의 그래프'}
-                      {displayLessonTab === 8 && '08차시 · 무리함수 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
+                      {displayLessonTab === 8 && '08차시 · 무리식과 무리함수 (무리식의 계산, 정의역, y = √ax의 그래프)'}
+                      {displayLessonTab === 9 && '09차시 · 무리함수의 그래프와 평행이동 (y = √(a(x−p))+q, y = √(ax+b)+c)'}
                     </span>
                     <span className="font-semibold mono text-slate-600">
                       권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / {STAGE_TITLES[displayLessonTab].length}
@@ -1616,7 +1642,8 @@ export default function App() {
                     {displayLessonTab === 5 && '거꾸로, 그리고 대칭으로! — 역함수의 성질과 y = x 대칭'}
                     {displayLessonTab === 6 && '점근선의 비밀을 찾아라! — 유리함수 y = k/x의 그래프'}
                     {displayLessonTab === 7 && '평행이동과 대칭의 중심 — 유리함수 y = (ax+b)/(cx+d) 탐구'}
-                    {displayLessonTab === 8 && '출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구'}
+                    {displayLessonTab === 8 && '근호 안을 지켜라! — 무리식과 무리함수 y = √ax'}
+                    {displayLessonTab === 9 && '출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구'}
                   </h2>
                   <p className="mt-1 text-xs sm:text-sm text-slate-600">
                     {displayLessonTab === 1 && '두 집합 X, Y 사이의 대응 관계에서 함수가 되기 위한 조건과 서로 같은 함수를 탐구해 보세요.'}
@@ -1627,7 +1654,10 @@ export default function App() {
                     {displayLessonTab === 6 && '유리식의 정의역과 유리함수 y = k/x (k ≠ 0)의 부호에 따른 그래프 개형을 분석해 보세요.'}
                     {displayLessonTab === 7 && '유리함수 그래프의 평행이동, 두 점근선의 교점 (p, q), 그리고 직선 y = ±(x−p)+q에 대한 대칭성을 탐구해 보세요.'}
                     {displayLessonTab === 8 && (
-                      <MathText text="무리함수 y = √(a(x−p))+q의 정의역·치역과 역함수(이차함수의 일부)와의 관계를 탐구해 보세요." />
+                      <MathText text="무리식의 값이 실수가 되는 조건, 무리식의 계산, 무리함수의 정의역과 y = √ax의 그래프(역함수 y = x²/a와의 관계)를 탐구해 보세요." />
+                    )}
+                    {displayLessonTab === 9 && (
+                      <MathText text="무리함수 y = √(a(x−p))+q의 그래프를 평행이동으로 그리고, y = √(ax+b)+c를 변형해 정의역·치역을 구해 보세요." />
                     )}
                   </p>
 
@@ -1647,8 +1677,10 @@ export default function App() {
                   className={`no-print grid ${
                     STAGE_TITLES[displayLessonTab].length === 6
                       ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
-                      : STAGE_TITLES[displayLessonTab].length === 4 || STAGE_TITLES[displayLessonTab].length === 8
+                      : STAGE_TITLES[displayLessonTab].length === 4
                       ? 'grid-cols-2 sm:grid-cols-4'
+                      : STAGE_TITLES[displayLessonTab].length === 3
+                      ? 'grid-cols-3'
                       : STAGE_TITLES[displayLessonTab].length === 2
                       ? 'grid-cols-2'
                       : 'grid-cols-5'
@@ -1946,6 +1978,30 @@ export default function App() {
                             };
                           })
                         }
+                        onGoToLesson9={() => handleSelectStudentLesson(9, true)}
+                        onRequestConfirm={requestConfirm}
+                      />
+                    )}
+
+                    {/* 9차시는 8차시와 같은 저장 칸(l7) — 2026-11-13 무리함수를 두 차시로 나눔 */}
+                    {activeLessonTab === 9 && isLessonEnabled(effectiveLessonAccess, 9) && (
+                      <Lesson9View
+                        state={student.l7}
+                        step={steps[9]}
+                        onStepChange={(next) => {
+                          setSteps((prev) => ({ ...prev, 9: next }));
+                          window.scrollTo({ top: 180, behavior: 'smooth' });
+                        }}
+                        onUpdate={(updater) =>
+                          setStudent((prev) => {
+                            if (!isLessonEnabled(effectiveLessonAccessRef.current, 9)) return prev;
+                            return {
+                              ...prev,
+                              updatedAt: new Date().toISOString(),
+                              l7: updater(prev.l7),
+                            };
+                          })
+                        }
                         onRequestConfirm={requestConfirm}
                       />
                     )}
@@ -2079,7 +2135,7 @@ export default function App() {
               <strong>평가 상태:</strong> {getTeacherEvaluationProgress(printingStudent).statusLabel} ({getTeacherEvaluationProgress(printingStudent).percent}%)
             </div>
 
-            <h3 className="text-lg font-bold pt-2">1. 탐구 활동 요약 (1 ~ 8차시)</h3>
+            <h3 className="text-lg font-bold pt-2">1. 탐구 활동 요약 (1 ~ 9차시)</h3>
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
               <strong>1차시 대응·정의역·치역 [문제 1·2]:</strong> {printingStudent.l1.claim || '미작성'}
             </div>
@@ -2183,17 +2239,31 @@ export default function App() {
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="8차시 무리함수 [생각 열기·문제 1~7·예제 1·2]:" /></strong>{' '}
+              <strong><MathText text="8차시 무리식과 무리함수 [생각 열기·문제 1~5·예제 1]:" /></strong>{' '}
               <MathText text={summarizeL8(printingStudent.l7) || '미작성'} />
+            </div>
+            {printingStudent.l7?.ieReflection1 && (
+              <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
+                <strong>8차시 성찰 1:</strong> {printingStudent.l7.ieReflection1}
+              </div>
+            )}
+            {printingStudent.l7?.ieReflection2 && (
+              <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
+                <strong>8차시 성찰 2:</strong> {printingStudent.l7.ieReflection2}
+              </div>
+            )}
+            <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
+              <strong><MathText text="9차시 무리함수의 그래프 [문제 6·예제 2·문제 7]:" /></strong>{' '}
+              <MathText text={summarizeL9(printingStudent.l7) || '미작성'} />
             </div>
             {printingStudent.l7?.irReflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 1:</strong> {printingStudent.l7.irReflection1}
+                <strong>9차시 성찰 1:</strong> {printingStudent.l7.irReflection1}
               </div>
             )}
             {printingStudent.l7?.irReflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 2:</strong> {printingStudent.l7.irReflection2}
+                <strong>9차시 성찰 2:</strong> {printingStudent.l7.irReflection2}
               </div>
             )}
 

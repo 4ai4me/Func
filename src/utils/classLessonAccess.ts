@@ -18,7 +18,7 @@ export const MAX_CLASS_LESSON_ACCESS = 60;
 
 const KEY_SEP = '|';
 
-/** 반별 설정 묶음: 반 키 → 1~8차시 열림 여부 */
+/** 반별 설정 묶음: 반 키 → 1~9차시 열림 여부 */
 export type ClassLessonAccessMap = Record<string, LessonAccessConfig>;
 
 export interface ClassIdentity {
@@ -70,11 +70,13 @@ function stripMeta(config: LessonAccessConfig): LessonAccessConfig {
 /**
  * 한 반의 저장값을 읽습니다. l1~l8 여덟 칸이 모두 true/false여야 인정합니다.
  * (칸이 빠진 값을 '열림'으로 채우면 잠가 둔 차시가 열릴 수 있으므로, 이상한 값은 버리고 전체 설정을 따르게 함)
+ * 9차시 칸(l9, 2026-11-13~)이 없는 예전 값은 인정하고, 9차시는 8차시와 같게 봅니다(normalizeLessonAccess).
  */
 function readClassEntry(raw: unknown): LessonAccessConfig | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
-  const complete = ALL_LESSON_NUMBERS.every((n) => typeof obj[`l${n}`] === 'boolean' || typeof obj[String(n)] === 'boolean');
+  const has = (n: number) => typeof obj[`l${n}`] === 'boolean' || typeof obj[String(n)] === 'boolean';
+  const complete = ALL_LESSON_NUMBERS.every((n) => has(n) || (n === 9 && obj.l9 === undefined && obj['9'] === undefined));
   if (!complete) return null;
   return stripMeta(normalizeLessonAccess(obj));
 }

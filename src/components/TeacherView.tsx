@@ -54,7 +54,9 @@ const SUMMARY_ROW_QUESTIONS: Record<string, string[]> = {
   '[함께하기·문제 4·생각 톡톡·문제 5·예제 2·문제 6]': ['tgVerified', 'p4Verified', 'thinkVerified', 'p5Verified', 'ex2Verified', 'p6Verified'],
   // 8차시 (저장 칸 l7, 문항 상태 lesson="l7")
   '[생각 열기·문제 1~3·예제 1]': ['openVerified', 'p1Verified', 'ex1Verified', 'p2Verified', 'p3Verified'],
-  '[함께 탐구·문제 4~7·예제 2]': ['sqVerified', 'p4Verified', 'p5Verified', 'p6Verified', 'ex2Verified', 'p7Verified'],
+  '[함께 탐구·문제 4·문제 5]': ['sqVerified', 'p4Verified', 'p5Verified'],
+  // 9차시 (8차시와 같은 저장 칸 l7, 문항 상태 lesson="l7b")
+  '[문제 6·예제 2·문제 7]': ['p6Verified', 'ex2Verified', 'p7Verified'],
 };
 import {
   StudentRecord,
@@ -72,6 +74,7 @@ import {
   evaluateRubricL6,
   evaluateRubricL7,
   evaluateRubricL8,
+  evaluateRubricL9,
   extractFuncWorksheetFromJson,
   getTeacherEvalAverage,
   getTeacherEvaluationProgress,
@@ -148,7 +151,7 @@ import {
 import { summarizeL4 } from '../utils/lesson4Logic';
 import { summarizeL6 } from '../utils/lesson6Logic';
 import { summarizeL7 } from '../utils/lesson7Logic';
-import { summarizeL8Lines } from '../utils/lesson8Logic';
+import { summarizeL8Lines, summarizeL9 } from '../utils/lesson8Logic';
 import {
   hasStudentPassword,
   resetStudentPassword,
@@ -162,7 +165,7 @@ import { AnswerWithStatus } from './QuestionStatusBadge';
 import { AiDraftMap, AiFeedbackPanel } from './AiFeedbackPanel';
 
 /**
- * 탐정별 사건 기록 표의 차시 열 (표시 차시 1~8 — 4·5차시는 저장 칸 l4, 6·7·8차시는 l5·l6·l7)
+ * 탐정별 사건 기록 표의 차시 열 (표시 차시 1~9 — 4·5차시는 저장 칸 l4, 6·7차시는 l5·l6, 8·9차시는 l7)
  * 칸에는 루브릭 충족 수와 진행 상태(완료·진행 중·시작 전)만 짧게 보여 주고, 자세한 답은 [상세 비교 · 평가]에서 본다.
  */
 const RECORD_LESSON_COLUMNS: { n: number; short: string; title: string; rubric: (x: StudentRecord) => boolean[] }[] = [
@@ -173,7 +176,8 @@ const RECORD_LESSON_COLUMNS: { n: number; short: string; title: string; rubric: 
   { n: 5, short: '역함수2', title: '역함수의 성질과 그래프', rubric: (x) => (x.l4 ? evaluateRubricL5(x.l4) : []) },
   { n: 6, short: '유리식·정의역', title: '유리식과 유리함수의 정의역', rubric: (x) => (x.l5 ? evaluateRubricL6(x.l5) : []) },
   { n: 7, short: '유리함수 그래프', title: '유리함수의 그래프', rubric: (x) => (x.l6 ? evaluateRubricL7(x.l6) : []) },
-  { n: 8, short: '무리함수', title: '무리식과 무리함수', rubric: (x) => (x.l7 ? evaluateRubricL8(x.l7) : []) },
+  { n: 8, short: '무리함수1', title: '무리식과 무리함수', rubric: (x) => (x.l7 ? evaluateRubricL8(x.l7) : []) },
+  { n: 9, short: '무리함수2', title: '무리함수의 그래프와 평행이동', rubric: (x) => (x.l7 ? evaluateRubricL9(x.l7) : []) },
 ];
 const LESSON_CHIP_CLASS: Record<LessonProgress, string> = {
   done: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -273,7 +277,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
 
   // Column filter states for student records table
   const [filterGroup, setFilterGroup] = useState<string>('all');
-  // 1~8차시 진행 상태 필터 (완료 / 진행 중 / 시작 전)
+  // 1~9차시 진행 상태 필터 (완료 / 진행 중 / 시작 전)
   const [filterL1, setFilterL1] = useState<'all' | LessonProgress>('all');
   const [filterL2, setFilterL2] = useState<'all' | LessonProgress>('all');
   const [filterL3, setFilterL3] = useState<'all' | LessonProgress>('all');
@@ -282,6 +286,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const [filterL6, setFilterL6] = useState<'all' | LessonProgress>('all');
   const [filterL7, setFilterL7] = useState<'all' | LessonProgress>('all');
   const [filterL8, setFilterL8] = useState<'all' | LessonProgress>('all');
+  const [filterL9, setFilterL9] = useState<'all' | LessonProgress>('all');
   const [filterEvalStatus, setFilterEvalStatus] = useState<'all' | 'complete' | 'partial' | 'none'>('all');
 
   // Modeless (비모달) dialog state for detail comparison
@@ -689,8 +694,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     });
   };
 
-  // CSV 1~8차시 열 (Func 수업 문항 이름표 기준 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'·'l7'은 6·7·8차시)
-  const funcAnswerCsv = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7']);
+  // CSV 1~9차시 열 (Func 수업 문항 이름표 기준 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'·'l7'은 6·7·8차시, 'l7b'는 9차시(저장 칸 l7))
+  const funcAnswerCsv = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7', 'l7b']);
 
   const handleExportCSV = () => {
     if (!records.length) {
@@ -701,7 +706,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       '학급',
       '식별코드',
       '수정 시각',
-      // 1~8차시: [전체 답안 보기]와 같은 문항 이름으로 모든 답안을 내보냄 (Func 수업 문항 기준)
+      // 1~9차시: [전체 답안 보기]와 같은 문항 이름으로 모든 답안을 내보냄 (Func 수업 문항 기준)
       ...funcAnswerCsv.map((c) => c.header),
       '교사 메모',
       '교사 평가 상태',
@@ -734,7 +739,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '수학탐정단_1-8차시_학급응답.csv';
+    a.download = '수학탐정단_1-9차시_학급응답.csv';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -811,7 +816,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       if (filterGroup !== 'all' && (x.group || '').trim() !== filterGroup) {
         return false;
       }
-      // 3~10. 1~8차시 진행 상태
+      // 3~11. 1~9차시 진행 상태
       if (filterL1 !== 'all' && funcLessonProgress(x, 1) !== filterL1) return false;
       if (filterL2 !== 'all' && funcLessonProgress(x, 2) !== filterL2) return false;
       if (filterL3 !== 'all' && funcLessonProgress(x, 3) !== filterL3) return false;
@@ -820,6 +825,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
       if (filterL6 !== 'all' && funcLessonProgress(x, 6) !== filterL6) return false;
       if (filterL7 !== 'all' && funcLessonProgress(x, 7) !== filterL7) return false;
       if (filterL8 !== 'all' && funcLessonProgress(x, 8) !== filterL8) return false;
+      if (filterL9 !== 'all' && funcLessonProgress(x, 9) !== filterL9) return false;
       // 6. Filter by Teacher Evaluation status
       if (filterEvalStatus !== 'all') {
         const evalProg = getTeacherEvaluationProgress(x);
@@ -838,12 +844,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   const complete1 = records.filter((x) => evaluateRubricL1(x.l1).every(Boolean)).length;
   const complete2 = records.filter((x) => evaluateRubricL2(x.l2).every(Boolean)).length;
   const complete3 = records.filter((x) => x.l3 && evaluateRubricL3(x.l3).every(Boolean)).length;
-  // 4·5차시는 같은 저장 칸(l4), 6·7·8차시는 l5·l6·l7
+  // 4·5차시는 같은 저장 칸(l4), 6·7차시는 l5·l6, 8·9차시는 같은 칸 l7
   const complete4 = records.filter((x) => x.l4 && evaluateRubricL4(x.l4).every(Boolean)).length;
   const complete5 = records.filter((x) => x.l4 && evaluateRubricL5(x.l4).every(Boolean)).length;
   const complete6 = records.filter((x) => x.l5 && evaluateRubricL6(x.l5).every(Boolean)).length;
   const complete7 = records.filter((x) => x.l6 && evaluateRubricL7(x.l6).every(Boolean)).length;
   const complete8 = records.filter((x) => x.l7 && evaluateRubricL8(x.l7).every(Boolean)).length;
+  const complete9 = records.filter((x) => x.l7 && evaluateRubricL9(x.l7).every(Boolean)).length;
   const classEvalSummary = getClassEvaluationSummary(records);
 
   const selectedStudent = records.find((v) => studentKey(v) === selectedKey) || null;
@@ -897,12 +904,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ['6차시 유리식과 유리함수의 정의역 완료', complete6],
     ['7차시 유리함수의 그래프 완료', complete7],
     ['8차시 무리식과 무리함수 완료', complete8],
+    ['9차시 무리함수의 그래프와 평행이동 완료', complete9],
   ];
 
-  // 1~8차시(함수 단원) 중 완료한 차시 수별 학생 분포
+  // 1~9차시(함수 단원) 중 완료한 차시 수별 학생 분포
   const completedDist = completedLessonDistribution(records);
   const decisions: [string, number, string][] = [
-    ['8개 차시 모두 완료', completedDist[8], '#10b981'],
+    ['9개 차시 모두 완료', completedDist[9], '#10b981'],
+    ['8개 차시 완료', completedDist[8], '#047857'],
     ['7개 차시 완료', completedDist[7], '#059669'],
     ['6개 차시 완료', completedDist[6], '#16a34a'],
     ['5개 차시 완료', completedDist[5], '#22c55e'],
@@ -913,7 +922,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     ['완료한 차시 없음', completedDist[0], '#94a3b8'],
   ];
 
-  // 1~8차시 문항별 확인 현황 (학생 화면의 [확인] 통과 기준)
+  // 1~9차시 문항별 확인 현황 (학생 화면의 [확인] 통과 기준)
   const topicRows: [string, number][] = FUNC_ITEM_CHECKS.map((c) => [c.title, records.filter(c.done).length]);
 
   const rated = records.filter((x) => ensureTeacherEval(x).scores.some((v) => v !== null));
@@ -1244,7 +1253,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       : 'bg-indigo-50 text-indigo-800 border-indigo-200'
                   }`}
                 >
-                  {isClassTarget ? `${classKeyLabel(accessTarget)} ` : '현재 '}열림 {targetEnabledLessonCount}개 / 전체 8차시
+                  {isClassTarget ? `${classKeyLabel(accessTarget)} ` : '현재 '}열림 {targetEnabledLessonCount}개 / 전체 9차시
                 </span>
               </h2>
             </div>
@@ -1254,7 +1263,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('only1', '1차시만 열기 (2~8차시 잠금)')}
+              onClick={() => handleApplyLessonPreset('only1', '1차시만 열기 (2~9차시 잠금)')}
               className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
             >
               <Lock className="h-3.5 w-3.5 text-indigo-600" />
@@ -1262,35 +1271,35 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('upTo2', '1~2차시 열기 (3~8차시 잠금)')}
+              onClick={() => handleApplyLessonPreset('upTo2', '1~2차시 열기 (3~9차시 잠금)')}
               className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
             >
               1~2차시 열기
             </button>
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('upTo3', '1~3차시 열기 (4~8차시 잠금)')}
+              onClick={() => handleApplyLessonPreset('upTo3', '1~3차시 열기 (4~9차시 잠금)')}
               className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
             >
               1~3차시 열기
             </button>
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('upTo4', '1~4차시 열기 (5~8차시 잠금)')}
+              onClick={() => handleApplyLessonPreset('upTo4', '1~4차시 열기 (5~9차시 잠금)')}
               className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
             >
               1~4차시 열기
             </button>
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('upTo5', '1~5차시 열기 (6~8차시 잠금)')}
+              onClick={() => handleApplyLessonPreset('upTo5', '1~5차시 열기 (6~9차시 잠금)')}
               className="inline-flex items-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-800 hover:bg-indigo-100 transition-colors"
             >
               1~5차시 열기
             </button>
             <button
               type="button"
-              onClick={() => handleApplyLessonPreset('allOpen', '전체 차시 열기 (1~8차시 모두 활성)')}
+              onClick={() => handleApplyLessonPreset('allOpen', '전체 차시 열기 (1~9차시 모두 활성)')}
               className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-800 hover:bg-emerald-100 transition-colors"
             >
               <Unlock className="h-3.5 w-3.5 text-emerald-600" />
@@ -1350,7 +1359,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   (학습자 진입·URL 우회·선행 입력 완전 차단 중)
                 </span>
               ) : (
-                <span>전체 설정: 1~8차시가 모두 열려 있습니다 (선행 제한 없음)</span>
+                <span>전체 설정: 1~9차시가 모두 열려 있습니다 (선행 제한 없음)</span>
               )}
               {lessonAccessLastSyncedAt && (
                 <span className="ml-2 mono text-slate-500">
@@ -2140,7 +2149,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         {isControlsOpen && (
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-              승인된 학생들이 작성한 1~8차시(함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 역함수(4·5차시) · 6~8차시) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
+              승인된 학생들이 작성한 1~9차시(함수의 뜻과 그래프 · 여러 가지 함수 · 합성함수 · 역함수(4·5차시) · 유리함수(6·7차시) · 무리함수(8·9차시)) 탐구 기록이 실시간으로 연동되며, 외부 JSON 파일을 추가로 불러오거나 CSV로 내려받을 수도 있습니다.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
@@ -2215,7 +2224,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             </div>
 
             {/* Summary KPI Tiles */}
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9">
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
               {[
                 [count, '수합 학생 (명)'],
                 [complete1, '1차시(함수의 뜻) 완성'],
@@ -2225,7 +2234,8 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 [complete5, '5차시(역함수2) 완성'],
                 [complete6, '6차시(유리식) 완성'],
                 [complete7, '7차시(유리함수 그래프) 완성'],
-                [complete8, '8차시(무리함수) 완성'],
+                [complete8, '8차시(무리함수1) 완성'],
+                [complete9, '9차시(무리함수2) 완성'],
               ].map(([num, label], idx) => (
                 <div
                   key={idx}
@@ -2315,7 +2325,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~8차시 완료 분포 (함수 단원)</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~9차시 완료 분포 (함수 단원)</h4>
                   <div className="flex items-center gap-6 flex-wrap">
                     <div
                       className="relative h-32 w-32 rounded-full shrink-0"
@@ -2345,7 +2355,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~8차시 문항별 확인 현황</h4>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-3">1~9차시 문항별 확인 현황</h4>
                   <div className="space-y-2.5">
                     {topicRows.map(([title, n]) => {
                       const pct = count ? Math.round((n / count) * 100) : 0;
@@ -2511,7 +2521,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </select>
                 </div>
 
-                {/* Column Filter: 1~8차시 진행 상태 */}
+                {/* Column Filter: 1~9차시 진행 상태 */}
                 <div>
                   <label htmlFor="filter-l1" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
@@ -2634,12 +2644,29 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                 <div>
                   <label htmlFor="filter-l8" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Filter className="h-3 w-3 text-slate-400" />
-                    <span>8차시 무리함수</span>
+                    <span>8차시 무리함수1</span>
                   </label>
                   <select
                     id="filter-l8"
                     value={filterL8}
                     onChange={(e) => setFilterL8(e.target.value as typeof filterL8)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="all">전체</option>
+                    <option value="done">완료</option>
+                    <option value="progress">진행 중</option>
+                    <option value="none">시작 전</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="filter-l9" className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <Filter className="h-3 w-3 text-slate-400" />
+                    <span>9차시 무리함수2</span>
+                  </label>
+                  <select
+                    id="filter-l9"
+                    value={filterL9}
+                    onChange={(e) => setFilterL9(e.target.value as typeof filterL9)}
                     className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                   >
                     <option value="all">전체</option>
@@ -2811,7 +2838,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
               <div ref={detailRef} className="mt-6 pt-6 border-t border-slate-200 space-y-4">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                    {selectedStudent.code || '미입력'} 학생의 1~8차시 종합 비교 ({selectedStudent.group || '학급 미입력'})
+                    {selectedStudent.code || '미입력'} 학생의 1~9차시 종합 비교 ({selectedStudent.group || '학급 미입력'})
                   </h3>
                   <div className="flex items-center gap-2">
                     <button
@@ -3030,29 +3057,46 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     ))}
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3 lg:col-span-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
                     <div className="text-xs font-bold text-rose-700">
                       8차시 · 무리식과 무리함수 (루브릭 {selectedStudent.l7 ? evaluateRubricL8(selectedStudent.l7).filter(Boolean).length : 0}/{STAGE_TITLES[8].length})
                     </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      {(() => {
-                        const lines = summarizeL8Lines(selectedStudent.l7);
-                        return [
-                          ['[생각 열기·문제 1~3·예제 1]', lines.slice(0, 4).filter(Boolean).join('\n')],
-                          ['[함께 탐구·문제 4~7·예제 2]', lines.slice(4).filter(Boolean).join('\n')],
-                          ['8차시 성찰 1', selectedStudent.l7?.irReflection1],
-                        ];
-                      })().map(([label, val]) => (
-                        <div key={label}>
-                          <div className="text-xs font-bold text-slate-700">
-                            <MathText text={label || ''} />
-                          </div>
-                          <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                            <AnswerWithStatus lesson="l7" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
-                          </div>
+                    {(() => {
+                      const lines = summarizeL8Lines(selectedStudent.l7);
+                      return [
+                        ['[생각 열기·문제 1~3·예제 1]', lines.slice(0, 4).filter(Boolean).join('\n')],
+                        ['[함께 탐구·문제 4·문제 5]', lines[4] || ''],
+                        ['8차시 성찰 1', selectedStudent.l7?.ieReflection1],
+                      ];
+                    })().map(([label, val]) => (
+                      <div key={label}>
+                        <div className="text-xs font-bold text-slate-700">
+                          <MathText text={label || ''} />
                         </div>
-                                            ))}
+                        <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
+                          <AnswerWithStatus lesson="l7" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4 space-y-3">
+                    <div className="text-xs font-bold text-rose-700">
+                      9차시 · 무리함수의 그래프와 평행이동 (루브릭 {selectedStudent.l7 ? evaluateRubricL9(selectedStudent.l7).filter(Boolean).length : 0}/{STAGE_TITLES[9].length})
                     </div>
+                    {[
+                      ['[문제 6·예제 2·문제 7]', summarizeL9(selectedStudent.l7)],
+                      ['9차시 성찰 1', selectedStudent.l7?.irReflection1],
+                    ].map(([label, val]) => (
+                      <div key={label}>
+                        <div className="text-xs font-bold text-slate-700">
+                          <MathText text={label || ''} />
+                        </div>
+                        <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
+                          <AnswerWithStatus lesson="l7b" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -3320,7 +3364,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                   </span>
                 </div>
 
-                {/* 1~8차시 Side by Side Comparison */}
+                {/* 1~9차시 Side by Side Comparison */}
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
@@ -3525,29 +3569,46 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     ))}
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3 lg:col-span-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                     <div className="text-xs font-bold text-rose-700">
                       8차시 · 무리식과 무리함수 (루브릭 {selectedStudent.l7 ? evaluateRubricL8(selectedStudent.l7).filter(Boolean).length : 0}/{STAGE_TITLES[8].length})
                     </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      {(() => {
-                        const lines = summarizeL8Lines(selectedStudent.l7);
-                        return [
-                          ['[생각 열기·문제 1~3·예제 1]', lines.slice(0, 4).filter(Boolean).join('\n')],
-                          ['[함께 탐구·문제 4~7·예제 2]', lines.slice(4).filter(Boolean).join('\n')],
-                          ['8차시 성찰 1', selectedStudent.l7?.irReflection1],
-                        ];
-                      })().map(([label, val]) => (
-                        <div key={label}>
-                          <div className="text-xs font-bold text-slate-700">
-                            <MathText text={label || ''} />
-                          </div>
-                          <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
-                            <AnswerWithStatus lesson="l7" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
-                          </div>
+                    {(() => {
+                      const lines = summarizeL8Lines(selectedStudent.l7);
+                      return [
+                        ['[생각 열기·문제 1~3·예제 1]', lines.slice(0, 4).filter(Boolean).join('\n')],
+                        ['[함께 탐구·문제 4·문제 5]', lines[4] || ''],
+                        ['8차시 성찰 1', selectedStudent.l7?.ieReflection1],
+                      ];
+                    })().map(([label, val]) => (
+                      <div key={label}>
+                        <div className="text-xs font-bold text-slate-700">
+                          <MathText text={label || ''} />
                         </div>
-                                            ))}
+                        <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
+                          <AnswerWithStatus lesson="l7" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                    <div className="text-xs font-bold text-rose-700">
+                      9차시 · 무리함수의 그래프와 평행이동 (루브릭 {selectedStudent.l7 ? evaluateRubricL9(selectedStudent.l7).filter(Boolean).length : 0}/{STAGE_TITLES[9].length})
                     </div>
+                    {[
+                      ['[문제 6·예제 2·문제 7]', summarizeL9(selectedStudent.l7)],
+                      ['9차시 성찰 1', selectedStudent.l7?.irReflection1],
+                    ].map(([label, val]) => (
+                      <div key={label}>
+                        <div className="text-xs font-bold text-slate-700">
+                          <MathText text={label || ''} />
+                        </div>
+                        <div className="mt-1 rounded-lg border border-slate-200 bg-white p-2.5 text-xs sm:text-sm text-slate-800 whitespace-pre-wrap">
+                          <AnswerWithStatus lesson="l7b" lessonData={selectedStudent.l7} value={val} questions={SUMMARY_ROW_QUESTIONS[String(label)] ?? []} math />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

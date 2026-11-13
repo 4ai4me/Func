@@ -579,7 +579,8 @@ export interface Lesson7State {
   reflection1: string;
   reflection2: string;
 
-  // --- Func 8차시: 무리식과 무리함수 (2026-11-13 추가, 저장 칸 l7) ---
+  // --- Func 8·9차시: 무리식과 무리함수 (2026-11-13 추가, 저장 칸 l7 — 8·9차시가 함께 씀) ---
+  // 8차시 = 생각 열기 ~ y = √ax의 그래프(op·p1·ex1·p2·p3·sq·p4·p5) + 성찰 ie*, 9차시 = 평행이동·변형(p6·ex2·p7) + 성찰 ir*
   // 위의 항목(examples ~ reflection2)은 예전 절대부등식3 화면의 항목 — 지우지 않고 보존만 함(화면·완료 판정에 쓰지 않음).
   // 문항 자료·채점: src/utils/lesson8Logic.ts / 부등식 답은 "x ≥ 3/2"처럼 한 글자열(lesson8Logic composeIneq)
 
@@ -665,7 +666,12 @@ export interface Lesson7State {
   p7Reason?: string;
   p7Verified?: boolean;
 
-  // 8단계 성찰 (완료 조건: 성찰 1 — lesson8Logic L8_MIN_REFLECTION)
+  // 8차시 성찰 (2026-11-13 8·9차시로 나눔 — 완료 조건: 성찰 1, lesson8Logic L8_MIN_REFLECTION)
+  ieReflection1?: string;
+  ieReflection2?: string;
+  ieHelpSource?: HelpSource;
+
+  // 9차시 성찰 (완료 조건: 성찰 1 — lesson8Logic L8_MIN_REFLECTION)
   irReflection1?: string;
   irReflection2?: string;
   irHelpSource?: HelpSource;
@@ -1446,10 +1452,11 @@ export const STAGE_TITLES = {
   5: ['함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
   6: ['생각 열기 · 유리식', '문제 1 · 유리식과 다항식', '유리식의 계산', '유리함수와 정의역', '성찰'],
   7: ['함께하기 · y = k/x', '문제 4 · y = k/x 그리기', '평행이동 · 문제 5', 'y = (ax+b)/(cx+d) · 문제 6', '성찰'],
-  8: ['생각 열기 · 무리식', '문제 1 · 무리식의 값', '무리식의 계산', '무리함수와 정의역', 'y = √ax의 그래프', '평행이동 · 문제 6', 'y = √(ax+b)+c · 문제 7', '성찰'],
+  8: ['생각 열기 · 무리식', '문제 1 · 무리식의 값', '무리식의 계산', '무리함수와 정의역', 'y = √ax의 그래프', '성찰'],
+  9: ['평행이동 · 문제 6', 'y = √(ax+b)+c · 문제 7', '성찰'],
 } as const;
 
-export const TOTAL_LESSONS = 8;
+export const TOTAL_LESSONS = 9;
 export const LEGACY_EVAL_CRITERIA_COUNT = 4;
 
 export const EVAL_CRITERIA = [
@@ -1460,7 +1467,8 @@ export const EVAL_CRITERIA = [
   '역함수의 성질과 그래프 (5차시)',
   '유리식과 유리함수의 정의역 (6차시)',
   '유리함수의 그래프 (7차시)',
-  '무리함수 탐구 (8차시)',
+  '무리식과 무리함수 (8차시)',
+  '무리함수의 그래프와 평행이동 (9차시)',
 ] as const;
 
 export const EVAL_DESCRIPTIONS = [
@@ -1471,7 +1479,8 @@ export const EVAL_DESCRIPTIONS = [
   '(g∘f)⁻¹ = f⁻¹∘g⁻¹ 성질을 추론하고 함수와 역함수 그래프의 y = x 대칭성을 탐구하는 능력',
   '유리식과 다항식을 구분하고 유리식을 계산하며, 유리함수의 정의역을 구하는 능력',
   '유리함수 y=k/x와 y=k/(x-p)+q의 그래프를 그리고, 점근선과 대칭성을 찾으며 y=(ax+b)/(cx+d)를 변형하는 능력',
-  '무리함수 y=√(a(x-p))+q의 정의역·치역과 그래프를 탐구하는 능력',
+  '무리식의 값이 실수가 되는 조건과 무리식의 계산, 무리함수의 정의역, y=√ax의 그래프를 탐구하는 능력',
+  '무리함수 y=√(a(x-p))+q의 그래프를 평행이동으로 그리고 정의역·치역을 구하며 y=√(ax+b)+c를 변형하는 능력',
 ] as const;
 
 export const CLASSROOM_BRAND_NAME = '이하연 수학 교실';
@@ -2239,6 +2248,13 @@ export function evaluateLevel8Completion(p: Lesson7State): boolean[] {
     Boolean(p.ex1Verified && p.p2Verified),
     Boolean(p.p3Verified),
     Boolean(p.sqVerified && p.p4Verified && p.p5Verified),
+    (p.ieReflection1 || '').trim().length >= 10, // = lesson8Logic L8_MIN_REFLECTION
+  ];
+}
+
+/** 9차시(무리함수의 그래프와 평행이동) 단계 완료 — 8차시와 같은 저장 칸 l7 */
+export function evaluateLevel9Completion(p: Lesson7State): boolean[] {
+  return [
     Boolean(p.p6Verified),
     Boolean(p.ex2Verified && p.p7Verified),
     (p.irReflection1 || '').trim().length >= 10, // = lesson8Logic L8_MIN_REFLECTION
@@ -3185,9 +3201,14 @@ export function evaluateRubricL7(p: Lesson6State): boolean[] {
   return evaluateLevel7Completion(p);
 }
 
-/** 8차시(무리식과 무리함수) 루브릭 = 학생 화면 8단계 */
+/** 8차시(무리식과 무리함수) 루브릭 = 학생 화면 6단계 */
 export function evaluateRubricL8(p: Lesson7State): boolean[] {
   return evaluateLevel8Completion(p);
+}
+
+/** 9차시(무리함수의 그래프와 평행이동) 루브릭 = 학생 화면 3단계 */
+export function evaluateRubricL9(p: Lesson7State): boolean[] {
+  return evaluateLevel9Completion(p);
 }
 
 export function validateClaim1(
@@ -3432,6 +3453,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL7.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL7.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL7.prob2Hints, 4),
+      ieHelpSource: cleanHelpSource(rawL7.ieHelpSource),
       irHelpSource: cleanHelpSource(rawL7.irHelpSource),
     },
   };
@@ -3843,6 +3865,8 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.ex2a ||
           l.p7_1a ||
           l.p7Reason ||
+          l.ieReflection1 ||
+          l.ieReflection2 ||
           l.irReflection1 ||
           l.irReflection2
       )
@@ -3877,7 +3901,8 @@ export function migrateEvalScoresForLessonSplit(
   scores: (number | null)[],
   targetCriteriaCount: number = EVAL_CRITERIA.length
 ): (number | null)[] {
-  if (targetCriteriaCount === PRE_SPLIT_EVAL_CRITERIA_COUNT + 1 && scores.length === PRE_SPLIT_EVAL_CRITERIA_COUNT) {
+  // 2026-11-13 9칸(8·9차시 나눔)이 되어도 7칸 배열은 먼저 8칸으로 맞춤 — 9번째(새 9차시) 칸은 ensureTeacherEval이 끝에 빈칸으로 붙임
+  if (targetCriteriaCount > PRE_SPLIT_EVAL_CRITERIA_COUNT && scores.length === PRE_SPLIT_EVAL_CRITERIA_COUNT) {
     return [...scores.slice(0, SPLIT_INSERT_INDEX), null, ...scores.slice(SPLIT_INSERT_INDEX)];
   }
   return scores;
@@ -3896,13 +3921,14 @@ export function ensureTeacherEval(
     };
   }
   if (Array.isArray(x.evaluation.scores)) {
-    x.evaluation.scores = migrateEvalScoresForLessonSplit(x.evaluation.scores, targetCriteriaCount);
+    const original = x.evaluation.scores;
+    x.evaluation.scores = migrateEvalScoresForLessonSplit(original, targetCriteriaCount);
     if (
-      x.evaluation.scores.length === targetCriteriaCount &&
-      typeof x.evaluation.evaluatedLessonCount === 'number' &&
-      x.evaluation.evaluatedLessonCount === PRE_SPLIT_EVAL_CRITERIA_COUNT
+      x.evaluation.evaluatedLessonCount === PRE_SPLIT_EVAL_CRITERIA_COUNT &&
+      (x.evaluation.scores !== original || original.length === PRE_SPLIT_EVAL_CRITERIA_COUNT + 1)
     ) {
-      // 7차시 시절의 '평가 당시 차시 수' 표시는 5번째 칸이 끼어들면서 의미가 없어짐 — 지우면 8칸 전체로 진행률을 계산
+      // 7차시 시절의 '평가 당시 차시 수' 표시는 5번째 칸이 끼어들면서 의미가 없어짐 — 지우면 아래에서 지금 칸 수(8)로 다시 적음
+      // (2026-11-13 9칸이 된 뒤에도 같은 기록을 같게 읽도록 '이미 8칸 + 표시 7'인 경우도 지움)
       delete x.evaluation.evaluatedLessonCount;
     }
   }
@@ -4330,6 +4356,8 @@ export function createFuncSampleLessons(
           p7_2r: 'y ≤ 5',
           p7Reason: '근호 안을 x의 계수로 묶어 a(x-p) 꼴로 바꾸고 평행이동한다.',
           p7Verified: true,
+          ieReflection1: '근호 안이 0 이상이어야 실수이고, 분모에 있으면 0보다 커야 한다.',
+          ieReflection2: 'y=√ax의 그래프가 y=x²/a와 y=x에 대칭인 것이 신기했다.',
           irReflection1: 'y=√(a(x-p))+q의 그래프는 y=√ax를 x축으로 p, y축으로 q만큼 평행이동한 것이다.',
           irReflection2: '정의역은 a의 부호로, 치역은 근호 앞의 부호로 정해진다는 것을 알았다.',
         }
@@ -4614,7 +4642,19 @@ const LESSON4_5_SYMBOLS: MathSymbolItem[] = [
     { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ];
 
-export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, MathSymbolItem[]> = {
+/** 8·9차시(무리함수) 추천 기호 */
+const LESSON8_9_SYMBOLS: MathSymbolItem[] = [
+    { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
+    { label: '√x', token: '√x', desc: '√x', isTemplate: true },
+    { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
+    { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
+    { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
+    { label: '(A+B)(A−B)', token: '(A+B)(A−B) = A² − B²', desc: '분모의 유리화에 쓰는 곱셈 공식', isTemplate: true },
+    { label: '√(a(x−p))+q', token: '√(a(x−p))+q', desc: '평행이동한 무리함수 꼴', isTemplate: true },
+    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
+];
+
+export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, MathSymbolItem[]> = {
   1: [
     { label: 'f(x)', token: 'f(x)', desc: '함수 f(x)', isTemplate: true },
     { label: 'g(x)', token: 'g(x)', desc: '함수 g(x)', isTemplate: true },
@@ -4677,17 +4717,9 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, M
     { label: 'a = b', token: 'a = b', desc: '등호 성립 조건', isTemplate: true },
     { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
-  // 8차시: 무리식과 무리함수 (2026-11-13 — 예전 절대부등식3 기호를 바꿈)
-  8: [
-    { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
-    { label: '√x', token: '√x', desc: '√x', isTemplate: true },
-    { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
-    { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
-    { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
-    { label: '(A+B)(A−B)', token: '(A+B)(A−B) = A² − B²', desc: '분모의 유리화에 쓰는 곱셈 공식', isTemplate: true },
-    { label: '√(a(x−p))+q', token: '√(a(x−p))+q', desc: '평행이동한 무리함수 꼴', isTemplate: true },
-    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
-  ],
+  // 8·9차시: 무리식과 무리함수 (2026-11-13 — 예전 절대부등식3 기호를 바꿈)
+  8: LESSON8_9_SYMBOLS,
+  9: LESSON8_9_SYMBOLS,
 };
 
 export const MATH_SYMBOL_CATEGORIES: MathSymbolCategory[] = [
@@ -5080,9 +5112,9 @@ export function tokenizeMathRadicals(text: string): MathTextToken[] {
   return tokens;
 }
 
-export type LessonTabNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type LessonTabNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
-export const ALL_LESSON_NUMBERS: LessonTabNumber[] = [1, 2, 3, 4, 5, 6, 7, 8];
+export const ALL_LESSON_NUMBERS: LessonTabNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 export function isLessonTabNumber(n: unknown): n is LessonTabNumber {
   return typeof n === 'number' && (ALL_LESSON_NUMBERS as number[]).includes(n);
@@ -5092,6 +5124,7 @@ export function isLessonTabNumber(n: unknown): n is LessonTabNumber {
  * 표시 차시 → 학생 기록 저장 칸 (2026-11-05 역함수를 두 차시로 나눔)
  * - 4·5차시는 같은 칸 l4를 함께 씀 (4차시를 하던 학생의 함께하기·그래프 답이 5차시에 그대로 보이도록)
  * - 6·7·8차시는 예전 5·6·7차시 칸(l5·l6·l7)을 그대로 씀 (기록을 옮기지 않음)
+ * - 8·9차시(무리함수, 2026-11-13 나눔)는 같은 칸 l7을 함께 씀
  * 저장 칸 이름(l1~l7)과 형식(Lesson5State 등)은 Firestore 문서 이름이라 바꾸지 않습니다.
  */
 export const LESSON_STORAGE_KEY = {
@@ -5103,6 +5136,7 @@ export const LESSON_STORAGE_KEY = {
   6: 'l5',
   7: 'l6',
   8: 'l7',
+  9: 'l7',
 } as const satisfies Record<LessonTabNumber, 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7'>;
 
 export const LESSON_TAB_METADATA: {
@@ -5118,7 +5152,8 @@ export const LESSON_TAB_METADATA: {
   { num: 5, badge: '05', shortTitle: '역함수 탐구2', fullTitle: '역함수의 성질과 그래프 (5차시)' },
   { num: 6, badge: '06', shortTitle: '유리함수1', fullTitle: '유리함수1 (6차시)' },
   { num: 7, badge: '07', shortTitle: '유리함수2', fullTitle: '유리함수2 (7차시)' },
-  { num: 8, badge: '08', shortTitle: '무리함수 탐구', fullTitle: '무리함수 탐구 (8차시)' },
+  { num: 8, badge: '08', shortTitle: '무리함수1', fullTitle: '무리식과 무리함수 (8차시)' },
+  { num: 9, badge: '09', shortTitle: '무리함수2', fullTitle: '무리함수의 그래프와 평행이동 (9차시)' },
 ];
 
 export interface LessonAccessConfig {
@@ -5130,6 +5165,7 @@ export interface LessonAccessConfig {
   6: boolean;
   7: boolean;
   8: boolean;
+  9: boolean;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -5156,6 +5192,7 @@ export const DEFAULT_LESSON_ACCESS: LessonAccessConfig = {
   6: true,
   7: true,
   8: true,
+  9: true,
 };
 
 export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
@@ -5163,6 +5200,7 @@ export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
     return { ...DEFAULT_LESSON_ACCESS };
   }
   const obj = raw as Record<string, unknown>;
+  const hasBool = (num: LessonTabNumber): boolean => typeof obj[String(num)] === 'boolean' || typeof obj[`l${num}`] === 'boolean';
   const pickBool = (num: LessonTabNumber): boolean => {
     if (typeof obj[String(num)] === 'boolean') return obj[String(num)] as boolean;
     if (typeof obj[`l${num}`] === 'boolean') return obj[`l${num}`] as boolean;
@@ -5177,6 +5215,8 @@ export function normalizeLessonAccess(raw: unknown): LessonAccessConfig {
     6: pickBool(6),
     7: pickBool(7),
     8: pickBool(8),
+    // 9차시 칸이 없는 예전 값(8칸, 2026-11-13 이전)은 8차시와 같게 — 잠가 둔 8차시의 뒷부분이 저절로 열리지 않도록
+    9: hasBool(9) ? pickBool(9) : pickBool(8),
   };
   if (typeof obj.updatedBy === 'string' && obj.updatedBy.trim()) {
     result.updatedBy = obj.updatedBy.trim();
@@ -5211,6 +5251,7 @@ export function lessonAccessFromLegacy(raw: unknown): LessonAccessConfig {
     6: old[5],
     7: old[6],
     8: old[7],
+    9: old[7],
   };
   if (old.updatedBy) result.updatedBy = old.updatedBy;
   if (old.updatedAt) result.updatedAt = old.updatedAt;
@@ -5264,6 +5305,7 @@ export function createLessonAccessPreset(
     6: preset === 'allOpen',
     7: preset === 'allOpen',
     8: preset === 'allOpen',
+    9: preset === 'allOpen',
     updatedAt: now,
   };
   if (updatedBy) {
@@ -5288,6 +5330,7 @@ export function buildLessonAccessFirestoreFields(
   l6: boolean;
   l7: boolean;
   l8: boolean;
+  l9: boolean;
   updatedBy: string;
 } {
   const normalized = normalizeLessonAccess(config);
@@ -5305,6 +5348,7 @@ export function buildLessonAccessFirestoreFields(
     l6: Boolean(normalized[6]),
     l7: Boolean(normalized[7]),
     l8: Boolean(normalized[8]),
+    l9: Boolean(normalized[9]),
     updatedBy: safeUpdatedBy,
   };
 }

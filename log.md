@@ -1047,3 +1047,36 @@
   - 8단계로 길어서 한 차시(50분)에 다 하기 빠듯할 수 있음 — 수업 뒤 학생 진행을 보고 나눌지 결정
   - 이미 있던 문제(이번에 고치지 않음): 6·7차시 수식 기호 입력 도우미의 추천 기호가 예전 절대부등식 기호
 - 다음 세션 인계: 브랜치 `lesson8-irrational`에 커밋. main 합치기·배포는 선생님 확인 후
+
+
+---
+
+## [2026-11-13] 8차시(무리함수)를 8·9차시로 나누기 · 9차시 잠금 칸 추가 (Tier 3)
+
+**시작**
+- Tier: 3 (차시 수 8→9, 차시 잠금 문서·보안 규칙, 교사 점수 칸 배열 변경)
+- 요청: "두 차시로 나눠줘" (같은 날 만든 8차시 무리함수, 아직 main에 합치기 전)
+- 사용자 결정(질문 2개): 나누는 위치 = **y = √ax까지 / 평행이동부터**, 9차시 잠금 = **따로 잠금(보안 규칙에 l9 추가)**
+- 판단해서 정한 것(질문하지 않음 — 4·5차시 나누기와 같은 방식): 기록 이동 없이 두 차시가 저장 칸 l7을 함께 씀, 8차시 끝에 새 성찰 단계, 평가 항목 9칸(8칸 뒤에 붙임), 9칸 없는 잠금 값은 9차시 = 8차시
+- 완료 기준: 8차시 6단계(생각 열기·문제 1·계산·정의역·y = √ax·성찰) / 9차시 3단계(평행이동·변형·성찰) / 8·9차시 따로 완료·잠금·초기화·평가·힌트 / 예전 8칸 잠금·반별 설정·8칸 점수가 깨지지 않음
+- 회귀 위험: 차시 잠금(학생 접근·교사 저장), 반별 잠금, 교사 점수·진행률, 1~7차시, Props(공용 규칙)
+- 롤백: 학생 기록 이동이 없으므로 사이트를 이전 커밋으로 되돌리면 됨. 규칙은 l9를 허용하는 쪽으로만 넓혀서 되돌릴 필요 없음
+
+**완료**
+- 변경 파일:
+  - 데이터 계약: `mathLogic.ts`(`LessonTabNumber` 1~9, `LESSON_STORAGE_KEY` 9 → l7, `STAGE_TITLES[8]` 6단계·`[9]` 3단계, `EVAL_CRITERIA`·설명 9개, `evaluateLevel9Completion`·`evaluateRubricL9`, 8차시 완료 = 성찰 `ieReflection1`, `Lesson7State`에 `ieReflection1·2`·`ieHelpSource` 추가, 잠금 9칸(`normalizeLessonAccess` 9칸 없으면 8차시 값, 프리셋·Firestore 칸 `l9`), 7칸 점수 이어받기를 9칸에서도 같게, `ensureTeacherEval`의 '7차시 시절 표시' 정리 조건 보완, 예시 답안, 추천 기호 8·9 공용), `classLessonAccess.ts`(반별 설정 9칸 없으면 인정·8차시 값), `firestore.rules`(`l9` 선택 칸 허용)
+  - 학생 화면: `Lesson8View.tsx`(part 1·2, 8차시 성찰 단계 신규, 차시별 초기화 `LESSON8_RESET`·`LESSON9_RESET`, 9차시 성찰 힌트 `reflection9`), 신규 `Lesson9View.tsx`, `App.tsx`(9개 탭·진행 표시·제목·3단계 버튼 줄·인쇄, 잠금 저장이 규칙 미게시로 거부되면 l9 없이 다시 저장 + 경고), `MathSymbolInputBar.tsx`(9차시)
+  - 교사 화면: `answerLabels.ts`(`l7b` = 9차시, 서로 상대 항목 hidden), `questionStatus.ts`(`l7b`), `funcTeacherMetrics.ts`(1~9차시), `hintCatalog.ts`(9차시), `aiFeedback.ts`(`ieHelpSource`도 보내지 않음), `lesson8Logic.ts`(`summarizeL8`·`summarizeL9`), `TeacherView.tsx`(KPI 5열·완료 분포 0~9·문항 현황·표 9차시 칸·9차시 필터·CSV `l7b`·잠금 문구·상세 비교 8·9차시 블록 두 곳), `StudentEvaluationModal.tsx`
+  - 테스트: `mathLogic.test.ts`(9칸 평가·8칸 평가 학생·잠금 9칸·저장 칸 표), `classLessonAccess.test.ts`, `aiFeedback.test.tsx`, `HelpSourcePicker.test.tsx`, `funcTeacherMetrics.test.ts`, `hintCatalog.test.ts`, `lesson8Logic.test.ts`(나누기 검사 1건 추가)
+  - 문서: `README.md`(4-6절 머리), `AGENTS.md`(차시 번호와 저장 칸), `index.html` 버전 `?v=20261113-l8-l9-split`, 빌드 파일
+  - Props 저장소: 브랜치 `func-l9-rules`에 같은 `firestore.rules` + log (main 합치기 전)
+- 확인한 것:
+  - `tsc --noEmit` 통과, 전체 단위 테스트 216/216, `npm run build` 통과, `diff`로 Props 규칙 = Func 규칙
+  - 검사 페이지 Chrome 76/76: 8차시 1~5단계 → 8차시 성찰 → 8차시 111111·9차시 000 → [09차시로 이동] → 9차시(이전 단계 버튼 없음) 평행이동·변형·성찰 → 9차시 111 / 새로고침 후 유지 / 교사 전체 답안 8·9차시 제목·도움 받은 정도 따로·9차시 성찰 힌트 2회 / 8차시 초기화 → 8차시만 0, 9차시 유지 / 9차시 초기화 / 390px 9개 화면 가로 넘침 0·그림 로드
+  - 교사 화면 검사(예시 학생, 서버 연결 없이): KPI 9차시·완료 분포 1~9·문항 현황 9차시·잠금 '전체 9차시'·9차시 필터·표 9차시 칸(1280·1366·1100px 표가 상자 안에 맞음)·상세 비교 8·9차시 블록·평가 항목 9개·AI 버튼 9개 / 페이지 오류 없음(서버 연결 실패 로그만)
+- 확인하지 못한 것: 실제 Firebase 보안 규칙 동작(에뮬레이터 없음 — `'l9' in data`는 규칙 언어의 맵 키 검사), 규칙 게시 전 잠금 저장 거부 → l9 없이 다시 저장 흐름(서버 필요 — 코드 검토만), 실제 학생·교사 데이터, 패드
+- 남은 위험·후속 작업:
+  - **배포 순서**: Firebase 콘솔에 새 규칙 게시 → Func·Props main 합치기. 규칙 게시 전에 배포하면 9차시는 8차시와 같이 열리고 잠김(교사 화면에 경고)
+  - 8칸 시절 '평가 완료' 학생은 9차시 칸이 생겨 '평가 진행 중'으로 바뀜(점수는 그대로)
+  - 배포 직후 예전 화면이 열린 교사 기기에서 잠금을 저장하면 l9가 빠진 문서가 됨 → 9차시가 8차시를 따름(새로고침하면 해결)
+  - 9차시 잠금 처음 값 = 8차시와 같음 — 수업 진도에 맞춰 교사 화면에서 9차시를 따로 열고 닫아야 함

@@ -7,10 +7,10 @@ import { hintLevelKey, hintOpenCount, type HintOpens } from './hintLog';
  * - id: 학생 화면에서 기록하는 힌트 이름 (각 Lesson{N}View의 toggleHint 이름과 같음)
  * - levels: 단계가 있는 힌트의 단계 수 — 열기 = id, N단계 더 보기 = id@N (N ≥ 2). 2026-11-13 예전 8차시 화면을 바꾸면서 지금은 쓰는 차시가 없음
  * - 힌트 버튼을 새로 만들면 여기에도 추가합니다(hintCatalog.test.ts가 화면 코드의 이름과 대조).
- * - 5차시는 4차시와 저장 칸(l4)을 함께 쓰지만 힌트 이름이 겹치지 않습니다(p3·reflection은 5차시).
+ * - 5차시는 4차시와 저장 칸(l4)을, 9차시는 8차시와 저장 칸(l7)을 함께 쓰지만 힌트 이름이 겹치지 않습니다.
  */
 
-export type HintLessonNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type HintLessonNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export interface HintDef {
   id: string;
@@ -146,10 +146,18 @@ export const HINT_CATALOG: readonly LessonHintCatalog[] = [
       { id: 'sq', label: '[함께 탐구] y = √x, y = √ax의 그래프' },
       { id: 'p4', label: '[문제 4] 대칭이동' },
       { id: 'p5', label: '[문제 5] 정의역과 치역' },
+      { id: 'reflection', label: '[성찰] 8차시' },
+    ],
+  },
+  {
+    // 9차시는 8차시와 같은 저장 칸(l7) — 힌트 이름이 겹치지 않게(성찰은 reflection9)
+    lesson: 9,
+    title: '9차시 · 무리함수의 그래프와 평행이동',
+    hints: [
       { id: 'p6', label: '[문제 6] 평행이동' },
       { id: 'ex2', label: '[예제 2] y = √(2x + 8) + 2' },
       { id: 'p7', label: '[문제 7] y = √(ax + b) + c' },
-      { id: 'reflection', label: '[성찰] 8차시' },
+      { id: 'reflection9', label: '[성찰] 9차시' },
     ],
   },
 ];

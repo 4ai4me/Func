@@ -41,7 +41,7 @@ test('답이 없는 차시는 버튼을 쓸 수 없다', () => {
   const r = sampleRecord();
   assert.equal(lessonHasAnswers(r, 'l3'), true);
   assert.equal(lessonHasAnswers(r, 'l2'), false);
-  for (const l of ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'] as const) {
+  for (const l of ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l7b'] as const) {
     assert.equal(lessonHasAnswers(createInitialStudentState(), l), false, `빈 기록 ${l}`);
   }
   const onlyHelp = createInitialStudentState();
@@ -116,8 +116,8 @@ test('화면을 열기만 해서는 AI를 부르지 않는다 (버튼을 눌러�
     assert.ok(html.includes('선생님만 보임'));
     // 답이 없는 차시·키가 없어도 버튼은 켜져 있음 (사용자 요청 2026-11-05)
     const buttons = [...html.matchAll(/<button[^>]*>(?:(?!<\/button>).)*?AI 피드백(?:(?!<\/button>).)*?<\/button>/gs)].map((m) => m[0]);
-    assert.equal(buttons.length, 8, '1~8차시 (4·5차시 따로)');
-    assert.ok(html.includes('4차시 AI 피드백') && html.includes('5차시 AI 피드백') && html.includes('8차시 AI 피드백'));
+    assert.equal(buttons.length, 9, '1~9차시 (4·5차시, 8·9차시 따로)');
+    assert.ok(html.includes('4차시 AI 피드백') && html.includes('5차시 AI 피드백') && html.includes('8차시 AI 피드백') && html.includes('9차시 AI 피드백'));
     for (const b of buttons) assert.ok(!/\sdisabled=""/.test(b), `꺼진 버튼: ${b.slice(0, 80)}`);
     assert.ok(html.includes('· 답 없음'), '답 없는 차시 표시');
   } finally {

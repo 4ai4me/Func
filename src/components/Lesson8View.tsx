@@ -57,21 +57,30 @@ import { CharCountBadge, getCharCountBorderClass } from './CharCountBadge';
 import { CheckCircle2, AlertTriangle, Lightbulb, ArrowRight, ArrowLeft, RotateCcw, BookOpen, Eye, EyeOff, Lock, Wind, Sigma } from 'lucide-react';
 
 /**
- * Func 8차시 · 무리식과 무리함수 (학생 화면, 2026-11-13 — 예전 절대부등식3 화면을 대체)
+ * Func 8·9차시 · 무리식과 무리함수 (학생 화면, 2026-11-13 — 예전 절대부등식3 화면을 대체, 같은 날 두 차시로 나눔)
+ * - part 1 = 8차시: 생각 열기 · 문제 1 · 무리식의 계산 · 무리함수와 정의역 · y = √ax의 그래프 · 성찰
+ * - part 2 = 9차시(Lesson9View): 평행이동 · y = √(ax+b)+c · 성찰
  * 문항 자료·채점: src/utils/lesson8Logic.ts / 식 읽기: src/utils/irrExpr.ts / 그래프: src/components/IrrationalGraph.tsx
- * 단계 완료: mathLogic.ts evaluateLevel8Completion / 저장 칸: func_lessons/l7 (Lesson7State에 항목 추가만)
+ * 단계 완료: mathLogic.ts evaluateLevel8Completion·evaluateLevel9Completion / 저장 칸: func_lessons/l7 (두 차시가 함께 씀, Lesson7State에 항목 추가만)
  */
 
-interface Lesson8ViewProps {
+export interface Lesson8ViewProps {
   state: Lesson7State;
   step: number;
   onStepChange: (step: number) => void;
   onUpdate: (updater: (prev: Lesson7State) => Lesson7State) => void;
   onRequestConfirm: (title: string, message: string, onConfirm: () => void) => void;
+  /** 8차시 → 9차시 이동 (part 1 성찰 끝) */
+  onGoToLesson9?: () => void;
+  /** 1 = 8차시, 2 = 9차시 */
+  part?: 1 | 2;
 }
 
-type Section = 'open' | 'p1' | 'calc' | 'domain' | 'graph' | 'shift' | 'transform' | 'reflect';
-export const LESSON8_SECTIONS: Section[] = ['open', 'p1', 'calc', 'domain', 'graph', 'shift', 'transform', 'reflect'];
+type Section = 'open' | 'p1' | 'calc' | 'domain' | 'graph' | 'reflect8' | 'shift' | 'transform' | 'reflect';
+/** 8차시 단계 (STAGE_TITLES[8]과 같은 순서) */
+export const LESSON8_SECTIONS: Section[] = ['open', 'p1', 'calc', 'domain', 'graph', 'reflect8'];
+/** 9차시 단계 (STAGE_TITLES[9]와 같은 순서) */
+export const LESSON9_SECTIONS: Section[] = ['shift', 'transform', 'reflect'];
 
 // ── 교과서 그림 경로 (7차시와 같은 방식: GitHub Pages에서는 ./public/… 경로) ──
 const textbookSrc = (fileName: string): string => {
@@ -190,7 +199,7 @@ type FeedbackKey = 'open' | 'p1' | 'ex1' | 'p2' | 'p3' | 'sq' | 'p4' | 'p5' | 'p
 type GraphKey = 'p4' | 'p5' | 'p6' | 'ex2' | 'p7';
 type PadKey = 'ex1' | 'p2' | 'ex2' | 'p7';
 
-/** 8차시 초기화 항목 — 예전 절대부등식3 항목(examples·prob1ProofText·reflection1 등)은 건드리지 않음 */
+/** 8차시 초기화 항목 — 9차시 답과 예전 절대부등식3 항목(examples·prob1ProofText·reflection1 등)은 건드리지 않음 */
 export const LESSON8_RESET: Partial<Lesson7State> = {
   opExpr: '',
   opSpeed: '',
@@ -230,6 +239,13 @@ export const LESSON8_RESET: Partial<Lesson7State> = {
   p5r3: '',
   p5r4: '',
   p5Verified: false,
+  ieReflection1: '',
+  ieReflection2: '',
+  ieHelpSource: '',
+};
+
+/** 9차시 초기화 항목 — 8차시 답과 예전 항목은 건드리지 않음 */
+export const LESSON9_RESET: Partial<Lesson7State> = {
   p6_1p: '',
   p6_1q: '',
   p6_1d: '',
@@ -728,8 +744,10 @@ const aText = (a: number) => (Number.isInteger(a) ? numText(a) : numText(a));
 // ─────────────────────────────────────────────
 // 8차시 화면
 // ─────────────────────────────────────────────
-export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepChange, onUpdate, onRequestConfirm }) => {
-  const section: Section = LESSON8_SECTIONS[step] ?? LESSON8_SECTIONS[0];
+export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepChange, onUpdate, onRequestConfirm, onGoToLesson9, part = 1 }) => {
+  const sections = part === 1 ? LESSON8_SECTIONS : LESSON9_SECTIONS;
+  const lessonNo = part === 1 ? 8 : 9;
+  const section: Section = sections[step] ?? sections[0];
   const [hints, setHints] = useState<Record<string, boolean>>({});
   const toggleHint = (k: string) => {
     // 힌트를 '열 때'만 횟수 기록 (hintLog.ts, 교사 화면 '힌트 사용 현황')
@@ -771,15 +789,19 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
 
   const goSection = (sec: Section) => {
     setOpenPad(null);
-    onStepChange(Math.max(0, LESSON8_SECTIONS.indexOf(sec)));
+    onStepChange(Math.max(0, sections.indexOf(sec)));
   };
 
   const handleReset = () => {
-    onRequestConfirm('8차시 탐구 기록 초기화', '8차시(무리함수)에 입력한 모든 답안과 확인 상태를 초기화할까요?', () => {
-      onUpdate((prev) => ({ ...prev, ...LESSON8_RESET }));
+    onRequestConfirm(
+      `${lessonNo}차시 탐구 기록 초기화`,
+      `${lessonNo}차시(${part === 1 ? '무리식과 무리함수' : '무리함수의 그래프와 평행이동'})에 입력한 모든 답안과 확인 상태를 초기화할까요? (${part === 1 ? 9 : 8}차시 답은 그대로 둡니다)`,
+      () => {
+      onUpdate((prev) => ({ ...prev, ...(part === 1 ? LESSON8_RESET : LESSON9_RESET) }));
       setFeedback({});
       setGraphOpen({});
-    });
+      }
+    );
   };
 
   const graphReveal = (k: GraphKey, unlocked: boolean | undefined, panels: IrrPanel[], caption?: React.ReactNode) => (
@@ -831,10 +853,21 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200/80 bg-rose-50/60 px-4 py-3">
         <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-rose-950 flex-wrap">
           <Sigma className="h-4 w-4 text-rose-600 shrink-0" />
-          <span>08차시 · 무리함수:</span>
-          <span className="font-semibold text-rose-800">
-            무리식의 계산과 <MathText text="y = √(ax + b) + c" />의 그래프
-          </span>
+          {part === 1 ? (
+            <>
+              <span>08차시 · 무리식과 무리함수:</span>
+              <span className="font-semibold text-rose-800">
+                무리식의 계산, 정의역과 <MathText text="y = √(ax)" />의 그래프
+              </span>
+            </>
+          ) : (
+            <>
+              <span>09차시 · 무리함수의 그래프:</span>
+              <span className="font-semibold text-rose-800">
+                평행이동과 <MathText text="y = √(ax + b) + c" />의 그래프
+              </span>
+            </>
+          )}
         </div>
         <button
           type="button"
@@ -842,7 +875,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
           className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
         >
           <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
-          <span>8차시 초기화</span>
+          <span>{lessonNo}차시 초기화</span>
         </button>
       </div>
 
@@ -1655,7 +1688,54 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             )}
           </div>
 
-          <NavRow onPrev={() => goSection('domain')} onNext={() => goSection('shift')} nextLabel="다음 단계: 평행이동 · 문제 6" />
+          <NavRow onPrev={() => goSection('domain')} onNext={() => goSection('reflect8')} nextLabel="다음 단계: 성찰" />
+        </div>
+      )}
+
+      {/* =====================================================================
+          8차시 6단계: 성찰 (2026-11-13 두 차시로 나누며 추가)
+      ===================================================================== */}
+      {section === 'reflect8' && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-xs font-extrabold text-rose-600">8차시 마무리 성찰</span>
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">무리식과 무리함수 정리하기</h4>
+              </div>
+              <HintToggle open={!!hints.reflection} onClick={() => toggleHint('reflection')} label="💡 성찰 힌트 보기" />
+            </div>
+            {hints.reflection && (
+              <HintBox>
+                <div>
+                  • <strong>성찰 1 예시</strong>: “무리식의 값이 실수가 되려면 근호 안이 0 이상이어야 하고, 분모에 있으면 0보다 커야 한다. 무리함수의 정의역은 이 조건으로 구한다.”
+                </div>
+                <div>
+                  • <strong>성찰 2 예시</strong>: “y = √x의 그래프가 y = x²(x ≥ 0)의 그래프와 y = x에 대하여 대칭이라는 것을 알았다.”
+                </div>
+              </HintBox>
+            )}
+            <HelpSourcePicker idPrefix="l8" value={state.ieHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, ieHelpSource: v }))} />
+            <ReasonInput
+              id="l8-reflection1"
+              theme="rose"
+              label="1. 무리식의 값이 실수가 되는 조건과 무리함수의 정의역을 구하는 방법을 정리해 보세요."
+              value={state.ieReflection1}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, ieReflection1: v }))}
+              min={L8_MIN_REFLECTION}
+            />
+            <ReasonInput
+              id="l8-reflection2"
+              theme="rose"
+              label="2. 오늘 새롭게 알게 된 점이나 어려웠던 점을 적어 보세요."
+              value={state.ieReflection2}
+              onChange={(v) => onUpdate((prev) => ({ ...prev, ieReflection2: v }))}
+              min={L8_MIN_REFLECTION}
+            />
+            <div className="pt-3 border-t border-slate-100">
+              <NavRow onPrev={() => goSection('graph')} onNext={onGoToLesson9} nextLabel="다음 차시: 09차시로 이동" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -1838,7 +1918,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             )}
           </div>
 
-          <NavRow onPrev={() => goSection('graph')} onNext={() => goSection('transform')} nextLabel="다음 단계: y = √(ax+b)+c · 문제 7" />
+          <NavRow onNext={() => goSection('transform')} nextLabel="다음 단계: y = √(ax+b)+c · 문제 7" />
         </div>
       )}
 
@@ -1960,19 +2040,19 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
       )}
 
       {/* =====================================================================
-          8단계: 성찰
+          9차시 3단계: 성찰
       ===================================================================== */}
       {section === 'reflect' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
               <div>
-                <span className="text-xs font-extrabold text-rose-600">8차시 마무리 성찰</span>
-                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">무리식과 무리함수의 그래프 정리하기</h4>
+                <span className="text-xs font-extrabold text-rose-600">9차시 마무리 성찰</span>
+                <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">무리함수의 그래프 정리하기</h4>
               </div>
-              <HintToggle open={!!hints.reflection} onClick={() => toggleHint('reflection')} label="💡 성찰 힌트 보기" />
+              <HintToggle open={!!hints.reflection9} onClick={() => toggleHint('reflection9')} label="💡 성찰 힌트 보기" />
             </div>
-            {hints.reflection && (
+            {hints.reflection9 && (
               <HintBox>
                 <div>
                   • <strong>성찰 1 예시</strong>: “y = √(a(x − p)) + q의 그래프는 y = √ax의 그래프를 x축 방향으로 p, y축 방향으로 q만큼 평행이동한 것이고, 정의역은 a의 부호, 치역은
@@ -1983,9 +2063,9 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
                 </div>
               </HintBox>
             )}
-            <HelpSourcePicker idPrefix="l8" value={state.irHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, irHelpSource: v }))} />
+            <HelpSourcePicker idPrefix="l9" value={state.irHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, irHelpSource: v }))} />
             <ReasonInput
-              id="l8-reflection1"
+              id="l9-reflection1"
               theme="rose"
               label="1. y = √(a(x − p)) + q의 그래프를 그리는 방법과 정의역·치역을 정리해 보세요."
               value={state.irReflection1}
@@ -1993,7 +2073,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
               min={L8_MIN_REFLECTION}
             />
             <ReasonInput
-              id="l8-reflection2"
+              id="l9-reflection2"
               theme="rose"
               label="2. 오늘 새롭게 알게 된 점이나 어려웠던 점을 적어 보세요."
               value={state.irReflection2}
@@ -2002,7 +2082,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             />
             <div className="pt-3 border-t border-slate-100 space-y-3">
               <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs sm:text-sm font-bold text-emerald-900">
-                🎉 함수 단원 1~8차시 탐구를 모두 마쳤어요. 성찰을 쓰면 8차시가 완료됩니다.
+                🎉 함수 단원 1~9차시 탐구를 모두 마쳤어요. 성찰을 쓰면 9차시가 완료됩니다.
               </p>
               <NavRow onPrev={() => goSection('transform')} />
             </div>

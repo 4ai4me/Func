@@ -95,18 +95,24 @@ test('부등식 답: 입력 글자 만들기·읽기·확인', () => {
   assert.equal(L8.checkIneq('', '≥', 1.5), 'empty');
 });
 
-test('8차시 예시 답안(complete)은 채점을 모두 통과하고 8단계 완료', () => {
+test('8·9차시 예시 답안(complete)은 채점을 모두 통과하고 8차시 6단계·9차시 3단계 완료', () => {
   const p = sample();
   for (const fn of VALIDATORS) assert.equal(fn(p).ok, true, `${fn.name}: ${fn(p).message}`);
-  assert.deepEqual(M.evaluateLevel8Completion(p), new Array(8).fill(true));
-  assert.equal(M.STAGE_TITLES[8].length, 8);
+  assert.deepEqual(M.evaluateLevel8Completion(p), new Array(6).fill(true));
+  assert.deepEqual(M.evaluateLevel9Completion(p), new Array(3).fill(true));
+  assert.equal(M.STAGE_TITLES[8].length, 6);
+  assert.equal(M.STAGE_TITLES[9].length, 3);
+  // 8차시 성찰(ie*)과 9차시 성찰(ir*)은 서로 다른 칸
+  assert.equal(M.evaluateLevel8Completion({ ...p, ieReflection1: '' })[5], false);
+  assert.equal(M.evaluateLevel9Completion({ ...p, ieReflection1: '' })[2], true);
 });
 
 test('빈 답안은 채점을 통과하지 못하고, 예전 절대부등식3 기록으로는 완료되지 않음', () => {
   const p = M.createInitialStudentState().l7;
   for (const fn of VALIDATORS) assert.equal(fn(p).ok, false, fn.name);
   const legacy = { ...p, reflection1: '절댓값 제곱의 차 원리를 이용해 증명했다.'.repeat(2), prob1Verified: [true, true, true, true] };
-  assert.deepEqual(M.evaluateLevel8Completion(legacy), new Array(8).fill(false));
+  assert.deepEqual(M.evaluateLevel8Completion(legacy), new Array(6).fill(false));
+  assert.deepEqual(M.evaluateLevel9Completion(legacy), new Array(3).fill(false));
 });
 
 test('흔한 오답에 맞는 안내', () => {
@@ -142,7 +148,11 @@ test('교사 요약: 입력이 없으면 빈 글자, 있으면 단계별 줄', (
   const text = L8.summarizeL8(sample());
   assert.match(text, /\[생각 열기\] 식: 6\.3√\(1013 − x\)/);
   assert.match(text, /\[문제 1\] \(1\) x ≥ 3\/2 \(2\) x < 4/);
-  assert.equal(text.split('\n').length, 7);
+  assert.equal(L8.summarizeL8Lines(sample()).filter(Boolean).length, 7);
+  // 8차시 몫 5줄 · 9차시 몫 2줄
+  assert.equal(text.split('\n').length, 5);
+  assert.match(L8.summarizeL9(sample()), /^\[문제 6\][\s\S]*\n\[변형\]/);
+  assert.equal(L8.summarizeL9(M.createInitialStudentState().l7), '');
 });
 
 test('저장·불러오기: 새 항목 보존, 도움 받은 정도 검사, 기기 간 합치기에서 새 항목도 내용으로 인정', () => {
@@ -165,17 +175,36 @@ test('저장·불러오기: 새 항목 보존, 도움 받은 정도 검사, 기�
   assert.equal(merged.l7.p1a, 'x ≥ 3/2', '원격이 비어 있으면 내용 있는 로컬 기록을 지킴');
 });
 
-test('교사 문항 상태(8차시, 답안 묶음 l7): 완료·오답·작성 중·미작성, 근호 앞 부호는 빈 칸으로 세지 않음', async () => {
+test('교사 문항 상태(8차시 = 답안 묶음 l7, 9차시 = l7b): 완료·오답·작성 중·미작성, 근호 앞 부호는 빈 칸으로 세지 않음', async () => {
   const { getQuestionStatus, lessonQuestions } = await import('./questionStatus');
-  const keys = lessonQuestions('l7').map((q) => q.verifiedKey);
-  assert.deepEqual(keys, ['openVerified', 'p1Verified', 'ex1Verified', 'p2Verified', 'p3Verified', 'sqVerified', 'p4Verified', 'p5Verified', 'p6Verified', 'ex2Verified', 'p7Verified']);
+  assert.deepEqual(lessonQuestions('l7').map((q) => q.verifiedKey), ['openVerified', 'p1Verified', 'ex1Verified', 'p2Verified', 'p3Verified', 'sqVerified', 'p4Verified', 'p5Verified']);
+  assert.deepEqual(lessonQuestions('l7b').map((q) => q.verifiedKey), ['p6Verified', 'ex2Verified', 'p7Verified']);
   const p = sample();
   assert.equal(getQuestionStatus('l7', 'p1Verified', p)?.status, 'done');
   assert.equal(getQuestionStatus('l7', 'p1Verified', { ...p, p1Verified: false, p1b: 'x ≤ 4' })?.status, 'wrong');
   assert.equal(getQuestionStatus('l7', 'p1Verified', { ...p, p1Verified: false, p1b: '' })?.status, 'unchecked');
   assert.equal(getQuestionStatus('l7', 'p1Verified', M.createInitialStudentState().l7)?.status, 'empty');
   // 예제 2: 부호를 고르지 않았지만(= 없음) 나머지가 맞으면 '점검 버튼을 누르지 않음'
-  assert.equal(getQuestionStatus('l7', 'ex2Verified', { ...p, ex2Verified: false, ex2s: '' })?.note, '점검 버튼을 누르지 않음');
+  assert.equal(getQuestionStatus('l7b', 'ex2Verified', { ...p, ex2Verified: false, ex2s: '' })?.note, '점검 버튼을 누르지 않음');
   // 이유만 짧으면 점검
-  assert.match(getQuestionStatus('l7', 'p7Verified', { ...p, p7Verified: false, p7Reason: '짧음' })?.note || '', /이유 서술 부족/);
+  assert.match(getQuestionStatus('l7b', 'p7Verified', { ...p, p7Verified: false, p7Reason: '짧음' })?.note || '', /이유 서술 부족/);
+  // 8차시 묶음에서 9차시 문항은 다루지 않음
+  assert.equal(getQuestionStatus('l7', 'p6Verified', p), undefined);
+});
+
+test('8·9차시 나누기: 화면 단계 수 = STAGE_TITLES, 초기화 항목이 서로 겹치지 않고 모든 새 항목을 덮음', async () => {
+  const V = await import('../components/Lesson8View');
+  assert.equal(V.LESSON8_SECTIONS.length, M.STAGE_TITLES[8].length);
+  assert.equal(V.LESSON9_SECTIONS.length, M.STAGE_TITLES[9].length);
+  const k8 = Object.keys(V.LESSON8_RESET);
+  const k9 = Object.keys(V.LESSON9_RESET);
+  assert.deepEqual(k8.filter((k) => k9.includes(k)), [], '두 차시 초기화가 같은 항목을 지우지 않음');
+  // 예시 답안의 새 항목(예전 절대부등식3 항목 제외)은 둘 중 한 곳에서 지워짐
+  const legacy = new Set(Object.keys(M.createInitialStudentState().l7));
+  const newKeys = Object.keys(sample()).filter((k) => !legacy.has(k));
+  assert.deepEqual(newKeys.filter((k) => !k8.includes(k) && !k9.includes(k)), []);
+  // 9차시 초기화는 8차시 답을 건드리지 않음
+  const after = { ...sample(), ...V.LESSON9_RESET };
+  assert.deepEqual(M.evaluateLevel8Completion(after), new Array(6).fill(true));
+  assert.deepEqual(M.evaluateLevel9Completion(after), new Array(3).fill(false));
 });

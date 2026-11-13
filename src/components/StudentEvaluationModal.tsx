@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { summarizeL4 } from '../utils/lesson4Logic';
 import { summarizeL6 } from '../utils/lesson6Logic';
 import { summarizeL7 } from '../utils/lesson7Logic';
-import { summarizeL8 } from '../utils/lesson8Logic';
+import { summarizeL8, summarizeL9 } from '../utils/lesson8Logic';
 import {
   Award,
   CheckCircle2,
@@ -194,7 +194,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       {student.code} 탐정의 {EVAL_CRITERIA.length}대 수학적 탐구 역량
                     </div>
                     <p className="text-xs text-slate-600">
-                      1~8차시 탐구 활동(함수의 뜻과 그래프, 여러 가지 함수, 합성함수 등)의 기록과 서술을 종합하여 평정되었습니다.
+                      1~9차시 탐구 활동(함수의 뜻과 그래프, 여러 가지 함수, 합성함수 등)의 기록과 서술을 종합하여 평정되었습니다.
                     </p>
                   </div>
 
@@ -323,7 +323,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-slate-500" />
-                    <span>내가 작성한 1~8차시 핵심 서술 확인</span>
+                    <span>내가 작성한 1~9차시 핵심 서술 확인</span>
                   </div>
                   {showInquirySummary ? (
                     <ChevronUp className="h-4 w-4 text-slate-400" />
@@ -439,7 +439,25 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
                       <div className="font-bold text-rose-700">8차시 · 무리식과 무리함수</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>[생각 열기·문제 1~7·예제 1·2]:</strong> {summarizeL8(student.l7) || '(미작성)'}
+                        <strong>[생각 열기·문제 1~5·예제 1]:</strong> {summarizeL8(student.l7) || '(미작성)'}
+                      </div>
+                      {student.l7?.ieReflection1 && (
+                        <div className="text-slate-600 whitespace-pre-wrap">
+                          <strong>성찰 1:</strong> {student.l7.ieReflection1}
+                        </div>
+                      )}
+                      {student.l7?.ieReflection2 && (
+                        <div className="text-slate-600 whitespace-pre-wrap">
+                          <strong>성찰 2:</strong> {student.l7.ieReflection2}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 9차시 (8차시와 같은 저장 칸 l7 — 무리함수의 그래프와 평행이동) */}
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
+                      <div className="font-bold text-rose-700">9차시 · 무리함수의 그래프와 평행이동</div>
+                      <div className="text-slate-600 whitespace-pre-wrap">
+                        <strong>[문제 6·예제 2·문제 7]:</strong> {summarizeL9(student.l7) || '(미작성)'}
                       </div>
                       {student.l7?.irReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
@@ -468,7 +486,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                     아직 교수자의 평가 결과가 등록되지 않았습니다
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
-                    1~8차시 탐구 활동을 충실히 작성하여 완료하면, 교수자가 제출된 기록을 검토하고
+                    1~9차시 탐구 활동을 충실히 작성하여 완료하면, 교수자가 제출된 기록을 검토하고
                     {EVAL_CRITERIA.length}대 핵심 탐구 역량 평정 점수와 맞춤형 피드백을 이곳에 등록해 줍니다.
                   </p>
                 </div>

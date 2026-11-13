@@ -101,7 +101,7 @@ test('기기 간 합치기: 선택 값이 차시 기록과 함께 남는다', ()
 test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 회색 미선택으로 보이고 작성 개수에는 들어가지 않는다', () => {
   const r = createInitialStudentState();
   const emptyHtml = renderToStaticMarkup(<FullAnswerPanel record={r} initiallyOpen />);
-  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 8, '1~8차시에 하나씩 (4·5차시는 같은 저장 칸이지만 따로)');
+  assert.equal((emptyHtml.match(/해결 방법 \(도움 받은 정도\)/g) || []).length, 9, '1~9차시에 하나씩 (4·5차시, 8·9차시는 같은 저장 칸이지만 따로)');
   assert.ok(emptyHtml.includes('text-slate-400">미선택<'));
   const countBefore = emptyHtml.match(/작성 0\/(\d+)/g);
 
@@ -114,8 +114,8 @@ test('교사 전체 답안 보기: 선택은 짧은 이름으로, 안 고르면 
 });
 
 test('CSV: 차시마다 해결 방법 열이 생기고 짧은 이름으로 나온다', () => {
-  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7']).filter((c) => c.header.includes('해결 방법'));
-  assert.equal(cols.length, 8);
+  const cols = lessonAnswerCsvColumns(['l1', 'l2', 'l3', 'l4', 'l4b', 'l5', 'l6', 'l7', 'l7b']).filter((c) => c.header.includes('해결 방법'));
+  assert.equal(cols.length, 9);
   const r = createInitialStudentState();
   r.l1.helpSource = 'self';
   assert.equal(cols[0].value(r), '스스로 해결');
@@ -134,10 +134,13 @@ test('CSV: 차시마다 해결 방법 열이 생기고 짧은 이름으로 나�
   r.l6.rgHelpSource = 'hint';
   assert.ok(cols[6].header.startsWith('7차시'));
   assert.equal(cols[6].value(r), '힌트 도움');
-  // 8차시(저장 칸 l7)는 irHelpSource (2026-11-13)
-  r.l7.irHelpSource = 'peer';
+  // 8차시(저장 칸 l7)는 ieHelpSource, 9차시(같은 칸 l7)는 irHelpSource (2026-11-13)
+  r.l7.ieHelpSource = 'peer';
+  r.l7.irHelpSource = 'self';
   assert.ok(cols[7].header.startsWith('8차시'));
   assert.equal(cols[7].value(r), '친구·선생님 도움');
+  assert.ok(cols[8].header.startsWith('9차시'));
+  assert.equal(cols[8].value(r), '스스로 해결');
 });
 
 

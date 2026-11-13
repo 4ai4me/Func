@@ -3,11 +3,11 @@ import { isRatNumber, parseRatNumber } from './ratExpr';
 import { compareIrr, hasRootInDenominator, hasVarRoot, parseIrr } from './irrExpr';
 
 /**
- * Func 8차시 · 무리식과 무리함수 — 문항 자료와 채점 (순수 로직, 단위 테스트 대상)
+ * Func 8·9차시 · 무리식과 무리함수 — 문항 자료와 채점 (2026-11-13 두 차시로 나눔: 8차시 = 문제 1~5, 9차시 = 문제 6·7) (순수 로직, 단위 테스트 대상)
  * ------------------------------------------------------------------
  * 학생 화면: src/components/Lesson8View.tsx / 그래프: src/components/IrrationalGraph.tsx
  * 저장 칸: func_lessons/l7 (형식 Lesson7State — 예전 절대부등식3 항목은 보존만, 새 항목을 추가)
- * 단계 완료·루브릭 판정: mathLogic.ts evaluateLevel8Completion / evaluateRubricL8
+ * 단계 완료·루브릭 판정: mathLogic.ts evaluateLevel8/9Completion / evaluateRubricL8/9
  */
 
 export interface L8Feedback {
@@ -456,7 +456,7 @@ const v = (s?: string) => (s && s.trim() ? s.trim() : '-');
 const choiceText: Record<string, string> = { ge: '≥ 0', le: '≤ 0', all: '모든 실수' };
 const sym = (s?: string) => (s && s in SYMMETRY_LABEL ? SYMMETRY_LABEL[s as 'x' | 'y' | 'o'] : '-');
 
-/** 8차시 답안 요약 줄 (단계 순서 7줄 — 입력이 없는 줄은 '') — 교사 상세 화면은 앞 4줄·뒤 3줄로 나누어 보여 줌 */
+/** 8·9차시 답안 요약 줄 (단계 순서 7줄 — 입력이 없는 줄은 '') — 앞 5줄 = 8차시, 뒤 2줄 = 9차시 (L8_SUMMARY_SPLIT) */
 export function summarizeL8Lines(p: Lesson7State | undefined | null): string[] {
   if (!p) return [];
   const openExpr = L8_OPEN_EXPR_OPTIONS.find(([k]) => k === p.opExpr)?.[1];
@@ -490,7 +490,15 @@ export function summarizeL8Lines(p: Lesson7State | undefined | null): string[] {
   return lines;
 }
 
+/** 요약 줄 중 8차시 몫 (앞 5줄: 생각 열기·문제 1·계산·문제 3·y = √ax) */
+export const L8_SUMMARY_SPLIT = 5;
+
 /** 8차시 답안 요약 (입력이 없으면 빈 문자열) */
 export function summarizeL8(p: Lesson7State | undefined | null): string {
-  return summarizeL8Lines(p).filter(Boolean).join('\n');
+  return summarizeL8Lines(p).slice(0, L8_SUMMARY_SPLIT).filter(Boolean).join('\n');
+}
+
+/** 9차시 답안 요약 (평행이동·변형 — 입력이 없으면 빈 문자열) */
+export function summarizeL9(p: Lesson7State | undefined | null): string {
+  return summarizeL8Lines(p).slice(L8_SUMMARY_SPLIT).filter(Boolean).join('\n');
 }

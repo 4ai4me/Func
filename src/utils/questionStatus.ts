@@ -81,8 +81,8 @@ import {
 } from './lesson8Logic';
 
 export type QuestionStatus = 'done' | 'unchecked' | 'wrong' | 'empty';
-/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'·'l7'은 6·7·8차시) */
-export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5' | 'l6' | 'l7';
+/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'·'l7'은 6·7·8차시, 'l7b'는 9차시(저장 칸 l7)) */
+export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5' | 'l6' | 'l7' | 'l7b';
 
 export interface QuestionStatusResult {
   status: QuestionStatus;
@@ -186,6 +186,9 @@ export const QUESTION_RULES: Record<StatusLessonKey, Record<string, QuestionRule
     sqVerified: { validate: as<Lesson7State>(validateL8Sqrt) },
     p4Verified: { validate: as<Lesson7State>(validateL8Prob4) },
     p5Verified: { validate: as<Lesson7State>(validateL8Prob5) },
+  },
+  // 9차시 (8차시와 같은 저장 칸 l7)
+  l7b: {
     p6Verified: { validate: as<Lesson7State>(validateL8Prob6) },
     ex2Verified: { validate: as<Lesson7State>(validateL8Ex2) },
     p7Verified: { validate: as<Lesson7State>(validateL8Prob7), reasons: { p7Reason: L8_MIN_REASON } },
@@ -230,7 +233,7 @@ function findQuestion(lesson: StatusLessonKey, verifiedKey: string): QuestionInf
 }
 
 export function isStatusLesson(lesson: string): lesson is StatusLessonKey {
-  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5' || lesson === 'l6' || lesson === 'l7';
+  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5' || lesson === 'l6' || lesson === 'l7' || lesson === 'l7b';
 }
 
 /** 한 문항의 상태. 규칙이 없는 확인 항목이면 undefined (예전처럼 확인/미확인으로 표시) */

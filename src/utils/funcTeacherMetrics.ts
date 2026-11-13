@@ -8,12 +8,13 @@ import {
   evaluateRubricL6,
   evaluateRubricL7,
   evaluateRubricL8,
+  evaluateRubricL9,
 } from './mathLogic';
 import { LESSON_ANSWER_CONFIG, answerStorageKey, type AnswerLessonKey } from './answerLabels';
 import type { AnswerFormat } from './answerLabels';
 
 /**
- * 교사 화면의 Func(함수와 그래프) 1~8차시 지표 — 순수 로직 (단위 테스트 대상)
+ * 교사 화면의 Func(함수와 그래프) 1~9차시 지표 — 순수 로직 (단위 테스트 대상)
  * ------------------------------------------------------------------
  * 교사 화면이 명제 수업(Props) 틀에서 만들어져 1~3차시 지표가 명제 항목(사례 수, 참·거짓 판단,
  * 탐구 주제 등)을 세고 있었습니다. Func 학생 화면은 그 항목을 입력하지 않으므로 항상 0이나
@@ -21,7 +22,7 @@ import type { AnswerFormat } from './answerLabels';
  * 사용합니다.
  * 4차시는 역함수 수업으로 교체됨(2026-10-30), 2026-11-05 역함수를 4·5차시로 나눔(같은 저장 칸 l4).
  * 6차시(저장 칸 l5)는 유리식·유리함수의 정의역, 7차시(l6)는 유리함수의 그래프 수업으로 교체됨(2026-11-06).
- * 8차시(저장 칸 l7)는 무리식과 무리함수 수업으로 교체됨(2026-11-13).
+ * 8차시(저장 칸 l7)는 무리식과 무리함수 수업으로 교체되고, 같은 날 8·9차시로 나눔(9차시도 저장 칸 l7).
  */
 
 export type LessonProgress = 'done' | 'progress' | 'none';
@@ -40,7 +41,7 @@ export const LESSON_PROGRESS_LABEL: Record<LessonProgress, string> = {
 };
 
 /** 함수 단원으로 운영 중인 차시 */
-export const FUNC_LESSONS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+export const FUNC_LESSONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export type FuncLesson = (typeof FUNC_LESSONS)[number];
 
 export function funcLessonProgress(x: StudentRecord, lesson: FuncLesson): LessonProgress {
@@ -53,10 +54,12 @@ export function funcLessonProgress(x: StudentRecord, lesson: FuncLesson): Lesson
   // 6·7·8차시는 저장 칸 l5·l6·l7
   if (lesson === 6) return lessonProgress(x.l5 ? evaluateRubricL6(x.l5) : [false]);
   if (lesson === 7) return lessonProgress(x.l6 ? evaluateRubricL7(x.l6) : [false]);
-  return lessonProgress(x.l7 ? evaluateRubricL8(x.l7) : [false]);
+  // 8·9차시는 같은 저장 칸 l7
+  if (lesson === 8) return lessonProgress(x.l7 ? evaluateRubricL8(x.l7) : [false]);
+  return lessonProgress(x.l7 ? evaluateRubricL9(x.l7) : [false]);
 }
 
-/** 1~8차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
+/** 1~9차시 문항별 확인 현황 (학생 화면의 [확인] 통과 여부 기준) */
 export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => boolean }[] = [
   { title: '1차시 [생각 열기] 나라–화폐 대응', done: (x) => Boolean(x.l1.countryMapVerified) },
   { title: '1차시 [문제 1] 함수 판별·정의역·공역·치역', done: (x) => Boolean(x.l1.prob1Verified) },
@@ -110,12 +113,13 @@ export const FUNC_ITEM_CHECKS: { title: string; done: (x: StudentRecord) => bool
   { title: '8차시 무리식의 계산 (예제 1·문제 2)', done: (x) => Boolean(x.l7?.ex1Verified && x.l7?.p2Verified) },
   { title: '8차시 [문제 3] 무리함수의 정의역', done: (x) => Boolean(x.l7?.p3Verified) },
   { title: '8차시 y = √ax의 그래프 (함께 탐구·문제 4·5)', done: (x) => Boolean(x.l7?.sqVerified && x.l7?.p4Verified && x.l7?.p5Verified) },
-  { title: '8차시 [문제 6] 평행이동', done: (x) => Boolean(x.l7?.p6Verified) },
-  { title: '8차시 y = √(ax+b)+c 변형 (예제 2·문제 7)', done: (x) => Boolean(x.l7?.ex2Verified && x.l7?.p7Verified) },
-  { title: '8차시 성찰', done: (x) => (x.l7?.irReflection1 || '').trim().length >= 10 },
+  { title: '8차시 성찰', done: (x) => (x.l7?.ieReflection1 || '').trim().length >= 10 },
+  { title: '9차시 [문제 6] 평행이동', done: (x) => Boolean(x.l7?.p6Verified) },
+  { title: '9차시 y = √(ax+b)+c 변형 (예제 2·문제 7)', done: (x) => Boolean(x.l7?.ex2Verified && x.l7?.p7Verified) },
+  { title: '9차시 성찰', done: (x) => (x.l7?.irReflection1 || '').trim().length >= 10 },
 ];
 
-/** 1~8차시 중 완료한 차시 수(0~8)별 학생 수 — 배열의 i번째 = i개 차시 완료 */
+/** 1~9차시 중 완료한 차시 수(0~9)별 학생 수 — 배열의 i번째 = i개 차시 완료 */
 export function completedLessonDistribution(records: StudentRecord[]): number[] {
   const dist = new Array<number>(FUNC_LESSONS.length + 1).fill(0);
   for (const x of records) {
