@@ -21,6 +21,16 @@ import {
 
 const LESSONS = HINT_CATALOG.map((c) => c.lesson);
 
+/**
+ * 처음 보여 줄 차시: 힌트를 연 횟수가 가장 많은 차시 (모두 0이면 1차시) — 2026-11-13
+ * (예전에는 늘 1차시로 시작해, 지금 수업 중인 차시의 기록이 있어도 0만 보이는 일이 있었음)
+ */
+export function pickDefaultHintLesson(totals: readonly number[]): HintLessonNumber {
+  let best = 0;
+  for (let i = 1; i < totals.length; i++) if (totals[i] > totals[best]) best = i;
+  return LESSONS[best] ?? 1;
+}
+
 /** 학생 × 힌트 표의 한 칸 (단계 힌트는 '열기·2단계·3단계'를 점으로 구분) */
 function CountCell({ counts }: { counts: number[] }) {
   const total = counts.reduce((a, b) => a + b, 0);
@@ -36,7 +46,12 @@ function CountCell({ counts }: { counts: number[] }) {
 
 export function HintUsageSection({ records, totalCount }: { records: readonly StudentRecord[]; totalCount: number }) {
   const [open, setOpen] = useState(true);
-  const [lesson, setLesson] = useState<HintLessonNumber>(1);
+  // 교사가 차시를 고르기 전에는 기록이 가장 많은 차시를 자동으로 보여 줌 (학생 기록이 나중에 도착해도 따라감)
+  const [picked, setPicked] = useState<HintLessonNumber | null>(null);
+  const lessonTotals = LESSONS.map((n) => records.reduce((sum, r) => sum + studentHintTotal(r, n), 0));
+  const allTotal = lessonTotals.reduce((a, b) => a + b, 0);
+  const lesson = picked ?? pickDefaultHintLesson(lessonTotals);
+  const setLesson = setPicked;
   const catalog = catalogOf(lesson);
   const summary = summarizeHints(records, lesson);
   const usedStudents = records.filter((r) => studentHintTotal(r, lesson) > 0).length;
@@ -78,9 +93,19 @@ export function HintUsageSection({ records, totalCount }: { records: readonly St
                 }`}
               >
                 {n}차시
+                <span className={`ml-1 mono ${lessonTotals[LESSONS.indexOf(n)] ? 'text-amber-700' : 'text-slate-400'}`} data-hint-tab-total={n}>
+                  {lessonTotals[LESSONS.indexOf(n)]}
+                </span>
               </button>
             ))}
           </div>
+
+          {allTotal === 0 && records.length > 0 && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-hint-empty-note>
+              아직 기록된 힌트 열람이 없습니다. 힌트 횟수는 <strong>2026-11-12 오전 10시 40분 배포 이후</strong> 학생이 [힌트 보기]를 연 것만 셉니다.
+              그 전부터 학생 기기(패드)에 사이트가 열려 있었다면 예전 화면이라 기록되지 않으니, 학생 기기에서 새로고침한 뒤 다시 확인해 주세요.
+            </p>
+          )}
 
           <p className="text-xs text-slate-600">
             <strong className="text-slate-900">{catalog.title}</strong> · 아래 &lsquo;탐정별 사건 기록&rsquo;의 검색·반·진행 필터가 적용된 학생{' '}
