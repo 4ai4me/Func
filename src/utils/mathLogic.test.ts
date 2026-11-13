@@ -315,9 +315,12 @@ test('evaluateLevel1..7Completion track progress accurately', () => {
   s.l6.tgVerified = true;
   assert.equal(evaluateLevel7Completion(s.l6)[0], true);
 
-  assert.deepEqual(evaluateLevel8Completion(s.l7), [false, false, false, false, false]);
+  // 8차시는 2026-11-13 무리식과 무리함수로 교체 — 예전 절대부등식3 기록으로는 완료되지 않음
+  assert.deepEqual(evaluateLevel8Completion(s.l7), new Array(8).fill(false));
   s.l7.examples = [calc7Abs(2, 3), calc7Abs(2, -3), calc7Abs(-2, -3)];
   s.l7.absSquareConceptChoice = 'square_diff';
+  assert.equal(evaluateLevel8Completion(s.l7)[0], false);
+  s.l7.openVerified = true;
   assert.equal(evaluateLevel8Completion(s.l7)[0], true);
 });
 

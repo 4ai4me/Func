@@ -188,7 +188,7 @@
 - **문항 자료·채점·교사용 요약**: `src/utils/lesson7Logic.ts` / 교과서 그림: `public/assets/aistudio/image_l7_*.png`(9장)
 - **저장 데이터**: 저장 칸은 그대로 `func_lessons/l6`(형식 `Lesson6State`). 새 항목을 **추가만** 했습니다(`tgPosQuad`·`p4q1`·`p4v1`·`thinkSymX`·`p5_1x`·`ex2k`·`p6_1k`·`rgReflection1`·`rgHelpSource` 등). 예전 절대부등식2 항목은 보존·숨김, 완료는 새 항목 기준, [7차시 초기화]는 새 항목만 지움
 - **교사 화면**: 6차시와 같은 범위(KPI·완료 분포 0~7·문항별 현황·목록 7차시 열·필터·CSV·상세 비교 2곳·문항 상태·전체 답안·AI 피드백(`rgHelpSource` 보내지 않음)·평가 창·인쇄). 평가 항목 이름 `유리함수의 그래프 (7차시)`
-- 8차시는 아직 예전 화면(절대부등식3)
+- 8차시는 2026-11-13 무리식과 무리함수로 교체(4-6절)
 
 ## 4-4. 성찰 '도움 받은 정도'에 「친구나 선생님의 도움을 받았어요」 추가 (2026-11-06)
 
@@ -202,7 +202,7 @@
 
 - **기록 위치**: 각 차시 기록 안의 `hintOpens` 항목 `{ 힌트 이름: 횟수 }`(`src/utils/hintLog.ts`). 차시 문서는 JSON 문자열로 저장되므로 **보안 규칙·저장 칸은 그대로**입니다. 4·5차시는 같은 칸 `l4`에 이름이 겹치지 않게 저장합니다
 - **대상**: 힌트 버튼이 있는 1·2·3·4·5·6·7·8차시 모든 힌트. 3차시 쿠폰 미션 힌트는 `coupon_m2` 식으로 구분. 1차시 [문제 2] 그래프 힌트는 처음부터 열려 있어 **다시 연 횟수**만 셉니다
-- **8차시 단계 힌트**: 열기는 이름 그대로(`step1`, `prob1_s1` …), '다음 힌트 더 보기'로 N단계를 연 횟수는 `이름@N`. 교사 화면에는 `열기 2 · 2단계 1 · 3단계 0`처럼 보임
+- **단계 힌트**(예전 8차시 화면): 열기는 이름 그대로(`step1`, `prob1_s1` …), '다음 힌트 더 보기'로 N단계를 연 횟수는 `이름@N`. 2026-11-13 8차시를 무리함수로 바꾸면서 지금은 쓰는 차시가 없고, 예전 횟수는 기록에만 남아 교사 표에는 보이지 않음
 - **초기화해도 유지**: [N차시 초기화]는 답만 지우고 힌트 횟수는 남깁니다(교사용 기록)
 - **기기 간 합치기**: 차시 기록은 최신 기기 것을 고르지만, 힌트 횟수는 힌트마다 큰 값으로 합칩니다(`mergeStudentStates`). 그래도 두 기기를 **동시에** 쓰면 일부가 빠질 수 있음
 - **교사 화면**
@@ -211,6 +211,28 @@
   - [전체 답안 보기]의 '기타 기록'에는 나오지 않음(`BOOKKEEPING_FIELD_PATTERN`)
 - **힌트 목록**: `src/utils/hintCatalog.ts`(힌트 이름 → 교사 화면에 보일 위치). **힌트 버튼을 새로 만들면 여기에도 추가**합니다 — `hintCatalog.test.ts`가 각 화면 코드의 `toggleHint('이름')`과 대조해 빠지면 실패합니다
 - 배포 전에 누른 횟수는 없으므로 2026-11-12부터 0에서 시작
+
+## 4-6. 8차시: 무리식과 무리함수 (`Lesson8View`, 2026-11-13)
+
+교과서 `무리함수` 단원(생각 열기, 무리식, [보기], [문제 1]~[문제 7], [예제 1]·[예제 2], [읽기 자료], y = √ax와 y = √(a(x − p)) + q 정리)을 7차시와 같은 형식으로 **8단계** 활동지로 만들었습니다. 이전 8차시 화면(명제 수업의 절대부등식3)을 대체합니다.
+
+1. **생각 열기 · 무리식**: 중심 기압 슬라이더(900~1020 hPa) → 풍속 6.3√(1013 − x) 계산, 1013보다 크면 '실수가 아님' 안내 → ① 식 고르기 ② 949 hPa일 때 풍속(50.4) ③ x의 범위(x ≤ 1013) + 이유. 통과하면 핵심 개념(무리식의 뜻, (근호 안) ≥ 0, 분모면 > 0, 완전제곱식은 무리식 아님, [보기]) 열림
+2. **문제 1**: 무리식의 값이 실수가 되는 범위 — (1) x ≥ 3/2 (2) x < 4. 등호를 빼거나 넣은 실수, 부등호 방향 실수를 따로 안내
+3. **무리식의 계산**: 제곱근의 성질 카드 → 예제 1을 문제로(교과서 풀이는 버튼) → 문제 2 + 유리화 방법 서술. 식 입력칸에 [√( )] 버튼과 근호·분수 모양 미리보기, [연습장]
+4. **무리함수와 정의역**: 무리함수의 뜻·정의역 규칙, [보기] → 문제 3 (1) x ≥ −4 (2) x ≤ 5/2 → [읽기 자료] 계산기(소방 호스·지진 해일·인체 겉넓이, 저장·채점 없음)
+5. **y = √ax의 그래프**: 함께 탐구(y = x² → y = x → y = √x 세 단계 그림, a 버튼으로 y = √ax 비교 → ① y = √x의 정의역·치역 ② |a|가 커지면 x축에서 멀어짐) → 정리 카드 → 문제 4(대칭이동: x축·y축·원점 + 사분면) → y = −√ax 설명 → 문제 5(정의역·치역 고르기). 문제마다 그래프 확인
+6. **평행이동 · 문제 6**: 부호·a·p·q 실험실(시작점 (p, q)와 점선) → 정리 카드 → [보기] → 문제 6(평행이동한 양 + 정의역·치역)
+7. **y = √(ax+b)+c · 문제 7**: 예제 2를 문제로 `y = (±)√(□(x − □)) + □` 틀과 정의역·치역 → 문제 7 (1)(2) + 그리는 방법 서술. 그래프 확인, [연습장]
+8. **성찰**: 도움 받은 정도 + 성찰 2칸(성찰 1, 10자 이상이 완료 조건)
+
+- **부등식 입력**: 정의역·치역·x의 범위는 [x] + 부등호 버튼(≥ > ≤ <) + 숫자 칸으로 입력하고 `"x ≥ 3/2"`처럼 한 글자로 저장합니다(패드에서 ≥를 치기 어려워서). 숫자는 `3/2`, `1.5`, `-4` 모두 인정
+- **무리식 읽기 (`src/utils/irrExpr.ts`)**: `√( )`·`sqrt( )`·괄호 없는 `√x`, `√2x`(= √(2x)) 지원. 여러 x 값에서 정답 식과 값을 비교하므로 순서·표기가 달라도 인정. 값은 맞지만 근호가 남은 식(예제 1·문제 2의 (1)), 분모에 근호가 남은 식((2))은 '오답'이 아니라 따로 안내
+- **그래프 (`src/components/IrrationalGraph.tsx`)**: y = ±√(a(x − p)) + q를 시작점 근처를 촘촘히 그림, 시작점과 축까지 점선. 범례는 근호 모양으로. `IrrGraphReveal`은 7차시와 같은 규칙(정답 확인을 통과해야 켜짐)
+- **근호 모양 미리보기 (`src/components/IrrMath.tsx`)**: `Root`(근호 안에 입력칸·식을 넣는 근호), `IrrView`
+- **문항 자료·채점·교사용 요약**: `src/utils/lesson8Logic.ts` / 교과서 그림: `public/assets/aistudio/image_l8_*.png`(25장)
+- **저장 데이터**: 저장 칸은 그대로 `func_lessons/l7`(형식 `Lesson7State`). 새 항목을 **추가만** 했습니다(`opExpr`·`p1a`·`ex1a`·`p3a`·`sqDomain`·`p4q1`·`p5d1`·`p6_1p`·`ex2a`·`p7_1a`·`irReflection1`·`irHelpSource` 등). 예전 절대부등식3 항목은 보존·숨김, 완료는 새 항목 기준, [8차시 초기화]는 새 항목만 지움
+- **교사 화면**: 7차시와 같은 범위(KPI·완료 분포 0~8·문항별 현황·목록 8차시 칸·8차시 필터·CSV(예전 8차시 절대부등식 열 9개 대신 새 이름표 열)·상세 비교 2곳·문항 상태·전체 답안·AI 피드백(`irHelpSource` 보내지 않음)·평가 창·인쇄·힌트 사용 현황)
+- 근호 앞 부호 칸(예제 2·문제 7)은 고르지 않으면 '없음(+)'과 같으므로 교사 화면에서 빈 칸으로 세지 않음
 
 ## 5. 시스템 아키텍처
 
@@ -308,7 +330,7 @@ student_registrations/{studentKey}/func_lessons/teacher 교사 평가·메모 (�
 npx --yes tsx --test src/utils/authLogic.test.ts
 npx --yes tsx --test src/utils/mathLogic.test.ts
 npx --yes tsx --test src/utils/lessonMerge.test.ts
-npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx src/utils/lesson6Logic.test.ts src/utils/lesson7Logic.test.ts
+npx --yes tsx --test src/utils/answerLabels.test.ts src/components/FullAnswerPanel.test.tsx src/utils/passwordCore.test.ts src/utils/useDraggableWindow.test.ts src/utils/studentDraft.test.ts src/utils/funcTeacherMetrics.test.ts src/components/MappingVennDiagram.test.tsx src/components/CompositeVennDiagram.test.tsx src/utils/lesson4Logic.test.ts src/components/ScratchPad.test.tsx src/utils/lesson3Coupon.test.ts src/components/TeacherSaveBar.test.tsx src/components/HelpSourcePicker.test.tsx src/components/CharCountCoverage.test.tsx src/utils/questionStatus.test.tsx src/utils/aiFeedback.test.tsx src/components/InverseGraphReveal.test.tsx src/components/LessonSplit.test.tsx src/utils/lesson6Logic.test.ts src/utils/lesson7Logic.test.ts src/utils/lesson8Logic.test.ts src/utils/hintCatalog.test.ts src/utils/hintLog.test.ts src/components/HintUsagePanel.test.tsx
 
 # 타입 체크 및 프로덕션 빌드 (GitHub Pages 정적 번들 ghpages-app.js / ghpages-app.css 자동 갱신)
 npm run build

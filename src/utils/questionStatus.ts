@@ -39,6 +39,7 @@ import {
   type Lesson4State,
   type Lesson5State,
   type Lesson6State,
+  type Lesson7State,
 } from './mathLogic';
 import { validateL1RealLifeQuiz } from './lesson1Quiz';
 import { validateCouponM1, validateCouponM2, validateCouponM3, validateCouponM4 } from './lesson3Coupon';
@@ -64,10 +65,24 @@ import {
   validateL7Ex2,
   validateL7Prob6,
 } from './lesson7Logic';
+import {
+  L8_MIN_REASON,
+  validateL8Open,
+  validateL8Prob1,
+  validateL8Ex1,
+  validateL8Prob2,
+  validateL8Prob3,
+  validateL8Sqrt,
+  validateL8Prob4,
+  validateL8Prob5,
+  validateL8Prob6,
+  validateL8Ex2,
+  validateL8Prob7,
+} from './lesson8Logic';
 
 export type QuestionStatus = 'done' | 'unchecked' | 'wrong' | 'empty';
-/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'은 6·7차시) */
-export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5' | 'l6';
+/** 문항 상태를 구분하는 차시 (답안 묶음 이름 — 'l4b'는 5차시(저장 칸 l4), 'l5'·'l6'·'l7'은 6·7·8차시) */
+export type StatusLessonKey = 'l1' | 'l2' | 'l3' | 'l4' | 'l4b' | 'l5' | 'l6' | 'l7';
 
 export interface QuestionStatusResult {
   status: QuestionStatus;
@@ -162,6 +177,19 @@ export const QUESTION_RULES: Record<StatusLessonKey, Record<string, QuestionRule
     ex2Verified: { validate: as<Lesson6State>(validateL7Ex2) },
     p6Verified: { validate: as<Lesson6State>(validateL7Prob6), reasons: { p6Reason: L7_MIN_REASON } },
   },
+  l7: {
+    openVerified: { validate: as<Lesson7State>(validateL8Open), reasons: { opReason: L8_MIN_REASON } },
+    p1Verified: { validate: as<Lesson7State>(validateL8Prob1) },
+    ex1Verified: { validate: as<Lesson7State>(validateL8Ex1) },
+    p2Verified: { validate: as<Lesson7State>(validateL8Prob2), reasons: { p2Reason: L8_MIN_REASON } },
+    p3Verified: { validate: as<Lesson7State>(validateL8Prob3) },
+    sqVerified: { validate: as<Lesson7State>(validateL8Sqrt) },
+    p4Verified: { validate: as<Lesson7State>(validateL8Prob4) },
+    p5Verified: { validate: as<Lesson7State>(validateL8Prob5) },
+    p6Verified: { validate: as<Lesson7State>(validateL8Prob6) },
+    ex2Verified: { validate: as<Lesson7State>(validateL8Ex2) },
+    p7Verified: { validate: as<Lesson7State>(validateL8Prob7), reasons: { p7Reason: L8_MIN_REASON } },
+  },
 };
 
 /** 이유 칸을 '충분히 쓴 것'으로 가정할 때 넣는 글 (숫자를 넣어 두어 '원소 번호 포함' 같은 조건도 통과) */
@@ -202,7 +230,7 @@ function findQuestion(lesson: StatusLessonKey, verifiedKey: string): QuestionInf
 }
 
 export function isStatusLesson(lesson: string): lesson is StatusLessonKey {
-  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5' || lesson === 'l6';
+  return lesson === 'l1' || lesson === 'l2' || lesson === 'l3' || lesson === 'l4' || lesson === 'l4b' || lesson === 'l5' || lesson === 'l6' || lesson === 'l7';
 }
 
 /** 한 문항의 상태. 규칙이 없는 확인 항목이면 undefined (예전처럼 확인/미확인으로 표시) */

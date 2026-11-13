@@ -27,8 +27,8 @@ export const GEMINI_MODEL_OPTIONS: { id: string; label: string }[] = [
   { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite (가장 가벼움)' },
 ];
 
-/** AI에 보내지 않는 항목: 도움 받은 정도(학생에게 '혼내지 않는다'고 약속한 선택 — 5차시 helpSource, 4차시 l4HelpSource, 6차시 ratHelpSource, 7차시 rgHelpSource) */
-export const NEVER_SEND_KEYS = new Set(['helpSource', 'l4HelpSource', 'ratHelpSource', 'rgHelpSource']);
+/** AI에 보내지 않는 항목: 도움 받은 정도(학생에게 '혼내지 않는다'고 약속한 선택 — 5차시 helpSource, 4차시 l4HelpSource, 6차시 ratHelpSource, 7차시 rgHelpSource, 8차시 irHelpSource) */
+export const NEVER_SEND_KEYS = new Set(['helpSource', 'l4HelpSource', 'ratHelpSource', 'rgHelpSource', 'irHelpSource']);
 const MAX_VALUE_CHARS = 600;
 const MAX_DIGEST_CHARS = 12000;
 
@@ -48,7 +48,7 @@ export function lessonHasAnswers(record: StudentRecord, lesson: AnswerLessonKey)
 
 /**
  * 한 차시의 답안을 AI에게 보낼 글로 정리한다. 학생 식별 정보는 넣지 않는다.
- * 1~7차시는 문항마다 확인 완료/점검/오답/미작성 상태도 함께 적는다.
+ * 1~8차시는 문항마다 확인 완료/점검/오답/미작성 상태도 함께 적는다.
  * 4·5차시는 같은 저장 칸(l4)이지만 그 차시 묶음의 문항만 보낸다.
  */
 export function buildLessonAnswerDigest(record: StudentRecord, lesson: AnswerLessonKey): string {

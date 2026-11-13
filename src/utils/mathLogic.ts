@@ -578,6 +578,97 @@ export interface Lesson7State {
   prob2ProofText: string;
   reflection1: string;
   reflection2: string;
+
+  // --- Func 8차시: 무리식과 무리함수 (2026-11-13 추가, 저장 칸 l7) ---
+  // 위의 항목(examples ~ reflection2)은 예전 절대부등식3 화면의 항목 — 지우지 않고 보존만 함(화면·완료 판정에 쓰지 않음).
+  // 문항 자료·채점: src/utils/lesson8Logic.ts / 부등식 답은 "x ≥ 3/2"처럼 한 글자열(lesson8Logic composeIneq)
+
+  // 1단계 [생각 열기] 태풍의 풍속 6.3√(1013 − x)
+  opExpr?: '' | 'a' | 'b' | 'c' | 'd';
+  opSpeed?: string;
+  opRange?: string;
+  opReason?: string;
+  openVerified?: boolean;
+
+  // 2단계 [문제 1] 무리식의 값이 실수가 되는 x의 값의 범위
+  p1a?: string;
+  p1b?: string;
+  p1Verified?: boolean;
+
+  // 3단계 무리식의 계산 — 예제 1, [문제 2] (식 입력)
+  ex1a?: string;
+  ex1b?: string;
+  ex1Verified?: boolean;
+  p2a?: string;
+  p2b?: string;
+  p2Reason?: string;
+  p2Verified?: boolean;
+
+  // 4단계 [문제 3] 무리함수의 정의역
+  p3a?: string;
+  p3b?: string;
+  p3Verified?: boolean;
+
+  // 5단계 y = √ax의 그래프 — 함께 탐구('ge' = 0 이상, 'le' = 0 이하), [문제 4] 대칭·사분면, [문제 5] 정의역·치역
+  sqDomain?: '' | 'ge' | 'le' | 'all';
+  sqRange?: '' | 'ge' | 'le' | 'all';
+  sqTrend?: '' | 'far' | 'near' | 'same';
+  sqVerified?: boolean;
+  p4q1?: '' | '1' | '2' | '3' | '4';
+  p4q2?: '' | '1' | '2' | '3' | '4';
+  p4q3?: '' | '1' | '2' | '3' | '4';
+  p4s1?: '' | 'x' | 'y' | 'o';
+  p4s2?: '' | 'x' | 'y' | 'o';
+  p4s3?: '' | 'x' | 'y' | 'o';
+  p4Verified?: boolean;
+  p5d1?: '' | 'ge' | 'le' | 'all';
+  p5d2?: '' | 'ge' | 'le' | 'all';
+  p5d3?: '' | 'ge' | 'le' | 'all';
+  p5d4?: '' | 'ge' | 'le' | 'all';
+  p5r1?: '' | 'ge' | 'le' | 'all';
+  p5r2?: '' | 'ge' | 'le' | 'all';
+  p5r3?: '' | 'ge' | 'le' | 'all';
+  p5r4?: '' | 'ge' | 'le' | 'all';
+  p5Verified?: boolean;
+
+  // 6단계 평행이동 — [문제 6] (p·q = 평행이동한 양, d·r = 정의역·치역 부등식)
+  p6_1p?: string;
+  p6_1q?: string;
+  p6_1d?: string;
+  p6_1r?: string;
+  p6_2p?: string;
+  p6_2q?: string;
+  p6_2d?: string;
+  p6_2r?: string;
+  p6Verified?: boolean;
+
+  // 7단계 y = √(ax + b) + c → y = ±√(a(x − p)) + q — 예제 2, [문제 7] (s = 근호 앞 부호 '+'/'-')
+  ex2s?: '' | '+' | '-';
+  ex2a?: string;
+  ex2p?: string;
+  ex2q?: string;
+  ex2d?: string;
+  ex2r?: string;
+  ex2Verified?: boolean;
+  p7_1s?: '' | '+' | '-';
+  p7_1a?: string;
+  p7_1p?: string;
+  p7_1q?: string;
+  p7_1d?: string;
+  p7_1r?: string;
+  p7_2s?: '' | '+' | '-';
+  p7_2a?: string;
+  p7_2p?: string;
+  p7_2q?: string;
+  p7_2d?: string;
+  p7_2r?: string;
+  p7Reason?: string;
+  p7Verified?: boolean;
+
+  // 8단계 성찰 (완료 조건: 성찰 1 — lesson8Logic L8_MIN_REFLECTION)
+  irReflection1?: string;
+  irReflection2?: string;
+  irHelpSource?: HelpSource;
 }
 
 export interface TeacherEvaluation {
@@ -1355,7 +1446,7 @@ export const STAGE_TITLES = {
   5: ['함께하기 · (g∘f)⁻¹', '그래프와 y = x 대칭'],
   6: ['생각 열기 · 유리식', '문제 1 · 유리식과 다항식', '유리식의 계산', '유리함수와 정의역', '성찰'],
   7: ['함께하기 · y = k/x', '문제 4 · y = k/x 그리기', '평행이동 · 문제 5', 'y = (ax+b)/(cx+d) · 문제 6', '성찰'],
-  8: ['절댓값 단서', '문제 1 (예제 5)', '절댓값 차 탐색', '문제 2 (문제 5)', '전체 수사 종결'],
+  8: ['생각 열기 · 무리식', '문제 1 · 무리식의 값', '무리식의 계산', '무리함수와 정의역', 'y = √ax의 그래프', '평행이동 · 문제 6', 'y = √(ax+b)+c · 문제 7', '성찰'],
 } as const;
 
 export const TOTAL_LESSONS = 8;
@@ -2137,13 +2228,20 @@ export function evaluateLevel7Completion(p: Lesson6State): boolean[] {
   ];
 }
 
+/**
+ * 8차시(무리식과 무리함수) 단계 완료 — 학생 화면의 [정답 확인] 통과 표시와 성찰 1만 사용합니다.
+ * 예전 절대부등식3 항목(examples·prob1ProofText 등)은 판정에 쓰지 않습니다(2026-11-13~).
+ */
 export function evaluateLevel8Completion(p: Lesson7State): boolean[] {
   return [
-    p.examples.length >= 3 && p.absSquareConceptChoice === 'square_diff',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.absDiffChecked && p.absDiffReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20 && p.reflection2.trim().length >= 15,
+    Boolean(p.openVerified),
+    Boolean(p.p1Verified),
+    Boolean(p.ex1Verified && p.p2Verified),
+    Boolean(p.p3Verified),
+    Boolean(p.sqVerified && p.p4Verified && p.p5Verified),
+    Boolean(p.p6Verified),
+    Boolean(p.ex2Verified && p.p7Verified),
+    (p.irReflection1 || '').trim().length >= 10, // = lesson8Logic L8_MIN_REFLECTION
   ];
 }
 
@@ -3087,14 +3185,9 @@ export function evaluateRubricL7(p: Lesson6State): boolean[] {
   return evaluateLevel7Completion(p);
 }
 
+/** 8차시(무리식과 무리함수) 루브릭 = 학생 화면 8단계 */
 export function evaluateRubricL8(p: Lesson7State): boolean[] {
-  return [
-    p.examples.length >= 3 && p.absSquareConceptChoice === 'square_diff',
-    p.prob1Verified.every(Boolean) && p.prob1ProofText.trim().length >= 35,
-    p.absDiffChecked && p.absDiffReason.trim().length >= 15,
-    p.prob2Verified.every(Boolean) && p.prob2ProofText.trim().length >= 40,
-    p.reflection1.trim().length >= 20,
-  ];
+  return evaluateLevel8Completion(p);
 }
 
 export function validateClaim1(
@@ -3339,6 +3432,7 @@ export function cleanStudentState(raw: unknown): StudentRecord {
       prob2Choices: sanitizeChoicesArray(rawL7.prob2Choices, 4),
       prob2Verified: sanitizeBooleansArray(rawL7.prob2Verified, 4),
       prob2Hints: sanitizeNumbersArray(rawL7.prob2Hints, 4),
+      irHelpSource: cleanHelpSource(rawL7.irHelpSource),
     },
   };
 
@@ -3721,7 +3815,36 @@ export function mergeStudentStates(remote: StudentRecord, local: StudentRecord):
           l.absDiffReason ||
           l.examples?.length ||
           l.reflection1 ||
-          l.reflection2
+          l.reflection2 ||
+          // 무리식과 무리함수 8차시 (2026-11-13~)
+          l.openVerified ||
+          l.p1Verified ||
+          l.ex1Verified ||
+          l.p2Verified ||
+          l.p3Verified ||
+          l.sqVerified ||
+          l.p4Verified ||
+          l.p5Verified ||
+          l.p6Verified ||
+          l.ex2Verified ||
+          l.p7Verified ||
+          l.opExpr ||
+          l.opSpeed ||
+          l.opRange ||
+          l.opReason ||
+          l.p1a ||
+          l.ex1a ||
+          l.p2a ||
+          l.p3a ||
+          l.sqDomain ||
+          l.p4q1 ||
+          l.p5d1 ||
+          l.p6_1p ||
+          l.ex2a ||
+          l.p7_1a ||
+          l.p7Reason ||
+          l.irReflection1 ||
+          l.irReflection2
       )
   );
 
@@ -3829,13 +3952,13 @@ export function studentKey(x: { group?: string; code?: string }): string {
 }
 
 /**
- * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~7차시 답안 (5차시는 4차시와 같은 저장 칸 l4, 6·7차시는 l5·l6).
+ * 교사 화면 [예시 학생 데이터] 체험용 Func(함수와 그래프) 1~8차시 답안 (5차시는 4차시와 같은 저장 칸 l4, 6·7·8차시는 l5·l6·l7).
  * 정답은 각 문항의 채점 함수(validateL1Prob1 등)와 일치하는 값만 사용합니다.
- * - complete: 1~7차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만(6·7차시 없음)
+ * - complete: 1~8차시 모든 확인 문항 통과 / partial: 1차시 일부·2차시 일부·3·4차시 생각 열기만(6~8차시 없음)
  */
 export function createFuncSampleLessons(
   variant: 'complete' | 'partial'
-): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6'> {
+): Pick<StudentRecord, 'l1' | 'l2' | 'l3' | 'l4' | 'l5' | 'l6' | 'l7'> {
   const base = createInitialStudentState();
   const full = variant === 'complete';
 
@@ -4134,7 +4257,86 @@ export function createFuncSampleLessons(
       : {}),
   };
 
-  return { l1, l2, l3, l4, l5, l6 };
+  // 8차시 무리식과 무리함수 (저장 칸 l7) — 정답은 lesson8Logic.ts의 채점 함수와 일치하는 값만 사용
+  const l7: Lesson7State = {
+    ...base.l7,
+    ...(full
+      ? {
+          opExpr: 'a' as const,
+          opSpeed: '50.4',
+          opRange: 'x ≤ 1013',
+          opReason: '근호 안의 1013 - x가 음수이면 실수가 아니므로 0 이상이어야 한다.',
+          openVerified: true,
+          p1a: 'x ≥ 3/2',
+          p1b: 'x < 4',
+          p1Verified: true,
+          ex1a: 'x-3',
+          ex1b: '(√(x+2)-√x)/2',
+          ex1Verified: true,
+          p2a: '3',
+          p2b: '√(x+1)+√(x-1)',
+          p2Reason: '분모와 분자에 √(x+1)+√(x-1)을 곱해 분모를 2로 만들었다.',
+          p2Verified: true,
+          p3a: 'x ≥ -4',
+          p3b: 'x ≤ 5/2',
+          p3Verified: true,
+          sqDomain: 'ge' as const,
+          sqRange: 'ge' as const,
+          sqTrend: 'far' as const,
+          sqVerified: true,
+          p4q1: '4' as const,
+          p4q2: '2' as const,
+          p4q3: '3' as const,
+          p4s1: 'x' as const,
+          p4s2: 'y' as const,
+          p4s3: 'o' as const,
+          p4Verified: true,
+          p5d1: 'ge' as const,
+          p5d2: 'le' as const,
+          p5d3: 'ge' as const,
+          p5d4: 'le' as const,
+          p5r1: 'ge' as const,
+          p5r2: 'ge' as const,
+          p5r3: 'le' as const,
+          p5r4: 'le' as const,
+          p5Verified: true,
+          p6_1p: '5',
+          p6_1q: '1',
+          p6_1d: 'x ≤ 5',
+          p6_1r: 'y ≥ 1',
+          p6_2p: '-2',
+          p6_2q: '-1',
+          p6_2d: 'x ≥ -2',
+          p6_2r: 'y ≤ -1',
+          p6Verified: true,
+          ex2s: '+' as const,
+          ex2a: '2',
+          ex2p: '-4',
+          ex2q: '2',
+          ex2d: 'x ≥ -4',
+          ex2r: 'y ≥ 2',
+          ex2Verified: true,
+          p7_1s: '+' as const,
+          p7_1a: '-3',
+          p7_1p: '1',
+          p7_1q: '-2',
+          p7_1d: 'x ≤ 1',
+          p7_1r: 'y ≥ -2',
+          p7_2s: '-' as const,
+          p7_2a: '-1',
+          p7_2p: '4',
+          p7_2q: '5',
+          p7_2d: 'x ≤ 4',
+          p7_2r: 'y ≤ 5',
+          p7Reason: '근호 안을 x의 계수로 묶어 a(x-p) 꼴로 바꾸고 평행이동한다.',
+          p7Verified: true,
+          irReflection1: 'y=√(a(x-p))+q의 그래프는 y=√ax를 x축으로 p, y축으로 q만큼 평행이동한 것이다.',
+          irReflection2: '정의역은 a의 부호로, 치역은 근호 앞의 부호로 정해진다는 것을 알았다.',
+        }
+      : {}),
+  };
+
+  return { l1, l2, l3, l4, l5, l6, l7 };
 }
 
 export function createSampleTeacherDataset(): StudentRecord[] {
@@ -4475,17 +4677,16 @@ export const LESSON_RECOMMENDED_SYMBOLS: Record<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, M
     { label: 'a = b', token: 'a = b', desc: '등호 성립 조건', isTemplate: true },
     { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
+  // 8차시: 무리식과 무리함수 (2026-11-13 — 예전 절대부등식3 기호를 바꿈)
   8: [
-    { label: '|□|', token: '|□|', desc: '절댓값 기호 감싸기', isTemplate: true },
-    { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
-    { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
+    { label: '√(□)', token: '√(□)', desc: '제곱근 감싸기', shorthand: 'sqrt(', isTemplate: true },
+    { label: '√x', token: '√x', desc: '√x', isTemplate: true },
     { label: '²', token: '²', desc: '제곱', shorthand: '^2' },
-    { label: '|a+b|', token: '|a+b|', desc: '합의 절댓값', isTemplate: true },
-    { label: '|a|+|b|', token: '|a|+|b|', desc: '절댓값의 합', isTemplate: true },
-    { label: '|a−b|', token: '|a−b|', desc: '차의 절댓값', isTemplate: true },
-    { label: '2(|ab|−ab)', token: '2(|ab|−ab)', desc: '제곱의 차 정리식', isTemplate: true },
-    { label: 'ab ≥ 0', token: 'ab ≥ 0', desc: '등호 성립 조건 (같은 부호)', isTemplate: true },
-    { label: 'ab ≤ 0', token: 'ab ≤ 0', desc: '등호 성립 조건 (반대 부호)', isTemplate: true },
+    { label: '≥', token: ' ≥ ', desc: '크거나 같다 (이상)', shorthand: '>=' },
+    { label: '≤', token: ' ≤ ', desc: '작거나 같다 (이하)', shorthand: '<=' },
+    { label: '(A+B)(A−B)', token: '(A+B)(A−B) = A² − B²', desc: '분모의 유리화에 쓰는 곱셈 공식', isTemplate: true },
+    { label: '√(a(x−p))+q', token: '√(a(x−p))+q', desc: '평행이동한 무리함수 꼴', isTemplate: true },
+    { label: '∴', token: '∴ ', desc: '따라서', shorthand: ':.' },
   ],
 };
 

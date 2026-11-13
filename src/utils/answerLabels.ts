@@ -1,6 +1,7 @@
 import type { LessonKey } from './lessonMerge';
 import { HELP_SOURCE_OPTIONS, type LessonTabNumber } from './mathLogic';
 import { L6_P1_EXPRS } from './lesson6Logic';
+import { L8_OPEN_EXPR_OPTIONS, L8_P4, L8_P4_QUAD_KEYS, L8_P4_SYM_KEYS, L8_P5, L8_P5_DOMAIN_KEYS, L8_P5_RANGE_KEYS, L8_P6, L8_P6_KEYS, L8_EX2, L8_P7 } from './lesson8Logic';
 
 /**
  * 교사 [전체 답안 보기]에 표시할 문항 이름표 (Func — 함수와 그래프)
@@ -810,7 +811,121 @@ export const LESSON_ANSWER_CONFIG: Record<AnswerLessonKey, LessonAnswerConfig> =
       'reflection1', 'reflection2',
     ],
   },
-  l7: { ...COMMON_L4_TO_L7.l7, title: COMMON_L4_TO_L7.l7.title.replace('7차시', '8차시') },
+  // 8차시(저장 칸 l7)는 무리식과 무리함수 수업 (2026-11-13~). 예전 절대부등식3 항목은 hidden(보존만).
+  l7: {
+    title: '8차시 · 무리식과 무리함수',
+    groups: [
+      {
+        title: '[생각 열기] 태풍의 풍속',
+        fields: [
+          { key: 'opExpr', label: '① 풍속을 x에 대한 식으로', format: { kind: 'choice', options: Object.fromEntries(L8_OPEN_EXPR_OPTIONS) } },
+          { key: 'opSpeed', label: '② 중심 기압 949 hPa일 때 풍속 (m/s)' },
+          { key: 'opRange', label: '③ 식의 값이 실수가 되는 x의 범위' },
+          { key: 'opReason', label: '③ 그렇게 생각한 이유' },
+          { key: 'openVerified', label: '생각 열기 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[문제 1] 무리식의 값이 실수가 되는 x의 범위',
+        fields: [
+          { key: 'p1a', label: '(1) √(2x − 3) + 1' },
+          { key: 'p1b', label: '(2) x/√(4 − x)' },
+          { key: 'p1Verified', label: '문제 1 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[무리식의 계산] 예제 1 · 문제 2',
+        fields: [
+          { key: 'ex1a', label: '예제 1 (1) (√(x + 1) + 2)(√(x + 1) − 2)' },
+          { key: 'ex1b', label: '예제 1 (2) 1/(√(x + 2) + √x)' },
+          { key: 'ex1Verified', label: '예제 1 확인', format: CHECK },
+          { key: 'p2a', label: '문제 2 (1) (√(x + 3) + √x)(√(x + 3) − √x)' },
+          { key: 'p2b', label: '문제 2 (2) 2/(√(x + 1) − √(x − 1))' },
+          { key: 'p2Reason', label: '문제 2 (2) 분모를 유리화한 방법' },
+          { key: 'p2Verified', label: '문제 2 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[문제 3] 무리함수의 정의역',
+        fields: [
+          { key: 'p3a', label: '(1) y = −√(x + 4)의 정의역' },
+          { key: 'p3b', label: '(2) y = √(5 − 2x) − 1의 정의역' },
+          { key: 'p3Verified', label: '문제 3 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[y = √ax의 그래프] 함께 탐구 · 문제 4 · 문제 5',
+        fields: [
+          { key: 'sqDomain', label: '① y = √x의 정의역', format: { kind: 'choice', options: { ge: '{x | x ≥ 0}', le: '{x | x ≤ 0}', all: '실수 전체' } } },
+          { key: 'sqRange', label: '① y = √x의 치역', format: { kind: 'choice', options: { ge: '{y | y ≥ 0}', le: '{y | y ≤ 0}', all: '실수 전체' } } },
+          { key: 'sqTrend', label: '② |a|가 커지면 그래프는?', format: { kind: 'choice', options: { far: 'x축에서 멀어진다', near: 'x축에 가까워진다', same: '변하지 않는다' } } },
+          { key: 'sqVerified', label: '함께 탐구 확인', format: CHECK },
+          ...L8_P4.flatMap((it, i): AnswerField[] => [
+            { key: L8_P4_SYM_KEYS[i], label: `문제 4 (${i + 1}) ${it.label} 대칭`, format: { kind: 'choice' as const, options: { x: 'x축 대칭', y: 'y축 대칭', o: '원점 대칭' } } },
+            { key: L8_P4_QUAD_KEYS[i], label: `문제 4 (${i + 1}) ${it.label} 사분면`, format: { kind: 'choice' as const, options: { '1': '제1사분면', '2': '제2사분면', '3': '제3사분면', '4': '제4사분면' } } },
+          ]),
+          { key: 'p4Verified', label: '문제 4 확인', format: CHECK },
+          ...L8_P5.flatMap((it, i): AnswerField[] => [
+            { key: L8_P5_DOMAIN_KEYS[i], label: `문제 5 (${i + 1}) ${it.label} 정의역`, format: { kind: 'choice' as const, options: { ge: '{x | x ≥ 0}', le: '{x | x ≤ 0}' } } },
+            { key: L8_P5_RANGE_KEYS[i], label: `문제 5 (${i + 1}) ${it.label} 치역`, format: { kind: 'choice' as const, options: { ge: '{y | y ≥ 0}', le: '{y | y ≤ 0}' } } },
+          ]),
+          { key: 'p5Verified', label: '문제 5 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[평행이동] 문제 6',
+        fields: [
+          ...L8_P6.flatMap((it, i): AnswerField[] => {
+            const k = L8_P6_KEYS[i];
+            return [
+              { key: k.p, label: `(${i + 1}) ${it.label}: x축 방향 평행이동` },
+              { key: k.q, label: `(${i + 1}) y축 방향 평행이동` },
+              { key: k.d, label: `(${i + 1}) 정의역` },
+              { key: k.r, label: `(${i + 1}) 치역` },
+            ];
+          }),
+          { key: 'p6Verified', label: '문제 6 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '[y = √(ax + b) + c 변형] 예제 2 · 문제 7',
+        fields: [
+          ...(
+            [
+              ['ex2', `예제 2 ${L8_EX2.label}`],
+              ['p7_1', `문제 7 (1) ${L8_P7[0].label}`],
+              ['p7_2', `문제 7 (2) ${L8_P7[1].label}`],
+            ] as const
+          ).flatMap(([pre, title]): AnswerField[] => [
+            // 근호 앞 부호: 고르지 않으면 '없음(+)'과 같음 — 빈 칸으로 세지 않도록 선택 응답
+            { key: `${pre}s`, label: `${title} → 근호 앞 부호`, format: { kind: 'choice' as const, options: { '+': '없음(+)', '-': '−' } }, optional: true, emptyLabel: '없음(+)' },
+            { key: `${pre}a`, label: `${title} → a` },
+            { key: `${pre}p`, label: `${title} → p` },
+            { key: `${pre}q`, label: `${title} → q` },
+            { key: `${pre}d`, label: `${title} 정의역` },
+            { key: `${pre}r`, label: `${title} 치역` },
+            ...(pre === 'ex2' ? [{ key: 'ex2Verified', label: '예제 2 확인', format: CHECK }] : []),
+          ]),
+          { key: 'p7Reason', label: '문제 7 그래프를 그리는 방법' },
+          { key: 'p7Verified', label: '문제 7 확인', format: CHECK },
+        ],
+      },
+      {
+        title: '성찰',
+        fields: [
+          helpSourceField('irHelpSource'),
+          { key: 'irReflection1', label: '8차시 성찰 1. y = √(a(x − p)) + q의 그래프·정의역·치역 정리' },
+          { key: 'irReflection2', label: '8차시 성찰 2. 새롭게 알게 된 점이나 어려웠던 점' },
+        ],
+      },
+    ],
+    // 예전 절대부등식3(명제 수업) 항목 — 지우지 않고 보존만, 표시하지 않음
+    hidden: [
+      'examples', 'absSquareConceptChoice', 'step1HintLevel', 'prob1Choices', 'prob1Verified', 'prob1ProofText',
+      'absDiffChecked', 'absDiffReason', 'step3HintLevel', 'prob2Choices', 'prob2Verified', 'prob2ProofText',
+      'reflection1', 'reflection2',
+    ],
+  },
   // Func 4·5차시는 역함수 수업 (2026-10-30~, 2026-11-05 두 차시로 나눔). 공통 4차시(귀류법) 이름표 대신 사용.
   // 두 차시가 같은 저장 칸(l4)을 쓰므로, 서로 상대 차시 항목을 hidden에 넣어 '기타 기록'에 섞이지 않게 함.
   l4: {

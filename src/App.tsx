@@ -75,6 +75,7 @@ import { Lesson4View } from './components/Lesson4View';
 import { summarizeL4 } from './utils/lesson4Logic';
 import { summarizeL6 } from './utils/lesson6Logic';
 import { summarizeL7 } from './utils/lesson7Logic';
+import { summarizeL8 } from './utils/lesson8Logic';
 import { summarizeCoupon } from './utils/lesson3Coupon';
 import { Lesson5View } from './components/Lesson5View';
 import { Lesson6View } from './components/Lesson6View';
@@ -1375,7 +1376,7 @@ export default function App() {
                       나의 수사 진행 현황
                     </h3>
                     <span className="mono text-xs font-bold text-sky-200 bg-sky-950/70 border border-sky-400/30 px-2 py-0.5 rounded-md">
-                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/{STAGE_TITLES[7].length} · 8차시 {done8.filter(Boolean).length}/5
+                      1차시 {done1.filter(Boolean).length}/{STAGE_TITLES[1].length} · 2차시 {done2.filter(Boolean).length}/{STAGE_TITLES[2].length} · 3차시 {done3.filter(Boolean).length}/{STAGE_TITLES[3].length} · 4차시 {done4.filter(Boolean).length}/{STAGE_TITLES[4].length} · 5차시 {done5.filter(Boolean).length}/{STAGE_TITLES[5].length} · 6차시 {done6.filter(Boolean).length}/{STAGE_TITLES[6].length} · 7차시 {done7.filter(Boolean).length}/{STAGE_TITLES[7].length} · 8차시 {done8.filter(Boolean).length}/{STAGE_TITLES[8].length}
                     </span>
                   </div>
 
@@ -1600,7 +1601,7 @@ export default function App() {
                       {displayLessonTab === 5 && '05차시 · 역함수의 성질과 그래프 ((g∘f)⁻¹ = f⁻¹∘g⁻¹과 y = f⁻¹(x)의 그래프)'}
                       {displayLessonTab === 6 && '06차시 · 유리식과 유리함수의 정의역'}
                       {displayLessonTab === 7 && '07차시 · 유리함수의 그래프'}
-                      {displayLessonTab === 8 && '08차시 · 무리함수 탐구 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
+                      {displayLessonTab === 8 && '08차시 · 무리함수 (무리식과 무리함수 y = √(a(x−p))+q의 그래프)'}
                     </span>
                     <span className="font-semibold mono text-slate-600">
                       권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / {STAGE_TITLES[displayLessonTab].length}
@@ -1646,7 +1647,7 @@ export default function App() {
                   className={`no-print grid ${
                     STAGE_TITLES[displayLessonTab].length === 6
                       ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
-                      : STAGE_TITLES[displayLessonTab].length === 4
+                      : STAGE_TITLES[displayLessonTab].length === 4 || STAGE_TITLES[displayLessonTab].length === 8
                       ? 'grid-cols-2 sm:grid-cols-4'
                       : STAGE_TITLES[displayLessonTab].length === 2
                       ? 'grid-cols-2'
@@ -2182,26 +2183,17 @@ export default function App() {
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="8차시 절대부등식3 [문제 1·|a+b|≤|a|+|b|]:" /></strong>{' '}
-              <MathText text={printingStudent.l7?.prob1ProofText || '미작성'} />
+              <strong><MathText text="8차시 무리함수 [생각 열기·문제 1~7·예제 1·2]:" /></strong>{' '}
+              <MathText text={summarizeL8(printingStudent.l7) || '미작성'} />
             </div>
-            {printingStudent.l7?.absDiffReason && (
+            {printingStudent.l7?.irReflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 [절댓값의 차 부호 판별 이유]:</strong> {printingStudent.l7.absDiffReason}
+                <strong>8차시 성찰 1:</strong> {printingStudent.l7.irReflection1}
               </div>
             )}
-            <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
-              <strong><MathText text="8차시 절대부등식3 [문제 2·절댓값 차 부등식]:" /></strong>{' '}
-              <MathText text={printingStudent.l7?.prob2ProofText || '미작성'} />
-            </div>
-            {printingStudent.l7?.reflection1 && (
+            {printingStudent.l7?.irReflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 1:</strong> {printingStudent.l7.reflection1}
-              </div>
-            )}
-            {printingStudent.l7?.reflection2 && (
-              <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 2:</strong> {printingStudent.l7.reflection2}
+                <strong>8차시 성찰 2:</strong> {printingStudent.l7.irReflection2}
               </div>
             )}
 

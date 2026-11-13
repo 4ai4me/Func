@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { summarizeL4 } from '../utils/lesson4Logic';
 import { summarizeL6 } from '../utils/lesson6Logic';
 import { summarizeL7 } from '../utils/lesson7Logic';
+import { summarizeL8 } from '../utils/lesson8Logic';
 import {
   Award,
   CheckCircle2,
@@ -434,28 +435,20 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                       )}
                     </div>
 
-                    {/* 8차시 */}
+                    {/* 8차시 (저장 칸 l7 — 무리식과 무리함수, 2026-11-13~) */}
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
-                      <div className="font-bold text-rose-700">8차시 · 절대부등식3 (절댓값 부등식)</div>
+                      <div className="font-bold text-rose-700">8차시 · 무리식과 무리함수</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 1 (|a+b| ≤ |a|+|b|):</strong> {student.l7?.prob1ProofText || '(미작성)'}
+                        <strong>[생각 열기·문제 1~7·예제 1·2]:</strong> {summarizeL8(student.l7) || '(미작성)'}
                       </div>
-                      {student.l7?.absDiffReason && (
+                      {student.l7?.irReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>절댓값의 차 부호 이유:</strong> {student.l7.absDiffReason}
+                          <strong>성찰 1:</strong> {student.l7.irReflection1}
                         </div>
                       )}
-                      <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>문제 2 (|a−b| ≤ |a|+|b| 외):</strong> {student.l7?.prob2ProofText || '(미작성)'}
-                      </div>
-                      {student.l7?.reflection1 && (
+                      {student.l7?.irReflection2 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 1:</strong> {student.l7.reflection1}
-                        </div>
-                      )}
-                      {student.l7?.reflection2 && (
-                        <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 2:</strong> {student.l7.reflection2}
+                          <strong>성찰 2:</strong> {student.l7.irReflection2}
                         </div>
                       )}
                     </div>

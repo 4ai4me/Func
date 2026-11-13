@@ -20,10 +20,7 @@ test('힌트 목록이 화면 코드의 힌트 버튼과 빠짐없이 맞는다'
   sameSet([...ids(4), ...ids(5)], toggleIds(src('Lesson4View.tsx')), '4·5차시(같은 화면 코드)');
   sameSet(ids(6), toggleIds(src('Lesson6View.tsx')), '6차시');
   sameSet(ids(7), toggleIds(src('Lesson7View.tsx')), '7차시');
-  const l8 = src('Lesson8View.tsx');
-  for (const id of ['step1', 'step3']) assert.ok(l8.includes(`'${id}'`), `8차시 ${id}`);
-  assert.ok(l8.includes('`prob1_s${idx + 1}`') && l8.includes('`prob2_s${idx + 1}`'), '8차시 문제 단계');
-  sameSet(ids(8), ['step1', 'prob1_s1', 'prob1_s2', 'prob1_s3', 'prob1_s4', 'step3', 'prob2_s1', 'prob2_s2', 'prob2_s3', 'prob2_s4'], '8차시');
+  sameSet(ids(8), toggleIds(src('Lesson8View.tsx')), '8차시');
 });
 
 test('같은 저장 칸을 쓰는 차시끼리 힌트 이름이 겹치지 않는다', () => {
@@ -33,15 +30,6 @@ test('같은 저장 칸을 쓰는 차시끼리 힌트 이름이 겹치지 않는
     byKey.set(k, [...(byKey.get(k) ?? []), ...c.hints.map((h) => h.id)]);
   }
   for (const [k, list] of byKey) assert.equal(new Set(list).size, list.length, k);
-});
-
-test('8차시 단계 힌트 수가 화면의 힌트 문장 수와 같다', () => {
-  const l8 = src('Lesson8View.tsx');
-  for (const name of ['STEP1_HINTS', 'STEP3_HINTS']) {
-    const block = l8.slice(l8.indexOf(`const ${name} = [`), l8.indexOf('];', l8.indexOf(`const ${name} = [`)));
-    assert.equal((block.match(/단계 힌트:/g) || []).length, 3, name);
-  }
-  for (const h of catalogOf(8).hints) assert.equal(h.levels, 3, h.id);
 });
 
 test('요약: 연 학생 수·총 횟수, 학생 합계, 단계 힌트 표시', () => {
@@ -60,10 +48,12 @@ test('요약: 연 학생 수·총 횟수, 학생 합계, 단계 힌트 표시', 
   assert.equal(studentHintTotal(a, 7), 0, '다른 차시와 섞이지 않음');
 
   const d = createInitialStudentState();
-  d.l7 = { ...d.l7, hintOpens: { step1: 2, 'step1@2': 1 } }; // 8차시 = 저장 칸 l7
-  const def = catalogOf(8).hints[0];
+  // 8차시 = 저장 칸 l7. 예전 절댓값 부등식 화면의 단계 힌트 횟수(step1)는 남아 있어도 새 8차시 합계에 섞이지 않음 (2026-11-13)
+  d.l7 = { ...d.l7, hintOpens: { step1: 2, 'step1@2': 1, p6: 2 } };
+  assert.equal(studentHintTotal(d, 8), 2);
+  // 단계 힌트 표시 형식 (지금은 쓰는 차시가 없지만 형식은 유지)
+  const def = { id: 'step1', label: '단계 힌트', levels: 3 };
   assert.deepEqual(hintCounts(d.l7.hintOpens, def), [2, 1, 0]);
   assert.equal(formatHintCounts([2, 1, 0]), '열기 2 · 2단계 1 · 3단계 0');
   assert.equal(formatHintCounts([5]), '5');
-  assert.equal(studentHintTotal(d, 8), 3);
 });

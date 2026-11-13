@@ -1,11 +1,11 @@
-import { LESSON_STORAGE_KEY, PROOF7_PROB1_STEPS, PROOF7_PROB2_STEPS, type StudentRecord } from './mathLogic';
+import { LESSON_STORAGE_KEY, type StudentRecord } from './mathLogic';
 import { hintLevelKey, hintOpenCount, type HintOpens } from './hintLog';
 
 /**
  * 차시별 힌트 목록 — 교사 화면 '힌트 사용 현황'·학생 상세 화면의 표 머리글
  *
  * - id: 학생 화면에서 기록하는 힌트 이름 (각 Lesson{N}View의 toggleHint 이름과 같음)
- * - levels: 단계가 있는 힌트(8차시)의 단계 수 — 열기 = id, N단계 더 보기 = id@N (N ≥ 2)
+ * - levels: 단계가 있는 힌트의 단계 수 — 열기 = id, N단계 더 보기 = id@N (N ≥ 2). 2026-11-13 예전 8차시 화면을 바꾸면서 지금은 쓰는 차시가 없음
  * - 힌트 버튼을 새로 만들면 여기에도 추가합니다(hintCatalog.test.ts가 화면 코드의 이름과 대조).
  * - 5차시는 4차시와 저장 칸(l4)을 함께 쓰지만 힌트 이름이 겹치지 않습니다(p3·reflection은 5차시).
  */
@@ -27,12 +27,6 @@ export interface LessonHintCatalog {
   title: string;
   hints: HintDef[];
 }
-
-/** 8차시 단계 힌트 수 (Lesson8View의 STEP1_HINTS·STEP3_HINTS) */
-export const L8_STEP_HINT_LEVELS = 3;
-
-const proofStepHints = (prefix: 'prob1' | 'prob2', steps: readonly { hints: readonly string[] }[], title: string): HintDef[] =>
-  steps.map((s, i) => ({ id: `${prefix}_s${i + 1}`, label: `${title} Step 0${i + 1}`, levels: s.hints.length }));
 
 export const HINT_CATALOG: readonly LessonHintCatalog[] = [
   {
@@ -140,13 +134,22 @@ export const HINT_CATALOG: readonly LessonHintCatalog[] = [
     ],
   },
   {
+    // 2026-11-13 무리식과 무리함수로 교체 — 예전 절댓값 부등식 화면의 횟수(step1·prob1_s1 등)는 기록에 남지만 표에는 보이지 않음
     lesson: 8,
-    title: '8차시 · 절댓값 부등식 (예전 화면)',
+    title: '8차시 · 무리식과 무리함수',
     hints: [
-      { id: 'step1', label: '[탐구] 절댓값 부등식의 증명 원리', levels: L8_STEP_HINT_LEVELS },
-      ...proofStepHints('prob1', PROOF7_PROB1_STEPS, '[문제 1]'),
-      { id: 'step3', label: '[탐구] 경우 나누기 원리', levels: L8_STEP_HINT_LEVELS },
-      ...proofStepHints('prob2', PROOF7_PROB2_STEPS, '[문제 2]'),
+      { id: 'open', label: '[생각 열기] 태풍의 풍속' },
+      { id: 'p1', label: '[문제 1] 무리식의 값이 실수가 되는 범위' },
+      { id: 'ex1', label: '[예제 1] 무리식의 계산' },
+      { id: 'p2', label: '[문제 2] 무리식의 계산' },
+      { id: 'p3', label: '[문제 3] 무리함수의 정의역' },
+      { id: 'sq', label: '[함께 탐구] y = √x, y = √ax의 그래프' },
+      { id: 'p4', label: '[문제 4] 대칭이동' },
+      { id: 'p5', label: '[문제 5] 정의역과 치역' },
+      { id: 'p6', label: '[문제 6] 평행이동' },
+      { id: 'ex2', label: '[예제 2] y = √(2x + 8) + 2' },
+      { id: 'p7', label: '[문제 7] y = √(ax + b) + c' },
+      { id: 'reflection', label: '[성찰] 8차시' },
     ],
   },
 ];
