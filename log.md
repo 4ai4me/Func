@@ -1149,5 +1149,6 @@
 **완료**
 - 변경 파일: `src/utils/lesson8Logic.ts`(`L8_OPEN_TABLE_PRESSURES`, `l8OpenTableRows`), `src/components/Lesson8View.tsx`(표), `src/utils/lesson8Logic.test.ts`
 - 확인한 것: `tsc --noEmit` 통과, 단위 테스트 219/219 / Chrome 표 검사 15/15(PC·휴대폰 폭, 949 가림·완료 후 50.4 표시, 1020 계산 불가, 클릭 → 막대 977, 가로 넘침 없음), 학생 화면 전체 회귀 80/80
-- 확인하지 못한 것: 배포 사이트(아직 배포 안 함)
+- 배포: `index.html` 버전 `?v=20261120-l8-table`, 빌드 파일 다시 만들어 main에 합침
+- 확인하지 못한 것: 배포된 사이트 화면
 - 남은 위험: 위쪽 막대의 [949 hPa] 버튼은 예전처럼 50.4를 바로 보여 줌(표만 가림)
