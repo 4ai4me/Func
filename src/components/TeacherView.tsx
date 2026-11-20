@@ -2304,7 +2304,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       return (
                         <div key={title}>
                           <div className="flex justify-between text-xs font-semibold text-slate-700">
-                            <span>{title}</span>
+                            <span>
+                              <MathText text={title} />
+                            </span>
                             <strong className="mono text-slate-900">
                               {n}명 ({pct}%)
                             </strong>
@@ -2362,7 +2364,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                       return (
                         <div key={title}>
                           <div className="flex justify-between text-xs font-semibold text-slate-700">
-                            <span>{title}</span>
+                            <span>
+                              <MathText text={title} />
+                            </span>
                             <strong className="mono text-slate-900">
                               {n}명 ({pct}%)
                             </strong>
@@ -2385,7 +2389,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                     {means.map((m) => (
                       <div key={m.title}>
                         <div className="flex justify-between text-xs font-semibold text-slate-700">
-                          <span>{m.title}</span>
+                          <span>
+                            <MathText text={m.title} />
+                          </span>
                           <strong className="mono text-slate-900">
                             {m.mean === null ? '평정 없음' : `${m.mean.toFixed(2)} / 3`} ({m.count}명)
                           </strong>
@@ -3147,7 +3153,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                               <label htmlFor={`inlineEval${i}`} className="block text-xs sm:text-sm font-bold text-slate-900">
                                 {title}
                                 <span className="block text-xs font-normal text-slate-500">
-                                  {EVAL_DESCRIPTIONS[i]}
+                                  <MathText text={EVAL_DESCRIPTIONS[i]} />
                                 </span>
                               </label>
                               <select
@@ -3674,7 +3680,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
                             <label htmlFor={`modelessEval${i}`} className="block text-xs sm:text-sm font-bold text-slate-900">
                               {title}
                               <span className="block text-xs font-normal text-slate-500">
-                                {EVAL_DESCRIPTIONS[i]}
+                                <MathText text={EVAL_DESCRIPTIONS[i]} />
                               </span>
                             </label>
                             <select

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { MathText } from './MathText';
 import { summarizeL4 } from '../utils/lesson4Logic';
 import { summarizeL6 } from '../utils/lesson6Logic';
 import { summarizeL7 } from '../utils/lesson7Logic';
@@ -240,7 +241,9 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="text-sm font-bold text-slate-900">{criterion}</div>
-                            <div className="text-xs text-slate-500 mt-0.5">{desc}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              <MathText text={desc} />
+                            </div>
                           </div>
                           <span
                             className={`rounded-lg border px-2 py-0.5 text-xs font-bold shrink-0 ${color.badgeBg}`}
@@ -439,16 +442,16 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
                       <div className="font-bold text-rose-700">8차시 · 무리식과 무리함수</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>[생각 열기·문제 1~5·예제 1]:</strong> {summarizeL8(student.l7) || '(미작성)'}
+                        <strong>[생각 열기·문제 1~5·예제 1]:</strong> <MathText text={summarizeL8(student.l7) || '(미작성)'} />
                       </div>
                       {student.l7?.ieReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 1:</strong> {student.l7.ieReflection1}
+                          <strong>성찰 1:</strong> <MathText text={student.l7.ieReflection1} />
                         </div>
                       )}
                       {student.l7?.ieReflection2 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 2:</strong> {student.l7.ieReflection2}
+                          <strong>성찰 2:</strong> <MathText text={student.l7.ieReflection2} />
                         </div>
                       )}
                     </div>
@@ -457,16 +460,16 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-2">
                       <div className="font-bold text-rose-700">9차시 · 무리함수의 그래프와 평행이동</div>
                       <div className="text-slate-600 whitespace-pre-wrap">
-                        <strong>[문제 6·예제 2·문제 7]:</strong> {summarizeL9(student.l7) || '(미작성)'}
+                        <strong>[문제 6·예제 2·문제 7]:</strong> <MathText text={summarizeL9(student.l7) || '(미작성)'} />
                       </div>
                       {student.l7?.irReflection1 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 1:</strong> {student.l7.irReflection1}
+                          <strong>성찰 1:</strong> <MathText text={student.l7.irReflection1} />
                         </div>
                       )}
                       {student.l7?.irReflection2 && (
                         <div className="text-slate-600 whitespace-pre-wrap">
-                          <strong>성찰 2:</strong> {student.l7.irReflection2}
+                          <strong>성찰 2:</strong> <MathText text={student.l7.irReflection2} />
                         </div>
                       )}
                     </div>
@@ -508,7 +511,7 @@ export const StudentEvaluationModal: React.FC<StudentEvaluationModalProps> = ({
                         {idx + 1}. {criterion}
                       </div>
                       <div className="text-xs text-slate-600 leading-relaxed">
-                        {EVAL_DESCRIPTIONS[idx]}
+                        <MathText text={EVAL_DESCRIPTIONS[idx]} />
                       </div>
                     </div>
                   ))}

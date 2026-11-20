@@ -143,11 +143,21 @@ export function IrrationalGraph({ curves, points = [], range = 6, ariaLabel }: I
         {points.map((pt, i) => (
           <g key={`p-${i}`}>
             <circle cx={sx(pt.x)} cy={sy(pt.y)} r={5} fill={pt.color} stroke="#ffffff" strokeWidth="1.5" />
-            {pt.label && (
-              <text x={sx(pt.x) + 8} y={sy(pt.y) - 8} fontSize="12" fontWeight="700" fill={pt.color}>
-                {pt.label}
-              </text>
-            )}
+            {pt.label &&
+              (pt.label.includes('√') ? (
+                // 그림 안 근호도 MathText(윗줄 있는 근호)로 그린다 — 글꼴 '√'는 윗줄이 없어 잘려 보임
+                <foreignObject x={sx(pt.x) + 6} y={sy(pt.y) - 27} width="140" height="26" overflow="visible">
+                  <div
+                    style={{ display: 'inline-block', color: pt.color, fontSize: 12, fontWeight: 700, lineHeight: '20px', marginTop: 3, padding: '0 3px', borderRadius: 4, background: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}
+                  >
+                    <MathText text={pt.label} />
+                  </div>
+                </foreignObject>
+              ) : (
+                <text x={sx(pt.x) + 8} y={sy(pt.y) - 8} fontSize="12" fontWeight="700" fill={pt.color}>
+                  {pt.label}
+                </text>
+              ))}
           </g>
         ))}
       </g>
@@ -233,7 +243,7 @@ export function IrrGraphReveal({
           <div className={`grid grid-cols-1 ${cols} gap-3`}>
             {panels.map((pn) => (
               <div key={pn.key} data-graph-panel={pn.key} className="min-w-0 rounded-xl border border-slate-200 bg-white p-2 space-y-2">
-                {pn.title && <div className="text-center text-xs font-extrabold text-slate-700">{pn.title}</div>}
+                {pn.title && <div className="text-center text-xs font-extrabold text-slate-700">{typeof pn.title === 'string' ? <MathText text={pn.title} /> : pn.title}</div>}
                 <IrrationalGraph curves={pn.curves} points={pn.points} range={pn.range} ariaLabel={pn.ariaLabel} />
                 <IrrLegend items={pn.legend} />
                 {pn.note && <div className="text-center text-[11px] sm:text-xs text-slate-600">{pn.note}</div>}

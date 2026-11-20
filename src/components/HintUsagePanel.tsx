@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MathText } from './MathText';
 import { ChevronDown, ChevronRight, ChevronUp, Lightbulb } from 'lucide-react';
 import type { StudentRecord } from '../utils/mathLogic';
 import {
@@ -129,7 +130,7 @@ export function HintUsageSection({ records, totalCount }: { records: readonly St
                   <tr key={row.def.id} className="border-t border-slate-100" data-hint-row={row.def.id}>
                     <td className="px-2 py-1.5 mono font-bold text-amber-700">H{i + 1}</td>
                     <td className="px-2 py-1.5 text-slate-800">
-                      {row.def.label}
+                      <MathText text={row.def.label} />
                       {row.def.openByDefault && <span className="ml-1 text-[11px] text-slate-500">(처음부터 열려 있음 — 다시 연 횟수)</span>}
                     </td>
                     <td className="px-2 py-1.5 text-right mono">
@@ -222,7 +223,9 @@ export function StudentHintPanel({ record }: { record: StudentRecord }) {
                   <ul className="mt-1.5 space-y-0.5 text-xs text-slate-700">
                     {used.map((h) => (
                       <li key={h.id} className="flex justify-between gap-3">
-                        <span>{h.label}</span>
+                        <span>
+                          <MathText text={h.label} />
+                        </span>
                         <span className="mono font-bold text-slate-900 whitespace-nowrap">{formatHintCounts(hintCounts(opens, h))}</span>
                       </li>
                     ))}

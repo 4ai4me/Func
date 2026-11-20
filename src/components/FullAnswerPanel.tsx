@@ -4,6 +4,7 @@ import { StudentRecord } from '../utils/mathLogic';
 import { ANSWER_LESSON_KEYS, LESSON_ANSWER_CONFIG, answerStorageKey, type AnswerLessonKey } from '../utils/answerLabels';
 import type { AnswerField, AnswerFormat } from '../utils/answerLabels';
 import { AnswerText, UnwrittenMark } from './AnswerText';
+import { MathText } from './MathText';
 import { isEmptyAnswer, BOOKKEEPING_FIELD_PATTERN } from '../utils/answerLabels';
 import { QuestionStatusResult, getQuestionStatus } from '../utils/questionStatus';
 import { QuestionStatusBadge } from './QuestionStatusBadge';
@@ -80,7 +81,11 @@ function AnswerValue({ value, format }: { value: unknown; format?: AnswerFormat 
     case 'choice': {
       const options = format && 'options' in format ? format.options : {};
       const key = String(value);
-      return <span className="font-semibold">{options[key] ?? key}</span>;
+      return (
+        <span className="font-semibold">
+          <MathText text={options[key] ?? key} />
+        </span>
+      );
     }
     case 'choices': {
       const arr = Array.isArray(value) ? value : [];
@@ -189,7 +194,9 @@ function FieldRow({
 }) {
   return (
     <div className="grid gap-1 sm:grid-cols-[minmax(0,14rem)_1fr] sm:gap-3 border-b border-slate-100 py-1.5 last:border-b-0">
-      <div className="text-[11px] sm:text-xs font-bold text-slate-600">{field.label}</div>
+      <div className="text-[11px] sm:text-xs font-bold text-slate-600">
+        <MathText text={field.label} />
+      </div>
       <div className="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap break-words">
         {status ? (
           <QuestionStatusBadge result={status} />
@@ -248,7 +255,9 @@ function LessonSection({
         <div className="space-y-3 border-t border-slate-100 px-3 py-2">
           {config.groups.map((group) => (
             <div key={group.title}>
-              <div className="mb-1 text-[11px] sm:text-xs font-extrabold text-blue-700">{group.title}</div>
+              <div className="mb-1 text-[11px] sm:text-xs font-extrabold text-blue-700">
+                <MathText text={group.title} />
+              </div>
               {group.fields.map((field) => (
                 <FieldRow
                   key={field.key}

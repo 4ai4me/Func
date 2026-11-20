@@ -1626,8 +1626,8 @@ export default function App() {
                       {displayLessonTab === 5 && '05차시 · 역함수의 성질과 그래프 ((g∘f)⁻¹ = f⁻¹∘g⁻¹과 y = f⁻¹(x)의 그래프)'}
                       {displayLessonTab === 6 && '06차시 · 유리식과 유리함수의 정의역'}
                       {displayLessonTab === 7 && '07차시 · 유리함수의 그래프'}
-                      {displayLessonTab === 8 && '08차시 · 무리식과 무리함수 (무리식의 계산, 정의역, y = √ax의 그래프)'}
-                      {displayLessonTab === 9 && '09차시 · 무리함수의 그래프와 평행이동 (y = √(a(x−p))+q, y = √(ax+b)+c)'}
+                      {displayLessonTab === 8 && <MathText text="08차시 · 무리식과 무리함수 (무리식의 계산, 정의역, y = √ax의 그래프)" />}
+                      {displayLessonTab === 9 && <MathText text="09차시 · 무리함수의 그래프와 평행이동 (y = √(a(x−p))+q, y = √(ax+b)+c)" />}
                     </span>
                     <span className="font-semibold mono text-slate-600">
                       권장 시간 50분 · 단계 완료 {activeDone.filter(Boolean).length} / {STAGE_TITLES[displayLessonTab].length}
@@ -1642,8 +1642,8 @@ export default function App() {
                     {displayLessonTab === 5 && '거꾸로, 그리고 대칭으로! — 역함수의 성질과 y = x 대칭'}
                     {displayLessonTab === 6 && '점근선의 비밀을 찾아라! — 유리함수 y = k/x의 그래프'}
                     {displayLessonTab === 7 && '평행이동과 대칭의 중심 — 유리함수 y = (ax+b)/(cx+d) 탐구'}
-                    {displayLessonTab === 8 && '근호 안을 지켜라! — 무리식과 무리함수 y = √ax'}
-                    {displayLessonTab === 9 && '출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구'}
+                    {displayLessonTab === 8 && <MathText text="근호 안을 지켜라! — 무리식과 무리함수 y = √ax" />}
+                    {displayLessonTab === 9 && <MathText text="출발점과 방향을 추리하라! — 무리함수 y = √(a(x−p))+q 탐구" />}
                   </h2>
                   <p className="mt-1 text-xs sm:text-sm text-slate-600">
                     {displayLessonTab === 1 && '두 집합 X, Y 사이의 대응 관계에서 함수가 되기 위한 조건과 서로 같은 함수를 탐구해 보세요.'}
@@ -2244,12 +2244,12 @@ export default function App() {
             </div>
             {printingStudent.l7?.ieReflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 1:</strong> {printingStudent.l7.ieReflection1}
+                <strong>8차시 성찰 1:</strong> <MathText text={printingStudent.l7.ieReflection1} />
               </div>
             )}
             {printingStudent.l7?.ieReflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>8차시 성찰 2:</strong> {printingStudent.l7.ieReflection2}
+                <strong>8차시 성찰 2:</strong> <MathText text={printingStudent.l7.ieReflection2} />
               </div>
             )}
             <div className="border-b border-[#ccd5df] py-2 text-sm whitespace-pre-wrap">
@@ -2258,12 +2258,12 @@ export default function App() {
             </div>
             {printingStudent.l7?.irReflection1 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>9차시 성찰 1:</strong> {printingStudent.l7.irReflection1}
+                <strong>9차시 성찰 1:</strong> <MathText text={printingStudent.l7.irReflection1} />
               </div>
             )}
             {printingStudent.l7?.irReflection2 && (
               <div className="border-b border-[#ccd5df] py-1.5 text-xs sm:text-sm whitespace-pre-wrap text-slate-700">
-                <strong>9차시 성찰 2:</strong> {printingStudent.l7.irReflection2}
+                <strong>9차시 성찰 2:</strong> <MathText text={printingStudent.l7.irReflection2} />
               </div>
             )}
 

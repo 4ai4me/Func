@@ -369,6 +369,9 @@ function DoneBadge({ show }: { show?: boolean }) {
   );
 }
 
+/** 글자로 받은 제목·안내에 근호(√)가 있으면 윗줄이 있는 근호로 그린다 (글꼴 '√'는 윗줄이 없어 잘려 보임) */
+const asMath = (x: React.ReactNode) => (typeof x === 'string' ? <MathText text={x} /> : x);
+
 function ActivityHeader({
   theme,
   kicker,
@@ -386,7 +389,7 @@ function ActivityHeader({
     <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-3">
       <div>
         <span className={`text-xs font-extrabold ${THEME[theme].label}`}>{kicker}</span>
-        <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">{title}</h4>
+        <h4 className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">{asMath(title)}</h4>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <DoneBadge show={done} />
@@ -459,7 +462,7 @@ function ReasonInput({
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 flex-wrap justify-between">
         <label htmlFor={id} className="block text-xs sm:text-sm font-bold text-slate-900">
-          {label}
+          {asMath(label)}
         </label>
         <CharCountBadge current={count} min={min} />
       </div>
@@ -483,7 +486,7 @@ function VerifyButton({ theme, onClick, children }: { theme: ThemeKey; onClick: 
         className={`inline-flex min-h-[42px] items-center gap-2 rounded-xl ${THEME[theme].btn} px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white transition-colors shadow-xs`}
       >
         <CheckCircle2 className="h-4 w-4" />
-        <span>{children}</span>
+        <span>{asMath(children)}</span>
       </button>
     </div>
   );
@@ -529,7 +532,9 @@ function ToggleButton({ on, onClick, onLabel, offLabel }: { on: boolean; onClick
       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
     >
       {on ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-      <span>{on ? onLabel : offLabel}</span>
+      <span>
+        <MathText text={on ? onLabel : offLabel} />
+      </span>
     </button>
   );
 }
@@ -538,7 +543,7 @@ function LockedNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
       <Lock className="h-4 w-4 shrink-0" />
-      <span>{children}</span>
+      <span>{asMath(children)}</span>
     </div>
   );
 }
@@ -581,7 +586,7 @@ function IneqInput({
   const num = cur.num;
   return (
     <div className="space-y-1">
-      {label && <div className="text-xs font-bold text-slate-700">{label}</div>}
+      {label && <div className="text-xs font-bold text-slate-700">{asMath(label)}</div>}
       <div className="flex items-center gap-1.5 flex-wrap" data-ineq={id}>
         <i className="font-serif text-base font-bold text-slate-900 w-3 text-center">{v}</i>
         <div className="inline-flex rounded-lg border border-slate-300 bg-white overflow-hidden" role="group" aria-label={`${v}의 부등호 고르기`}>
@@ -651,7 +656,7 @@ function ExprInput({
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
       <label htmlFor={id} className="block text-sm font-bold text-slate-900">
-        {label}
+        {asMath(label)}
       </label>
       <div className="flex items-center gap-1.5">
         <span className="text-sm font-bold text-slate-700 shrink-0">=</span>
@@ -674,7 +679,11 @@ function ExprInput({
           aria-label="근호 넣기"
           className="shrink-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-extrabold text-slate-800 hover:bg-slate-100"
         >
-          √( )
+          <span aria-hidden="true">
+            <Root>
+              <span className="inline-block w-3" />
+            </Root>
+          </span>
         </button>
       </div>
       <div className="min-h-[28px] text-sm text-slate-800 flex items-center gap-2 flex-wrap" aria-live="polite">
@@ -1197,7 +1206,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             </div>
             {imgs.roots && <TextbookImage file="image_l8_note_roots.png" alt="무리식을 계산할 때는 제곱근의 성질을 이용한다. 분모에 근호가 있으면 (A+B)(A−B)=A²−B²을 이용하여 분모를 유리화한다." maxH="max-h-[380px]" />}
             <p className="text-[11px] sm:text-xs text-slate-500">
-              ✏️ 입력 방법: <strong>√( )</strong> 버튼을 누르면 근호가 들어가요(또는 <span className="mono">sqrt(x+1)</span>). 분수는 <span className="mono">(식)/2</span>처럼 괄호로 묶어
+              ✏️ 입력 방법: <strong className="inline-block" aria-label="근호"><Root><span className="inline-block w-3" /></Root></strong> 버튼을 누르면 근호가 들어가요(또는 <span className="mono">sqrt(x+1)</span>). 분수는 <span className="mono">(식)/2</span>처럼 괄호로 묶어
               씁니다. 칸 아래 미리보기로 모양을 확인하세요.
             </p>
           </div>
@@ -1597,7 +1606,9 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
                   <div className="text-sm font-bold text-slate-900">
                     ({i + 1}) <MathText text={it.label} />
                   </div>
-                  <div className="text-[11px] font-bold text-slate-600">y = √x를 무엇에 대하여 대칭이동?</div>
+                  <div className="text-[11px] font-bold text-slate-600">
+                    <MathText text="y = √x를 무엇에 대하여 대칭이동?" />
+                  </div>
                   <ChoiceButtons
                     theme="emerald"
                     value={state[L8_P4_SYM_KEYS[i]]}
