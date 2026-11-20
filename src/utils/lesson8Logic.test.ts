@@ -208,3 +208,14 @@ test('8·9차시 나누기: 화면 단계 수 = STAGE_TITLES, 초기화 항목�
   assert.deepEqual(M.evaluateLevel8Completion(after), new Array(6).fill(true));
   assert.deepEqual(M.evaluateLevel9Completion(after), new Array(3).fill(false));
 });
+
+test('생각 열기 표: 기압별 풍속 값, 949 hPa는 ② 완료 전 숨김', () => {
+  const rows = L8.l8OpenTableRows(false);
+  assert.deepEqual(rows.map((r) => r.pressure), [913, 949, 977, 997, 1013, 1020]);
+  assert.deepEqual(rows.map((r) => r.inside), [100, 64, 36, 16, 0, -7]);
+  assert.deepEqual(rows.map((r) => r.speed), [63, 50.4, 37.8, 25.2, 0, null]);
+  assert.deepEqual(rows.map((r) => r.hidden), [false, true, false, false, false, false]);
+  assert.ok(L8.l8OpenTableRows(true).every((r) => !r.hidden));
+  // ②의 정답과 같은 값
+  assert.equal(rows[1].speed, Math.round(L8.typhoonSpeed(L8.L8_OPEN_PRESSURE) * 10) / 10);
+});

@@ -31,6 +31,7 @@ import {
   composeIneq,
   parseIneq,
   typhoonSpeed,
+  l8OpenTableRows,
   irrLabel,
   irrDomainText,
   irrRangeText,
@@ -989,6 +990,56 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
                   <div className="h-full rounded-full bg-gradient-to-r from-sky-400 to-rose-500" style={{ width: `${Math.min(100, (speed / 70) * 100)}%` }} />
                 </div>
               )}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 space-y-2" data-l8-open-table>
+              <div className="text-xs sm:text-sm font-extrabold text-slate-900">중심 기압에 따른 태풍의 풍속</div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[320px] border-collapse text-center text-xs sm:text-sm">
+                  <caption className="sr-only">중심 기압 x hPa에 따른 1013 − x와 풍속 6.3√(1013 − x) m/s</caption>
+                  <thead>
+                    <tr className="bg-sky-50 text-sky-900">
+                      <th scope="col" className="border border-slate-200 px-2 py-1.5 font-bold">중심 기압 x (hPa)</th>
+                      <th scope="col" className="border border-slate-200 px-2 py-1.5 font-bold">1013 − x</th>
+                      <th scope="col" className="border border-slate-200 px-2 py-1.5 font-bold">
+                        풍속 <MathText text="6.3√(1013 − x)" /> (m/s)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {l8OpenTableRows(!!state.openVerified).map((r) => (
+                      <tr
+                        key={r.pressure}
+                        className={pressure === r.pressure ? 'bg-rose-50' : r.speed === null ? 'bg-amber-50/60' : ''}
+                      >
+                        <td className="border border-slate-200 px-2 py-1.5 font-bold text-slate-900">
+                          <button
+                            type="button"
+                            onClick={() => setPressure(r.pressure)}
+                            className="underline decoration-dotted underline-offset-2 hover:text-sky-700"
+                            aria-label={`중심 기압을 ${r.pressure} hPa로 바꾸기`}
+                          >
+                            {r.pressure}
+                          </button>
+                        </td>
+                        <td className="border border-slate-200 px-2 py-1.5 text-slate-700">{r.inside < 0 ? `−${-r.inside}` : r.inside}</td>
+                        <td className="border border-slate-200 px-2 py-1.5 text-slate-900">
+                          {r.hidden ? (
+                            <span className="font-bold text-rose-600">? (②에서 직접 구해 보세요)</span>
+                          ) : r.speed === null ? (
+                            <span className="text-amber-800">계산할 수 없음 (근호 안이 음수)</span>
+                          ) : (
+                            <span>
+                              <MathText text={`6.3√${r.inside}`} /> = <span className="font-bold">{Number.isInteger(r.speed) ? r.speed : r.speed.toFixed(1)}</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500">기압 숫자를 누르면 위 막대가 그 값으로 바뀌어요. 기압이 낮을수록 풍속이 어떻게 변하는지 살펴보세요.</p>
             </div>
 
             <div className="space-y-2">

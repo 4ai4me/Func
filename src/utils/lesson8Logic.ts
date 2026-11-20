@@ -126,6 +126,27 @@ export type L8OpenExpr = '' | (typeof L8_OPEN_EXPR_OPTIONS)[number][0];
 export const typhoonSpeed = (pressure: number) => (pressure > 1013 ? NaN : 6.3 * Math.sqrt(1013 - pressure));
 /** ② 중심 기압 949 hPa일 때 → 6.3 × √64 = 50.4 */
 export const L8_OPEN_PRESSURE = 949;
+/** 생각 열기 표: 1013 − x가 제곱수가 되는 기압(풍속이 깔끔한 값)과 정의역 밖의 1020 */
+export const L8_OPEN_TABLE_PRESSURES = [913, 949, 977, 997, 1013, 1020] as const;
+export interface L8OpenTableRow {
+  pressure: number;
+  inside: number;
+  /** 근호 안이 음수이면 null */
+  speed: number | null;
+  /** ②의 답(949 hPa)은 학생이 직접 구한 뒤에만 보여 준다 */
+  hidden: boolean;
+}
+export function l8OpenTableRows(revealAnswer: boolean): L8OpenTableRow[] {
+  return L8_OPEN_TABLE_PRESSURES.map((pressure) => {
+    const s = typhoonSpeed(pressure);
+    return {
+      pressure,
+      inside: 1013 - pressure,
+      speed: Number.isFinite(s) ? Math.round(s * 10) / 10 : null,
+      hidden: pressure === L8_OPEN_PRESSURE && !revealAnswer,
+    };
+  });
+}
 
 export function validateL8Open(p: Lesson7State): L8Feedback {
   if (p.opExpr !== 'a') {
