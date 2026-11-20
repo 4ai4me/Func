@@ -58,3 +58,21 @@ test('요약: 연 학생 수·총 횟수, 학생 합계, 단계 힌트 표시', 
   assert.equal(formatHintCounts([2, 1, 0]), '열기 2 · 2단계 1 · 3단계 0');
   assert.equal(formatHintCounts([5]), '5');
 });
+
+test('8·9차시 단계 힌트(2026-11-20): 단계 수 = 화면 힌트 문장 수, 단계 열기 횟수를 따로 셈', async () => {
+  const { L8_HINT_STEPS } = await import('./lesson8Logic');
+  for (const def of [...catalogOf(8).hints, ...catalogOf(9).hints]) {
+    const steps = (L8_HINT_STEPS as Record<string, readonly string[]>)[def.id];
+    assert.ok(steps && steps.length >= 2, def.id);
+    assert.equal(def.levels, steps.length, def.id);
+  }
+  const l8 = src('Lesson8View.tsx');
+  for (const id of Object.keys(L8_HINT_STEPS)) assert.ok(l8.includes(`hintBox('${id}')`), `화면에 ${id} 단계 힌트 상자`);
+  const d = createInitialStudentState();
+  d.l7 = { ...d.l7, hintOpens: { p1: 2, 'p1@2': 2, 'p1@3': 1, p6: 1, 'p6@2': 1 } };
+  const p1 = catalogOf(8).hints.find((h) => h.id === 'p1')!;
+  assert.deepEqual(hintCounts(d.l7.hintOpens, p1), [2, 2, 1]);
+  assert.equal(formatHintCounts(hintCounts(d.l7.hintOpens, p1)), '열기 2 · 2단계 2 · 3단계 1');
+  assert.equal(studentHintTotal(d, 8), 5);
+  assert.equal(studentHintTotal(d, 9), 2);
+});

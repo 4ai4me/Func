@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { addHintOpen } from '../utils/hintLog';
+import { addHintOpen, hintLevelKey } from '../utils/hintLog';
 import type { Lesson7State } from '../utils/mathLogic';
 import {
   type L8Feedback,
@@ -46,6 +46,8 @@ import {
   validateL8Prob6,
   validateL8Ex2,
   validateL8Prob7,
+  L8_HINT_STEPS,
+  type L8HintId,
 } from '../utils/lesson8Logic';
 import { parseIrr } from '../utils/irrExpr';
 import { MathText } from './MathText';
@@ -319,8 +321,41 @@ function HintToggle({ open, onClick, label = '💡 힌트 보기' }: { open: boo
   );
 }
 
-function HintBox({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-950 space-y-1.5">{children}</div>;
+/**
+ * 단계 힌트 (2026-11-20): 힌트 1부터 보이고 [다음 힌트]를 누를 때마다 한 단계씩 더 보임.
+ * 연 단계는 이 화면에 있는 동안 유지(닫았다 다시 열어도 이어서 보임)
+ */
+function StepHintBox({ id, steps, level, onNext }: { id: string; steps: readonly string[]; level: number; onNext: () => void }) {
+  const shown = Math.max(1, Math.min(level, steps.length));
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-950 space-y-2" data-step-hint={id} data-hint-level={shown}>
+      {steps.slice(0, shown).map((t, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <span className="shrink-0 rounded-md bg-amber-200/70 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-900">힌트 {i + 1}</span>
+          <span className="leading-relaxed">
+            <MathText text={t} />
+          </span>
+        </div>
+      ))}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span className="text-[10px] font-bold text-amber-700">
+          {shown} / {steps.length}단계
+        </span>
+        {shown < steps.length ? (
+          <button
+            type="button"
+            onClick={onNext}
+            className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
+          >
+            <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+            <span>다음 힌트 보기 ({shown + 1}단계)</span>
+          </button>
+        ) : (
+          <span className="text-[10px] text-amber-700">마지막 힌트예요. 스스로 마무리해 보세요!</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function DoneBadge({ show }: { show?: boolean }) {
@@ -754,6 +789,17 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
     if (!hints[k]) onUpdate((prev) => addHintOpen(prev, k));
     setHints((prev) => ({ ...prev, [k]: !prev[k] }));
   };
+  // 단계 힌트: 지금 보이는 단계 (1부터). [다음 힌트]를 누르면 그 단계를 'id@N'으로 기록
+  const [hintLevel, setHintLevel] = useState<Partial<Record<L8HintId, number>>>({});
+  const nextHint = (k: L8HintId) => {
+    const cur = hintLevel[k] ?? 1;
+    const next = Math.min(cur + 1, L8_HINT_STEPS[k].length);
+    if (next === cur) return;
+    onUpdate((prev) => addHintOpen(prev, hintLevelKey(k, next)));
+    setHintLevel((prev) => ({ ...prev, [k]: next }));
+  };
+  const hintBox = (k: L8HintId) =>
+    hints[k] ? <StepHintBox id={k} steps={L8_HINT_STEPS[k]} level={hintLevel[k] ?? 1} onNext={() => nextHint(k)} /> : null;
   const [feedback, setFeedback] = useState<Partial<Record<FeedbackKey, L8Feedback | null>>>({});
   const [graphOpen, setGraphOpen] = useState<Partial<Record<GraphKey, boolean>>>({});
   const toggleGraph = (k: GraphKey) => setGraphOpen((prev) => ({ ...prev, [k]: !prev[k] }));
@@ -977,15 +1023,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.open} onClick={() => toggleHint('open')} />
             </div>
-            {hints.open && (
-              <HintBox>
-                <div>• (중심 기압) 자리에 x를 넣습니다. 6.3은 근호 밖에서 곱해져요.</div>
-                <div>
-                  • <MathText text="√64 = 8" />이므로 6.3 × 8을 계산해 보세요.
-                </div>
-                <div>• 음수의 제곱근은 실수가 아닙니다. 근호 안 1013 − x가 0 이상이어야 해요.</div>
-              </HintBox>
-            )}
+            {hintBox('open')}
             <ReasonInput id="l8-op-reason" theme="rose" label="③ 그렇게 생각한 이유를 써 보세요." value={state.opReason} onChange={(v) => setField('opReason', v)} min={L8_MIN_REASON} />
             <FeedbackBanner fb={feedback.open} />
             <VerifyButton theme="rose" onClick={() => verify('open', 'openVerified', validateL8Open)}>
@@ -1065,12 +1103,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p1} onClick={() => toggleHint('p1')} />
             </div>
-            {hints.p1 && (
-              <HintBox>
-                <div>• (1) 근호 안의 식이 0 이상: 2x − 3 ≥ 0</div>
-                <div>• (2) 근호가 분모에 있으면 0이 되면 안 돼요: 4 − x &gt; 0 (교과서 [보기] ②와 같은 경우)</div>
-              </HintBox>
-            )}
+            {hintBox('p1')}
             <FeedbackBanner fb={feedback.p1} />
             <VerifyButton theme="emerald" onClick={() => verify('p1', 'p1Verified', validateL8Prob1)}>
               [문제 1] 정답 확인하기
@@ -1142,15 +1175,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.ex1} onClick={() => toggleHint('ex1')} />
             </div>
-            {hints.ex1 && (
-              <HintBox>
-                {L8_EX1.map((it, i) => (
-                  <div key={it.label}>
-                    • ({i + 1}) <MathText text={it.hint} />
-                  </div>
-                ))}
-              </HintBox>
-            )}
+            {hintBox('ex1')}
             <FeedbackBanner fb={feedback.ex1} />
             <VerifyButton theme="sky" onClick={() => verify('ex1', 'ex1Verified', validateL8Ex1)}>
               [예제 1] 정답 확인하기
@@ -1165,15 +1190,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p2} onClick={() => toggleHint('p2')} />
             </div>
-            {hints.p2 && (
-              <HintBox>
-                {L8_P2.map((it, i) => (
-                  <div key={it.label}>
-                    • ({i + 1}) <MathText text={it.hint} />
-                  </div>
-                ))}
-              </HintBox>
-            )}
+            {hintBox('p2')}
             <FeedbackBanner fb={feedback.p2} />
             <VerifyButton theme="sky" onClick={() => verify('p2', 'p2Verified', validateL8Prob2)}>
               [문제 2] 정답 확인하기
@@ -1227,12 +1244,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p3} onClick={() => toggleHint('p3')} />
             </div>
-            {hints.p3 && (
-              <HintBox>
-                <div>• 근호 앞의 −나 근호 밖에서 더한 수는 정의역과 상관없어요. 근호 안만 보세요.</div>
-                <div>• (2) 5 − 2x ≥ 0 → −2x ≥ −5 → 양변을 −2로 나누면 부등호 방향이 바뀌어요.</div>
-              </HintBox>
-            )}
+            {hintBox('p3')}
             <FeedbackBanner fb={feedback.p3} />
             <VerifyButton theme="emerald" onClick={() => verify('p3', 'p3Verified', validateL8Prob3)}>
               [문제 3] 정답 확인하기
@@ -1475,14 +1487,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
               <div className="flex justify-end">
                 <HintToggle open={!!hints.sq} onClick={() => toggleHint('sq')} />
               </div>
-              {hints.sq && (
-                <HintBox>
-                  <div>• 역함수 y = x² (x ≥ 0)의 정의역과 치역을 서로 바꾸면 y = √x의 치역과 정의역이 돼요.</div>
-                  <div>
-                    • a = 1, 2, 3일 때 지나는 점 (1, √1), (1, √2), (1, √3)의 높이를 비교해 보세요.
-                  </div>
-                </HintBox>
-              )}
+              {hintBox('sq')}
               <FeedbackBanner fb={feedback.sq} />
               <VerifyButton theme="violet" onClick={() => verify('sq', 'sqVerified', validateL8Sqrt)}>
                 [함께 탐구] 정답 확인하기
@@ -1572,12 +1577,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p4} onClick={() => toggleHint('p4')} />
             </div>
-            {hints.p4 && (
-              <HintBox>
-                <div>• y = f(x)의 그래프와 y = −f(x)의 그래프는 x축에 대하여 대칭이에요.</div>
-                <div>• x 대신 −x를 넣으면 y축 대칭, x와 y 둘 다 부호를 바꾸면 원점 대칭이에요.</div>
-              </HintBox>
-            )}
+            {hintBox('p4')}
             <FeedbackBanner fb={feedback.p4} />
             <VerifyButton theme="emerald" onClick={() => verify('p4', 'p4Verified', validateL8Prob4)}>
               [문제 4] 정답 확인하기
@@ -1670,12 +1670,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p5} onClick={() => toggleHint('p5')} />
             </div>
-            {hints.p5 && (
-              <HintBox>
-                <div>• 정의역: 근호 안의 x의 계수 a가 양수면 x ≥ 0, 음수면 x ≤ 0</div>
-                <div>• 치역: 근호 앞에 −가 없으면 y ≥ 0, 있으면 y ≤ 0</div>
-              </HintBox>
-            )}
+            {hintBox('p5')}
             <FeedbackBanner fb={feedback.p5} />
             <VerifyButton theme="violet" onClick={() => verify('p5', 'p5Verified', validateL8Prob5)}>
               [문제 5] 정답 확인하기
@@ -1705,16 +1700,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
               </div>
               <HintToggle open={!!hints.reflection} onClick={() => toggleHint('reflection')} label="💡 성찰 힌트 보기" />
             </div>
-            {hints.reflection && (
-              <HintBox>
-                <div>
-                  • <strong>성찰 1 예시</strong>: “무리식의 값이 실수가 되려면 근호 안이 0 이상이어야 하고, 분모에 있으면 0보다 커야 한다. 무리함수의 정의역은 이 조건으로 구한다.”
-                </div>
-                <div>
-                  • <strong>성찰 2 예시</strong>: “y = √x의 그래프가 y = x²(x ≥ 0)의 그래프와 y = x에 대하여 대칭이라는 것을 알았다.”
-                </div>
-              </HintBox>
-            )}
+            {hintBox('reflection')}
             <HelpSourcePicker idPrefix="l8" value={state.ieHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, ieHelpSource: v }))} />
             <ReasonInput
               id="l8-reflection1"
@@ -1900,12 +1886,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p6} onClick={() => toggleHint('p6')} />
             </div>
-            {hints.p6 && (
-              <HintBox>
-                <div>• (2) x + 2 = x − (−2)이므로 x축 방향으로 −2만큼 평행이동한 것이에요.</div>
-                <div>• 정의역·치역은 시작점 (p, q)에서 그래프가 어느 쪽(오른쪽/왼쪽, 위/아래)으로 뻗는지 보면 됩니다.</div>
-              </HintBox>
-            )}
+            {hintBox('p6')}
             <FeedbackBanner fb={feedback.p6} />
             <VerifyButton theme="violet" onClick={() => verify('p6', 'p6Verified', validateL8Prob6)}>
               [문제 6] 정답 확인하기
@@ -1971,12 +1952,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.ex2} onClick={() => toggleHint('ex2')} />
             </div>
-            {hints.ex2 && (
-              <HintBox>
-                <div>• {L8_EX2.hint}</div>
-                <div>• 그러면 y = √(2(x + 4)) + 2: a = 2, p = −4, q = 2</div>
-              </HintBox>
-            )}
+            {hintBox('ex2')}
             <FeedbackBanner fb={feedback.ex2} />
             <VerifyButton theme="sky" onClick={() => verify('ex2', 'ex2Verified', validateL8Ex2)}>
               [예제 2] 정답 확인하기
@@ -2015,15 +1991,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
             <div className="flex justify-end">
               <HintToggle open={!!hints.p7} onClick={() => toggleHint('p7')} />
             </div>
-            {hints.p7 && (
-              <HintBox>
-                {L8_P7.map((t, i) => (
-                  <div key={t.label}>
-                    • ({i + 1}) {t.hint}
-                  </div>
-                ))}
-              </HintBox>
-            )}
+            {hintBox('p7')}
             <FeedbackBanner fb={feedback.p7} />
             <VerifyButton theme="sky" onClick={() => verify('p7', 'p7Verified', validateL8Prob7)}>
               [문제 7] 정답 확인하기
@@ -2052,17 +2020,7 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
               </div>
               <HintToggle open={!!hints.reflection9} onClick={() => toggleHint('reflection9')} label="💡 성찰 힌트 보기" />
             </div>
-            {hints.reflection9 && (
-              <HintBox>
-                <div>
-                  • <strong>성찰 1 예시</strong>: “y = √(a(x − p)) + q의 그래프는 y = √ax의 그래프를 x축 방향으로 p, y축 방향으로 q만큼 평행이동한 것이고, 정의역은 a의 부호, 치역은
-                  근호 앞의 부호로 정해진다.”
-                </div>
-                <div>
-                  • <strong>성찰 2 예시</strong>: “근호 안을 a로 묶으면 y = √(ax + b) + c도 평행이동한 그래프라는 것을 알았다.”
-                </div>
-              </HintBox>
-            )}
+            {hintBox('reflection9')}
             <HelpSourcePicker idPrefix="l9" value={state.irHelpSource} onChange={(v) => onUpdate((prev) => ({ ...prev, irHelpSource: v }))} />
             <ReasonInput
               id="l9-reflection1"
