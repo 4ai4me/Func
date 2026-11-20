@@ -1642,13 +1642,13 @@ export const Lesson8View: React.FC<Lesson8ViewProps> = ({ state, step, onStepCha
                   title: '(1)·(2)·(3)과 y = √x',
                   range: 5,
                   curves: [
-                    { fn: { s: 1, a: 1, p: 0, q: 0 }, color: IRR_COLORS.base, dashed: true, width: 1.8 },
+                    { fn: { s: 1, a: 1, p: 0, q: 0 }, color: '#0f172a' },
                     { fn: L8_P4[0].fn, color: IRR_COLORS.main },
                     { fn: L8_P4[1].fn, color: IRR_COLORS.alt },
                     { fn: L8_P4[2].fn, color: IRR_COLORS.third },
                   ],
                   legend: [
-                    { color: IRR_COLORS.base, label: 'y = √x', dashed: true },
+                    { color: '#0f172a', label: 'y = √x' },
                     { color: IRR_COLORS.main, label: '(1) y = −√x' },
                     { color: IRR_COLORS.alt, label: '(2) y = √(−x)' },
                     { color: IRR_COLORS.third, label: '(3) y = −√(−x)' },
